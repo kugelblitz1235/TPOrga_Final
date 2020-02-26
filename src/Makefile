@@ -26,3 +26,4 @@ $(BUILD_DIR)/%.o: %.asm
 
 clean:
 	rm -f $(BUILD_DIR)/*
+	rm -f ../cli
