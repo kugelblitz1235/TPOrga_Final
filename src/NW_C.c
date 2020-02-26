@@ -61,7 +61,7 @@ void NW(unsigned int str_cnt_1,char* str1,
 	unsigned int x = str_cnt_2;
 	
 	while(y != 0 || x != 0){
-		cerr << x << " " << y << endl;
+		//cerr << x << " " << y << " " << scores[y][x] << endl;
 		if(y > 0 && x > 0){
 			short score_diag = scores[y-1][x-1] + 
 						  missmatch_pen*(str1[y-1]!= str2[x-1]) + 
@@ -71,12 +71,12 @@ void NW(unsigned int str_cnt_1,char* str1,
 			
 			short score_up = scores[y-1][x] + gap_pen;
 			
-			if(score_diag > score_left && score_diag > score_up){
+			if(score_diag == scores[y][x]){
 				best_sequence_1[length] = str1[y-1];
 				best_sequence_2[length] = str2[x-1];
 				x--;
 				y--;
-			}else if(score_up > score_diag && score_up > score_left){
+			}else if(score_up == scores[y][x]){
 				best_sequence_1[length] = str1[y-1];
 				best_sequence_2[length] = '_';
 				y--;
