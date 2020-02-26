@@ -1,3 +1,7 @@
+#include <iostream>
+#include "Types.h"
+
+using namespace std;
 
 void NW(unsigned int str_cnt_1,char* str1,
 			   unsigned int str_cnt_2,char* str2,
@@ -40,6 +44,7 @@ void NW(unsigned int str_cnt_1,char* str1,
 		}
 	}
 	
+	cerr << "Score Matrix" << endl;
 	for(unsigned int y = 0;y < str_cnt_1+1;y++){
 		for(unsigned int x = 0;x < str_cnt_2+1;x++){
 			cerr << (int)scores[y][x] << " ";
@@ -103,6 +108,7 @@ void NW(unsigned int str_cnt_1,char* str1,
 		best_sequence_2[length-1-i] = swap;
 	}
 	
+	cerr << "Best sequences" << endl;
 	for(int i = 0;i < length;i++){
 		cerr << best_sequence_1[i];
 	}cerr << endl;
