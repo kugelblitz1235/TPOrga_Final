@@ -1,5 +1,6 @@
 #include <iostream>
-#include "Types.h"
+#include "Types.hpp"
+#include "NW_C.hpp"
 
 using namespace std;
 

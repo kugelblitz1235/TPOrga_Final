@@ -16,7 +16,7 @@ all: cli
 cli: $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH)
 	$(CC) $(CFLAGS) $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) -o ../$@ -lm
 
-$(BUILD_DIR)/%.o: %.c
+$(BUILD_DIR)/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
