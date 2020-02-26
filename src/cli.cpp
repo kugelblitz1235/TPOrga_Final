@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "Types.hpp"
+#include "NW_C.hpp"
+#include "SW_C.hpp"
 
 int
 main (int argc, char **argv)
