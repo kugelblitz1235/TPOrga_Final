@@ -3,6 +3,7 @@
 
 using namespace std;
 
+
 void SW(unsigned int str_cnt_1,char* str1,
 			   unsigned int str_cnt_2,char* str2,
 			   short match_score,short missmatch_pen,short gap_pen,
@@ -55,7 +56,6 @@ void SW(unsigned int str_cnt_1,char* str1,
 		}
 	}
 	
-	cerr << "Score Matrix" << endl;
 	for(unsigned int y = 0;y < str_cnt_1+1;y++){
 		for(unsigned int x = 0;x < str_cnt_2+1;x++){
 			cerr << (int)scores[y][x] << " ";
@@ -72,6 +72,9 @@ void SW(unsigned int str_cnt_1,char* str1,
 	unsigned int x = best_x;
 	
 	while(y != 0 || x != 0){
+		
+		//cerr << x << " " << y << " " << scores[y][x] << endl;
+		
 		if(y > 0 && x > 0){
 			short score_diag = scores[y-1][x-1] + 
 						  missmatch_pen*(str1[y-1]!= str2[x-1]) + 
@@ -81,21 +84,21 @@ void SW(unsigned int str_cnt_1,char* str1,
 			
 			short score_up = scores[y-1][x] + gap_pen;
 			
-			if(score_diag > score_left && score_diag > score_up){
+			if(scores[y][x] == 0){
+				break;
+			}else if(score_diag == scores[y][x]){
 				best_sequence_1[length] = str1[y-1];
 				best_sequence_2[length] = str2[x-1];
 				x--;
 				y--;
-			}else if(score_up > score_diag && score_up > score_left){
+			}else if(score_up == scores[y][x]){
 				best_sequence_1[length] = str1[y-1];
 				best_sequence_2[length] = '_';
 				y--;
-			}else if(score_left > score_up && score_left > score_diag){
+			}else {
 				best_sequence_1[length] = '_';
 				best_sequence_2[length] = str2[x-1];
 				x--;
-			}else{
-				break;
 			}
 			
 		}else if(x > 0){
@@ -119,7 +122,7 @@ void SW(unsigned int str_cnt_1,char* str1,
 		best_sequence_2[i] = best_sequence_2[length-1-i];
 		best_sequence_2[length-1-i] = swap;
 	}
-	cerr << "Best sequences" << endl;
+	
 	for(int i = 0;i < length;i++){
 		cerr << best_sequence_1[i];
 	}cerr << endl;
@@ -136,3 +139,4 @@ void SW(unsigned int str_cnt_1,char* str1,
 	alignment.sequence_1 = best_sequence_1;
 	alignment.sequence_2 = best_sequence_2;
 }
+
