@@ -15,8 +15,8 @@ void save_object_as_JSON(Alignment* alignment,char* file){
 	myfile << "    \"length\": \"" << alignment->sequence_1->length << "\"\n";
 	myfile << "  },\n";
 	myfile << "  \"sequence_2\": {\n";
-	myfile << "    \"sequence\": \"" << alignment->sequence_1->sequence << "\",\n";
-	myfile << "    \"length\": \"" << alignment->sequence_1->length << "\"\n";
+	myfile << "    \"sequence\": \"" << alignment->sequence_2->sequence << "\",\n";
+	myfile << "    \"length\": \"" << alignment->sequence_2->length << "\"\n";
 	myfile << "  },\n";
 	myfile << "  \"parameters\": {\n";
 	myfile << "    \"algorithm\": \"" << alignment->parameters->algorithm << "\",\n";
@@ -30,8 +30,8 @@ void save_object_as_JSON(Alignment* alignment,char* file){
 	myfile << "      \"length\": \"" << alignment->result->sequence_1->length << "\"\n";
 	myfile << "    },\n";
 	myfile << "    \"sequence_2\": {\n";
-	myfile << "      \"sequence\": \"" << alignment->result->sequence_1->sequence << "\",\n";
-	myfile << "      \"length\": \"" << alignment->result->sequence_1->length << "\"\n";
+	myfile << "      \"sequence\": \"" << alignment->result->sequence_2->sequence << "\",\n";
+	myfile << "      \"length\": \"" << alignment->result->sequence_2->length << "\"\n";
 	myfile << "    }\n";
 	myfile << "  }\n";
 	myfile << "}\n";
