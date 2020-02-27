@@ -1,5 +1,5 @@
-CC=gcc
-CFLAGS = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O0 -march=native
+CXX=g++
+CXXFLAGS = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O0 -march=native
 
 ASM = nasm
 ASMFLAGS = -felf64 -g -F dwarf
@@ -14,12 +14,11 @@ ALGORITMOS_OBJ_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(ALGORITMOS_OBJ))
 all: cli
 
 cli: $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH)
-	$(CC) $(CFLAGS) $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) -o ../$@ -lm
+	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH)
 
 $(BUILD_DIR)/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 $(BUILD_DIR)/%.o: %.asm
 	mkdir -p $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) -o $@ $<
