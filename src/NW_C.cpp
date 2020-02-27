@@ -122,7 +122,7 @@ void NW(unsigned int str_cnt_1,char* str1,
 	
 	free(scores);
 	
-	alignment.length = length;
-	alignment.sequence_1 = best_sequence_1;
-	alignment.sequence_2 = best_sequence_2;
+	// alignment.length = length;
+	// alignment.sequence_1 = best_sequence_1;
+	// alignment.sequence_2 = best_sequence_2;
 }

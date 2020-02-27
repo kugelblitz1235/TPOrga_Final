@@ -43,7 +43,7 @@ SW_SSE:
     mov seq1, rdi
     mov seq2, rsi
     xor rows, rows 
-    mov rows, r9w
+    ; mov rows, r9w
     xor columns, columns
     mov columns, [rbp+8]
 
