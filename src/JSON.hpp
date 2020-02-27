@@ -1,4 +1,6 @@
-#include <iostream>
+#ifndef JSON_H
+#define JSON_H
+
 #include <fstream>
 #include <iostream>
 
@@ -36,3 +38,5 @@ void save_object_as_JSON(Alignment* alignment,char* file){
 	myfile << "  }\n";
 	myfile << "}\n";
 }
+
+#endif
