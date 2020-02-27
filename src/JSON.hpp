@@ -24,7 +24,7 @@ void save_object_as_JSON(Alignment* alignment,char* file){
 	myfile << "    \"missmatch\": \"" << alignment->parameters->missmatch << "\",\n";
 	myfile << "    \"gap\": \"" << alignment->parameters->gap << "\"\n";
 	myfile << "  },\n";
-	myfile << "  \"parameters\": {\n";
+	myfile << "  \"result\": {\n";
 	myfile << "    \"sequence_1\": {\n";
 	myfile << "      \"sequence\": \"" << alignment->result->sequence_1->sequence << "\",\n";
 	myfile << "      \"length\": \"" << alignment->result->sequence_1->length << "\"\n";
