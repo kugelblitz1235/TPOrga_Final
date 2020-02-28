@@ -13,12 +13,13 @@ ALGORITMOS_OBJ_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(ALGORITMOS_OBJ))
 
 all: cli
 
-cli: $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH)
-	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH)
+cli: $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(BUILD_DIR)/Types.o
+	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(BUILD_DIR)/Types.o
 
 $(BUILD_DIR)/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
 $(BUILD_DIR)/%.o: %.asm
 	mkdir -p $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) -o $@ $<
