@@ -8,7 +8,8 @@ section .text:
 ;2_Inicializar la matriz de scores
 ;3_Darle puntaje a cada elemento recorriendo de izq-> der, top-> bottom
 ;4_Traceback para obtener el mejor alineamiento local
-
+extern malloc 
+extern free 
 global SW_SSE
 
 ;podriamos colocar aca unos defines 
@@ -91,24 +92,24 @@ SW_SSE:
     push alignment_ptr
     sub rsp, 16
 
-    ;preservlos parametros
+    ;preservo los parametros
     mov seq1, rdi
     mov seq2, rsi
     xor rows, rows 
     mov rows, r9
     xor columns, columns
-    mov columns, word [rbp+8]
-    lea alignment_ptr, qword [rbp+16]
+    mov columns, [rbp+8]
+    lea alignment_ptr, [rbp+16]
     shl rdx, 48
     shr rdx, 48             ;limpio la parte alta del registro rdx
     shl rcx, 48
     shr rcx, 48             ;limpio la parte alta del registro rcx
-    mov [rsp],0             ;best_y=0
-    mov [rsp+8],0           ;best_x=0
+    mov word [rsp],0             ;best_y=0
+    mov word [rsp+8],0           ;best_x=0
     
     ;para mas comodidad de los calculos
-    inc columns             ;rows=rows+1
-    inc rows                ;columns=columns+1
+    inc columns             ;columns=columns+1
+    inc rows                ;rows=rows+1
 
     ;inicializar la matriz de puntajes
     mov rsi, rdx
@@ -127,18 +128,17 @@ SW_SSE:
     pop match_score          ;rax=scores[rows+1][columns+1]
     
     mov word [rax],  0
-    ;primera fila y primera columna deben ser seteadas en cero
-    mov r10, rax              ;r8 = scores**
+    mov r10, rax              ;r10 = scores**
     mov r9, rdx
     mov rax, columns
     mul rows
     mov rdx, r9
     sub rax, columns         ;rax = (columns+1)*(rows+1)-columns-1
     xor rsi, rsi
-    inc rsi
+    inc rsi                  ;rsi=1
     .setFirstRow:
     mov r9w, word [r10+rsi*2-1]
-    add r9w, gap_pen
+    add r9, gap_pen
     mov word [r10+rsi*2], r9w
     inc rsi
     cmp rsp, columns
@@ -146,10 +146,10 @@ SW_SSE:
 
     
     xor rsi, rsi
-    add rsi, columns
+    add rsi, columns        ;rsi=columns+1
     .setFirstColumn:
     mov r9w, word [r10+rsi*2-1]
-    add r9w, gap_pen
+    add r9, gap_pen
     mov word [r10+rsi*2], r9w
     add rsi, columns
     cmp rsi, rax
@@ -174,15 +174,16 @@ SW_SSE:
         mul rsi                 
         mov rdx,r11             ;rax=columns*indice_anterior
         dec rdi                 ;rdi=(rdi-1)*2=x-1            
-        shl rdi,2          
-        mov r9w, word [r10+rax+rdi]
+        shl rdi,2 
+        add rax, rdi         
+        mov r9w, [r10+rax]
         mov r11, [seq1+rsi]
         cmp r11, [seq2+rdi]
         je .matchScore
-        add r9w, missmatch_pen
+        add r9, missmatch_pen
         jmp .Continue
         .matchScore:
-        add r9w, match_score
+        add r9, match_score
         
         .Continue:
         cmp r9w, 0
@@ -193,18 +194,18 @@ SW_SSE:
         add rsi,2
         add rax, columns        ;rax=columns*indice_actual
         
-        mov r11w, word [r10+rax+rdi]
-        add r11w, gap_pen
+        mov r11w, [r10+rax]
+        add r11, gap_pen
         cmp r11w, r9w
         jle .score_up
         mov r9w, r11w
         .score_up:
         sub rsi, 2
-        add rdi,2 
+        add rax,2 
         sub rax, columns        ;rax=columns*indice_anterior
         
-        mov r11w, word [r10+rax+rdi]
-        add r11w, gap_pen
+        mov r11w, [r10+rax]
+        add r11, gap_pen
         cmp r11w, r9w
         jle .UpdateScoreAndPos
         mov r9w, r11w
@@ -212,7 +213,7 @@ SW_SSE:
         shr rsi,2
         inc rsi
         add rax, columns        ;rax=columns*indice_actual
-        mov word [r10+rax*2+rdi], r9w    ;score[y][x]=best_score
+        mov word [r10+rax], r9w    ;score[y][x]=best_score
         
         ;update best position
         mov r11, rdx
@@ -220,9 +221,11 @@ SW_SSE:
         mul columns
         mov rdx, r11
         mov r11, [rsp+8]
-        shl r11,2                        ;r11=best_x*2
-        mov r11,[r10+r9+r11]
-        cmp r11, [r10+rax+rdi]
+        shl r11,2 
+        add r9, r11                       ;r11=best_x*2
+        mov r11,[r10+r9]
+        add rax, rdi
+        cmp r11, [r10+rax]
         shr rdi,2
         inc rdi
         jge .cols
@@ -236,29 +239,37 @@ SW_SSE:
     mov rax, columns
     add rax, rows 
     mov rdi, rax             ;rdi=columns+1+rows+1
+    push r10
     push match_score
     push missmatch_pen
     push gap_pen
+    sub rsp, 8
     call malloc 
+    add rsp,8
     pop gap_pen
     pop missmatch_pen
-    pop match_score          ;rax=best_sequence1
+    pop match_score
+    pop r10          ;rax=best_sequence1
     lea r9, [alignment_ptr+result]
     mov [r9+sequence_1], rax              ;(alignment->result)->sequence_1= best_sequence1
 
+    push r10
     push match_score
     push missmatch_pen
     push gap_pen
+    sub rsp,8
     call malloc 
+    add rsp,8
     pop gap_pen
     pop missmatch_pen
-    pop match_score          
+    pop match_score
+    pop r10          ;rax=best_sequence1
     lea r9, [alignment_ptr+result]
     mov [r9+sequence_2], rax              ;(alignment->result)->sequence_2= best_sequence2
 
     mov rsi, [rsp]           ;rsi=best_y
     mov rdi, [rsp+8]         ;rdi=best_x
-    mov [rsp],0              ;[rsp]=lenght
+    mov word [rsp],0              ;[rsp]=lenght
 
     mov r11, rdx
     mov rax, columns
@@ -287,56 +298,57 @@ SW_SSE:
         mul rsi                 
         mov rdx,r11             ;rax=columns*indice_anterior
         dec rdi                 ;rdi=(rdi-1)*2=x-1            
-        shl rdi,2          
-        mov r9w, word [r10+rax+rdi]
+        shl rdi,2    
+        add rax, rdi      
+        mov r9w, [r10+rax]
         mov r11, [seq1+rsi]
         cmp r11, [seq2+rdi]
         je .matchScoreTracing
-        add r9w, missmatch_pen
+        add r9, missmatch_pen
         jmp .ContinueTracing
         .matchScoreTracing:
-        add r9w, match_score
+        add r9, match_score
         
         .ContinueTracing:
         add rsi, 2
-        add rdi, 2
+        add rax, 2
         add rax, columns        ;rax=columns*indice_actual
-        cmp r9w, [r10+rax+rdi]
+        cmp r9w, [r10+rax]
         jne .score_left_tracing
             sub rsi, 2
-            sub rdi, 2
+            sub rax, 2
             mov r9, [alignment_ptr+result]
             mov r9, [r9+sequence_1]
             mov r11, [seq1+rsi]
-            mov byte [r9+rsi], r11
+            mov [r9+rsi], r11b
             
             mov r11, [alignment_ptr+result]
             mov r11, [r11+sequence_2]
             mov r9, [seq2+rdi]
-            mov byte [r11+rax], r9
+            mov [r11+rax], r9b
             
             shr rdi, 2
             shr rsi, 2
             dec rdi             ;x--
             dec rsi             ;y--
-            add [rsp],1         ;lenght++
+            add word [rsp],1         ;lenght++
             jmp .tracingBack
         .score_left_tracing:
-        mov r11w, word [r10+rax+rdi]
-        add r11w, gap_pen
-        add rdi,2
-        cmp r11w, word [r10+rax+rdi]
+        mov r11w, word [r10+rax]
+        add r11, gap_pen
+        add rax,2
+        cmp r11w, word [r10+rax]
         jne .score_up_tracing
         jmp .bestXPositive
         .score_up_tracing:
         sub rsi, 2
-        add rdi,2 
+        add rax,2 
         sub rax, columns        ;rax=columns*indice_anterior
         
-        mov r11w, word [r10+rax+rdi]
-        add r11w, gap_pen
+        mov r11w, word [r10+rax]
+        add r11, gap_pen
         add rax, columns
-        cmp r11w, [r10+rax+rdi]
+        cmp r11w, [r10+rax]
         jne .reverseSequences       ;pues el unico caso que queda es que score[y][x]==0
         jmp .bestYPositive
         .bestXPositive:
@@ -348,11 +360,11 @@ SW_SSE:
             mov r11, [alignment_ptr+result]
             mov r11, [r11+sequence_2]
             mov r9, [seq2+rdi-2]
-            mov byte [r11+rax*2], r9
+            mov [r11+rax*2], r9b
             shr rdi, 2
             shr rsi, 2
             dec rdi                     ;x--
-            add [rsp],1                 ;lenght++
+            add word [rsp],1                 ;lenght++
             jmp .tracingBack
 
         .bestYPositive:
@@ -364,9 +376,9 @@ SW_SSE:
             mov r11, [alignment_ptr+result]
             mov r11, [r11+sequence_1]
             mov r9, [seq1+rdi-2]
-            mov byte [r11+rax*2], r9
+            mov [r11+rax*2], r9b
             dec rsi                     ;y--
-            add [rsp],1                 ;lenght++
+            add word [rsp],1                 ;lenght++
             jmp .tracingBack
                 
 
@@ -402,10 +414,30 @@ SW_SSE:
     mov byte [rdi+rax*2], r11b
     
     inc rsi
-    jmp .reverseCicle
+    jmp .reversingCicle
 
     .end:
     ;FALTA HACER FREE SOBRE TODA LA MATRIZ DE SCORES
+    xor rsi, rsi
+    mov rax, columns
+    mul rsi
+    ;hago free sobre cada fila
+    .freeScoreMatrix:
+        mov rdi, [r10+rax*2]
+        push rsi
+        push rax
+        call free
+        pop rax
+        pop rsi
+
+        inc rsi
+        add rax, columns
+        cmp rsi, rows
+        jl .freeScoreMatrix
+    ;hago free sobre el puntero a la matriz
+    mov rdi, r10
+    call free
+
     add rsp, 16
     pop alignment_ptr
     pop columns
