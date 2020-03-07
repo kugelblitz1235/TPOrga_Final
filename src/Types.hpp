@@ -38,4 +38,10 @@ void destroy_result(Result* result);
 Alignment* new_alignment();
 void destroy_alignment(Alignment* a);
 
+struct AlignmentMatrix{
+  short* matrix;
+};
+
+AlignmentMatrix* new_alignment_matrix(unsigned int vector_length,unsigned int seq_length_1,unsigned int seq_length_2);
+
 #endif
