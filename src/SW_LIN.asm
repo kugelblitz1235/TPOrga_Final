@@ -476,7 +476,6 @@ SWLIN:
     
     inc rsi
     jmp .reversingCicle
-
     .end: 
     ;tengo que poner el caracter terminador a los best_sequence* 
     mov rdi, [rbp-8]                ;rdi=best_sequence1*
@@ -486,40 +485,20 @@ SWLIN:
     mov rdi, [rbp-16]               ;rdi=best_sequence2*
     mov byte [rdi+rsi], 0           ;best_sequence2[length+1]=0
 
-    xor rsi, rsi
-    mov rax, rows
-    mul columns
-    ;hago free sobre cada fila
-    .freeScoreMatrix:
-        cmp rsi, rax
-        jge .free
-        
-        mov rdi, [r10+rsi]
-        push rax
-        push rsi
-        push r10
-        call free
-        pop r10
-        pop rsi
-        pop rax
-        add rsi, columns
-        jmp .freeScoreMatrix
-
-    ;hago free sobre el puntero a la matriz
-    .free:
     mov rdi, r10
     call free
 
     ;tengo que asignar a la estructura alignment el length y las secuencias resultantes
-    ;mov rdi, [rbp-8]
-    ;call new_string     ;rax=String*(best_sequence1)
-    ;mov r9, [alignment_ptr+result]
-    ;mov [r9+sequence_1], rax
+    mov rdi, [rbp-8]
+    call new_string     ;rax=String*(best_sequence1)
+    mov r9, [alignment_ptr+result]
+    mov [r9+sequence_1], rax
 
-    ;mov rdi, [rbp-16]
-    ;call new_string     ;rax=String*(best_sequence2)         
-    ;mov r9, [alignment_ptr+result]
-    ;mov [r9+sequence_2], rax    
+    mov rdi, [rbp-16]
+    call new_string     ;rax=String*(best_sequence2)         
+    mov r9, [alignment_ptr+result]
+    mov [r9+sequence_2], rax    
+
     .skip:
     pop alignment_ptr
     pop columns
