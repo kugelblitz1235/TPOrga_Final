@@ -1,6 +1,6 @@
 
 section .rodata:
-debuggingW: DB '%c',10,0
+debuggingW: DB '%p',10,0
 indexView: DB '%hi ,%hi',10,0
 
 section .text:
@@ -32,8 +32,8 @@ global SWLIN
 %define missmatch 10
 %define gap 12
 ;Result 
-%define sequence_1 0
-%define sequence_2 8
+%define result_sequence_1 0
+%define result_sequence_2 8
 %define score 16
 ;Metrics
 ;Alignment
@@ -42,7 +42,7 @@ global SWLIN
 %define parameters 16
 %define result 24
 
-;struct Sequence{
+;struct String{
 ;  unsigned int length;-->4
 ;  char* sequence;-->8
 ;};
@@ -108,12 +108,12 @@ SWLIN:
     mov rows, r9
     xor columns, columns
     mov columns, [rbp+16]
-    lea alignment_ptr, [rbp-24]
-    mov qword[rbp-8],0             ;[rsp]=best_y=0
-    mov qword[rbp-16],0           ;[rsp+8]=best_x=0
+    mov alignment_ptr, [rbp+24]
+    mov qword[rbp-8],0              ;[rsp]=best_y=0
+    mov qword[rbp-16],0             ;[rsp+8]=best_x=0
     ;para mas comodidad de los calculos
-    inc columns             ;columns=columns+1
-    inc rows                ;rows=rows+1
+    inc columns                     ;columns=columns+1
+    inc rows                        ;rows=rows+1
 
     ;inicializar la matriz de puntajes
     mov rsi, rdx
@@ -121,7 +121,6 @@ SWLIN:
     mul rows                 ;rax = (rows+1)*(columns+1)
     shl rax, 2               ;rax = (rows+1)*(columns+1)*2<--tamano en bytes de los shorts
     mov rdx, rsi             ;restauro rdx
-    
     
     mov rdi, rax
     push match_score
@@ -144,7 +143,6 @@ SWLIN:
 
     xor r9,r9
     .setFirstRow:
-    ;add r9w, r8w
     mov word [r10+rsi*2], r9w
     inc rsi 
     cmp rsi, columns
@@ -154,7 +152,6 @@ SWLIN:
     add rsi, columns        ;rsi=columns+1
     xor r9, r9
     .setFirstColumn:
-    ;add r9w, r8w
     mov word [r10+rsi*2], r9w
     add rsi, columns
     cmp rsi, rax
@@ -322,6 +319,12 @@ SWLIN:
     shl columns, 1                ;columns=(columns+1)*2 (para una mejor comparacíon)
     shl rdi, 1                    ;rdi= best_x*2
 
+;asignamos el score a la estructura alignment
+    mov r9, [alignment_ptr+result]
+    add rsi, rdi
+    mov r11w, [r10+rsi]
+    mov [r9+score], r11w
+    sub rsi, rdi
     .tracingBack:
         mov r9, rdi
         or  r9, rsi               ;debería chequear que ambos valores son cero
@@ -487,19 +490,21 @@ SWLIN:
 
     mov rdi, r10
     call free
-
     ;tengo que asignar a la estructura alignment el length y las secuencias resultantes
-    mov rdi, [rbp-8]
+    mov rdi, [rbp-8]    ;[rbp-8]=best_sequence1
     call new_string     ;rax=String*(best_sequence1)
     mov r9, [alignment_ptr+result]
-    mov [r9+sequence_1], rax
+    mov rdi, debuggingW
+    mov qword [r9+result_sequence_1], rax        ;(result->sequence_1)=new_string(best_sequence1)
+    
 
-    mov rdi, [rbp-16]
-    call new_string     ;rax=String*(best_sequence2)         
+    mov rdi, [rbp-16]   ;[rbp-16]=best_sequence2
+    call new_string     ;rax=String*(best_sequence1)
     mov r9, [alignment_ptr+result]
-    mov [r9+sequence_2], rax    
+    mov [r9+result_sequence_2], rax      ;(result->sequence_1)=new_string(best_sequence2)
 
-    .skip:
+
+.skip:
     pop alignment_ptr
     pop columns
     pop rows

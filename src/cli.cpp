@@ -82,7 +82,23 @@ main (int argc, char **argv)
   short gap_pen=-2;
   short missmatch_pen=-3;
   short match_score=3;
+  alignment->sequence_1=new_string(seq2);
+  alignment->sequence_2=new_string(seq1);
+  (alignment->parameters)->match=match_score;
+  (alignment->parameters)->missmatch=missmatch_pen;
+  (alignment->parameters)->gap=gap_pen;
   SWLIN(seq2,seq1,match_score,missmatch_pen,gap_pen,9,8,alignment);
+  String* res_seq_1 = alignment->result->sequence_1;
+  for(int i = 0;i < res_seq_1->length;i++){
+      cout << res_seq_1->sequence[i];
+  }cout << endl;
+  
+  String* res_seq_2 = alignment->result->sequence_2;
+  for(int i = 0;i < res_seq_2->length;i++){
+      cout << res_seq_2->sequence[i];
+  }cout << endl;
+  
+  cout << alignment->result->score << endl;
   //cerr << (long long)matrix << endl;
   //for(int i = 0;i < 9+1;i++){
   //  for(int x = 0;x < 8+1;x++){
