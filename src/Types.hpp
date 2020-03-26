@@ -31,7 +31,7 @@ struct Alignment{
   Result* result;
 };
 
-String* new_string(char *s);
+extern "C" String* new_string(char *s);
 void destroy_string(String* seq);
 Result* new_result();
 void destroy_result(Result* result);

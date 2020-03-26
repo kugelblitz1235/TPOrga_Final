@@ -4,7 +4,7 @@
 
 using namespace std;
 
-String* new_string(char *s) {
+extern "C" String* new_string(char *s) {
     String* str = (String*) malloc(sizeof(String));
     char* new_s = (char*) malloc(strlen(s)+1);
     strcpy(new_s, s);
