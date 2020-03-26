@@ -82,14 +82,13 @@ main (int argc, char **argv)
   short gap_pen=-2;
   short missmatch_pen=-3;
   short match_score=3;
-  short* matrix = (short*)SWLIN(seq2,seq1,match_score,missmatch_pen,gap_pen,9,8,alignment);
+  SWLIN(seq2,seq1,match_score,missmatch_pen,gap_pen,9,8,alignment);
   //cerr << (long long)matrix << endl;
-   
-  for(int i = 0;i < 9+1;i++){
-    for(int x = 0;x < 8+1;x++){
-      cerr << matrix[i*(8+1)+x] << " ";
-    }cerr << endl;
-  }cerr << endl;
+  //for(int i = 0;i < 9+1;i++){
+  //  for(int x = 0;x < 8+1;x++){
+  //    cerr << matrix[i*(8+1)+x] << " ";
+  //  }cerr << endl;
+  //}cerr << endl;
   
  // char file[] = "./test.json";
   // save_object_as_JSON(a, file);
