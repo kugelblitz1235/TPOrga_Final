@@ -24,7 +24,7 @@ global SWLIN
 %define best_y 0
 %define best_x 8
 ;String
-%define lenght 0
+%define length 0
 %define sequence 8
 ;Parameters
 %define algorithm 0
@@ -71,7 +71,6 @@ global SWLIN
 ;  Parameters* parameters;
 ;  Result* result;
 ;};
-
 extern printf
 extern malloc 
 extern free 
@@ -82,7 +81,6 @@ extern new_alignment
 extern destroy_alignment
 
 SWLIN:
-
 ;parametros 
 ;char* seq1 RDI
 ;char* seq2 RSI
@@ -102,18 +100,20 @@ SWLIN:
     push alignment_ptr
     
     ;preservo los parametros
-    mov seq1, rdi
-    mov seq2, rsi
+    mov alignment_ptr, [rbp+24]         
+    mov r11, [alignment_ptr+sequence_1]         ;r11=  alignment_ptr*
+    mov seq1, [r11+sequence]                    ;seq1= (alignment_ptr->sequence_1)->sequence
     xor rows, rows 
-    mov rows, r9
+    mov rows, [r11+length]                      ;rows= (alignment_ptr->sequence_1)->length
+    mov r11, [alignment_ptr+sequence_2]
+    mov seq2, [r11+sequence]                    ;seq2= (alignment_ptr->sequence_2)->sequence
     xor columns, columns
-    mov columns, [rbp+16]
-    mov alignment_ptr, [rbp+24]
-    mov qword[rbp-8],0              ;[rsp]=best_y=0
-    mov qword[rbp-16],0             ;[rsp+8]=best_x=0
+    mov columns, [r11+length]                   ;columns= (alignment_ptr->sequence_2)->length
+    mov qword[rbp-8],0                          ;[rbp-8]=best_y=0
+    mov qword[rbp-16],0                         ;[rbp-16]=best_x=0
     ;para mas comodidad de los calculos
-    inc columns                     ;columns=columns+1
-    inc rows                        ;rows=rows+1
+    inc columns                                 ;columns=columns+1
+    inc rows                                    ;rows=rows+1
 
     ;inicializar la matriz de puntajes
     mov rsi, rdx
@@ -348,8 +348,8 @@ SWLIN:
         xor rdx, rdx
         mov rax, rsi        
         div columns 
-        mov rdx,r11             ;rax=y-1
-        shr rdi, 1              ;rdi=x-1 
+        mov rdx,r11                 ;rax=y-1
+        shr rdi, 1                  ;rdi=x-1 
         
         mov r11b, [seq1+rax]
         cmp r11b, byte [seq2+rdi]
@@ -514,7 +514,6 @@ SWLIN:
     pop rbp 
     ret             ;<--------------TERMINA ACA
 ;========================DEBUG=========================================
-
         ;debug
         push r11
         push rax
@@ -538,8 +537,3 @@ SWLIN:
         pop rax
         pop r11
         ;debug
-
-
-
-    
-    
