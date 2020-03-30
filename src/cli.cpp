@@ -87,7 +87,8 @@ main (int argc, char **argv)
   (alignment->parameters)->match=match_score;
   (alignment->parameters)->missmatch=missmatch_pen;
   (alignment->parameters)->gap=gap_pen;
-  SWLIN(seq2,seq1,match_score,missmatch_pen,gap_pen,9,8,alignment);
+  SWLIN(alignment);
+  //match_score,missmatch_pen,gap_pen,9,8,
   String* res_seq_1 = alignment->result->sequence_1;
   for(int i = 0;i < res_seq_1->length;i++){
       cout << res_seq_1->sequence[i];

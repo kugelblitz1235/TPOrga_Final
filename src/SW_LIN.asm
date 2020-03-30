@@ -17,9 +17,9 @@ global SWLIN
 %define rows R13
 %define columns R14
 %define alignment_ptr R15
-%define match_score RDX   
-%define missmatch_pen RCX 
-%define gap_pen R8        
+%define match_score DX   
+%define missmatch_pen CX 
+%define gap_pen R8w        
 %define sizeOf_short 2
 %define best_y 0
 %define best_x 8
@@ -82,14 +82,7 @@ extern destroy_alignment
 
 SWLIN:
 ;parametros 
-;char* seq1 RDI
-;char* seq2 RSI
-;int16_t match DX
-;int16_t missmatch CX
-;int16_t gap R8W
-;uint16_t len(seq1) R9W
-;uint16_t len(seq2) [RBP+8]
-;void* alignment [RBP+16]
+;void* alignment RDI
     push rbp 
     mov rbp, rsp
     sub rsp, 32
@@ -100,7 +93,7 @@ SWLIN:
     push alignment_ptr
     
     ;preservo los parametros
-    mov alignment_ptr, [rbp+24]         
+    mov alignment_ptr, rdi        
     mov r11, [alignment_ptr+sequence_1]         ;r11=  alignment_ptr*
     mov seq1, [r11+sequence]                    ;seq1= (alignment_ptr->sequence_1)->sequence
     xor rows, rows 
@@ -109,6 +102,14 @@ SWLIN:
     mov seq2, [r11+sequence]                    ;seq2= (alignment_ptr->sequence_2)->sequence
     xor columns, columns
     mov columns, [r11+length]                   ;columns= (alignment_ptr->sequence_2)->length
+    mov r11, [alignment_ptr+parameters]
+    xor rdx, rdx
+    xor rcx, rcx
+    xor r8, r8
+    mov dx,  word [r11+match]
+    mov cx,  word [r11+missmatch]
+    mov r8w, word [r11+gap]
+
     mov qword[rbp-8],0                          ;[rbp-8]=best_y=0
     mov qword[rbp-16],0                         ;[rbp-16]=best_x=0
     ;para mas comodidad de los calculos
@@ -355,10 +356,10 @@ SWLIN:
         cmp r11b, byte [seq2+rdi]
 
         je .matchScoreTracing
-        add r9w, cx
+        add r9w, missmatch_pen
         jmp .ContinueTracing
         .matchScoreTracing:
-        add r9w, dx
+        add r9w, match_score
         
         .ContinueTracing:
         shl rdi, 1
@@ -392,7 +393,7 @@ SWLIN:
         sub rax, 2                  ;rax=rax-2=y*2*(columns+1)+x*2-2=y*2*(columns+1)+(x-1)*2
         xor r9, r9
         mov r9w, [r10+rax]          
-        add r9w, r8w                ;r9w=score[y][x-1]+gap_penalty
+        add r9w, gap_pen                ;r9w=score[y][x-1]+gap_penalty
         add rax, 2                  ;rax=rax+2=y*2*(columns+1)+(x-1)*2+2=y*2*(columns+1)+x*2
         cmp r9w, [r10+rax]          ;(r9w=>score_left)==scores[x][y]?
         jne .score_up_tracing
@@ -401,7 +402,7 @@ SWLIN:
         sub rax, columns            ;rax=rax-(columns+1)*2=y*2*(columns+1)+x*2-(columns+1)*2=(y-1)*2*(columns+1)+x*2
         xor r9, r9
         mov r9w, [r10+rax]
-        add r9w, r8w
+        add r9w, gap_pen
         add rax, columns
         cmp r9w, [r10+rax]
         jne .reverseSequences       ;pues el unico caso que queda es que score[y][x]==0
@@ -512,28 +513,4 @@ SWLIN:
     pop seq1
     add rsp, 32
     pop rbp 
-    ret             ;<--------------TERMINA ACA
-;========================DEBUG=========================================
-        ;debug
-        push r11
-        push rax
-        push r10
-        push rdx
-        push rsi
-        push rdi
-        push match_score
-        push missmatch_pen
-        push gap_pen
-        mov rdx, rax
-        mov rdi, indexView
-        call printf 
-        pop gap_pen
-        pop missmatch_pen
-        pop match_score          
-        pop rdi
-        pop rsi
-        pop rdx
-        pop r10
-        pop rax
-        pop r11
-        ;debug
+    ret       
