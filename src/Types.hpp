@@ -20,8 +20,7 @@ struct Result{
 };
 
 struct Metrics{
-  // long long cycles;
-  
+// long long cycles;
 };
 
 struct Alignment{
