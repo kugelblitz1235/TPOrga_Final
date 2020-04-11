@@ -90,8 +90,9 @@ main (int argc, char **argv)
   (alignment->parameters)->missmatch=missmatch_pen;
   (alignment->parameters)->gap=gap_pen;
   //SWLIN(alignment);
-   NWLIN(alignment);
+  NWLIN(alignment);
   String* res_seq_1 = alignment->result->sequence_1;
+  cout<<res_seq_1->length<< endl;
   for(int i = 0;i < res_seq_1->length;i++){
       cout << res_seq_1->sequence[i];
   }cout << endl;
@@ -102,9 +103,9 @@ main (int argc, char **argv)
   }cout << endl;
   
   //cerr << (long long)matrix << endl;
-  //for(int i = 0;i < 9+1;i++){
-  //  for(int x = 0;x < 8+1;x++){
-  //    cerr << matrix[i*(8+1)+x] << " ";
+  //for(int i = 0;i < 7+1;i++){
+  //  for(int x = 0;x < 7+1;x++){
+  //    cerr << matrix[i*(7+1)+x] << " ";
   //  }cerr << endl;
   //}cerr << endl;
   

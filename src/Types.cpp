@@ -6,10 +6,18 @@ using namespace std;
 
 extern "C" String* new_string(char *s) {
     String* str = (String*) malloc(sizeof(String));
-    char* new_s = (char*) malloc(strlen(s)+1);
+    char* new_s = (char*) malloc(strlen(s)+2);
+    //pongo en primer lugar el guion
+    new_s[0]='-';
+    //avanzo el puntero
+    new_s++;
     strcpy(new_s, s);
+    //retrocedo el puntero para que el string completo tenga el guion
+    new_s--;
     str->sequence = new_s;
     str->length = strlen(s);
+    //por el guion dado que no lo cuenta el strlen
+    str->length++;
 
     return str;
 }

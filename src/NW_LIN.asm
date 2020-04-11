@@ -1,6 +1,6 @@
 
 section .rodata:
-debuggingW: DB '%p',10,0
+debuggingW: DB '%c',10,0
 indexView: DB '%hi ,%hi',10,0
 
 section .text:
@@ -112,10 +112,7 @@ NWLIN:
 
     mov qword[rbp-8],0                          ;[rbp-8]=best_y=0
     mov qword[rbp-16],0                         ;[rbp-16]=best_x=0
-    ;para mas comodidad de los calculos
-    inc columns                                 ;columns=columns+1
-    inc rows                                    ;rows=rows+1
-
+    
     ;inicializar la matriz de puntajes
     mov rsi, rdx
     mov rax, columns
@@ -194,8 +191,10 @@ NWLIN:
         mov rdx, r11            ;rax=rsi/columns=indice_anterior_fila
         
         .esCero:
-        mov r11b, [seq1+rax]     ;seq1[indice_fila_anterior*2]
-        cmp r11b, [seq2+rdi]     ;seq2[indice_columna_anterior*2]
+        inc rax
+        inc rdi
+        mov r11b, [seq1+rax]     ;seq1[indice_fila_anterior]
+        cmp r11b, [seq2+rdi]     ;seq2[indice_columna_anterior]
         je .matchScore
         add r9w, cx             ;+=missmatch_pen
         jmp .score_left
@@ -203,6 +202,7 @@ NWLIN:
         add r9w, dx             ;+=match_score
         
         .score_left:
+        dec rdi                 ;rdi-- dado que se incrementó para acceder a la secuencia
         xor r11, r11
         shl rdi, 1
         add rsi, columns
@@ -237,7 +237,6 @@ NWLIN:
     shr columns, 1
     mov r11, columns
     add r11, rows                         ;r11=(columns+1+rows+1)*2
-
 ;preservo r11 para conservar el valor y a su vez rdi, rsi que tienen el valor de la mejor posicion
     push rsi
     push r11
@@ -299,8 +298,8 @@ NWLIN:
         mov r9, rdi
         or  r9, rsi               ;debería chequear que ambos valores son cero
         jz .reverseSequences
-        
-        cmp rsi,0
+
+        cmp rsi, 0
         je .bestXPositive
 
         cmp rdi, 0
@@ -321,8 +320,10 @@ NWLIN:
         mov rdx,r11                 ;rax=y-1
         shr rdi, 1                  ;rdi=x-1 
         
+        inc rax
+        inc rdi
         mov r11b, [seq1+rax]
-        cmp r11b, byte [seq2+rdi]
+        cmp r11b, [seq2+rdi]
 
         je .matchScoreTracing
         add r9w, missmatch_pen
@@ -331,11 +332,13 @@ NWLIN:
         add r9w, match_score
         
         .ContinueTracing:
+        dec rdi
         shl rdi, 1
         add rsi, columns        ;rsi=y*2*(columns+1)
         add rdi, 2              ;rdi=x*2
         mov rax, rsi
         add rax, rdi            ;utilizo rax, porque si utilizara rsi
+
         cmp r9w, [r10+rax]      ;no podría restaurar su valor
         jne .score_left_tracing
             sub rdi, 2
@@ -345,16 +348,19 @@ NWLIN:
             mov rax, rsi        
             div columns 
             mov rdx,r11             ;rax=y-1
+            inc rax
             mov r9, [rbp-8]         ;r9=best_sequence1*
             mov r11b, [seq1+rax]    ;r11b=seq1[y-1]
+
             xor rax, rax            ;limpio rax
             mov ax, [rbp-24]        ;ax=length (word)
             mov [r9+rax], r11b      ;best_sequence1[length]=r11b
             shr rdi, 1              ;rdi=rdi/2=x-1 
-            mov r9, [rbp-16]        ;r9=best_sequence2*       
+            mov r9, [rbp-16]        ;r9=best_sequence2*
+            inc rdi       
             mov r11b, [seq2+rdi]    ;r11b=seq2[x-1]
+            dec rdi
             mov [r9+rax], r11b      ;best_sequence2[length]=r11b (rax=length sigue igual)
-            
             shl rdi, 1
             add word [rbp-24],1     ;lenght++
             jmp .tracingBack
@@ -381,19 +387,17 @@ NWLIN:
             mov ax, [rbp-24]               ;rax=length
             mov r9, [rbp-8]                 ;r9=best_sequence1*
             mov byte [r9+rax], '_'          ;best_sequence1[length]='_'
-
             mov r11, [rbp-16]               ;r11=best_sequence2*
-            sub rdi, 2
             shr rdi, 1
             xor r9, r9
             mov r9b, [seq2+rdi]             ;r9b=seq2[x-1]
             mov byte [r11+rax], r9b         ;best_sequence2[length]=seq2[x-1]
             shl rdi, 1                      ;rdi=(x-1)*2=> x--
+            sub rdi, 2
             add word [rbp-24],1             ;lenght++
             jmp .tracingBack
 
         .bestYPositive:             ;entra en este caso cuando y>0
-            sub rsi, columns
             xor rax, rax
             mov ax,  [rbp-24]       ;rax=[0000|0000|0000|length]
             mov r9,  [rbp-16]       ;r9=best_sequence2*
@@ -406,14 +410,16 @@ NWLIN:
             mov rdx, r9             ;rax=rsi/columns=y*2*(columns+1)/((columns+1)*2)=y
             xor r9, r9 
             mov r9b, [seq1+rax]     ;r9b=seq1[y-1]    
-
             mov r11, [rbp-8]        ;r11=best_sequence1*
             xor rax, rax
             mov ax,  [rbp-24]       ;rax=[0000|0000|0000|length]
             mov [r11+rax], r9b      ;best_sequence1[length]=seq1[y-1]
+
+
+            sub rsi, columns
             add word [rbp-24],1     ;lenght++
             jmp .tracingBack
-                
+           
     .reverseSequences:
     shr columns, 1              ;(columns+1)*2/2=columns+1
     xor r9, r9
