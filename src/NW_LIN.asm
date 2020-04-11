@@ -4,13 +4,7 @@ debuggingW: DB '%c',10,0
 indexView: DB '%hi ,%hi',10,0
 
 section .text:
-;Enumero los pasos del algoritmo
-;1_Determinar el esquema de penalizacion de gaps y la matriz de sustitucion
-;2_Inicializar la matriz de scores
-;3_Darle puntaje a cada elemento recorriendo de izq-> der, top-> bottom
-;4_Traceback para obtener el mejor alineamiento local
 global NWLIN
-
 ;podriamos colocar aca unos defines 
 %define seq1 RBX
 %define seq2 R12
