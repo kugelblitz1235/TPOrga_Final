@@ -77,20 +77,20 @@ main (int argc, char **argv)
   }
 
   Alignment* alignment = new_alignment();
-  //char* seq1 = "TGTTACGG";
-  //char* seq2 = "GGTTGACTA";
-  char* seq1 = "GCATGCU";
-  char* seq2 = "GATTACA";
-  short gap_pen=-1;
-  short missmatch_pen=-1;
-  short match_score=1;
+  char* seq1 = "TGTTACGG";
+  char* seq2 = "GGTTGACTA";
+  //char* seq1 = "GCATGCU";
+  //char* seq2 = "GATTACA";
+  short gap_pen=-2;
+  short missmatch_pen=-3;
+  short match_score=3;
   alignment->sequence_1=new_string(seq2);
   alignment->sequence_2=new_string(seq1);
   (alignment->parameters)->match=match_score;
   (alignment->parameters)->missmatch=missmatch_pen;
   (alignment->parameters)->gap=gap_pen;
-  //SWLIN(alignment);
-  NWLIN(alignment);
+  SWLIN(alignment);
+  //NWLIN(alignment);
   String* res_seq_1 = alignment->result->sequence_1;
   cout<<res_seq_1->length<< endl;
   for(int i = 0;i < res_seq_1->length;i++){
@@ -103,9 +103,9 @@ main (int argc, char **argv)
   }cout << endl;
   
   //cerr << (long long)matrix << endl;
-  //for(int i = 0;i < 7+1;i++){
-  //  for(int x = 0;x < 7+1;x++){
-  //    cerr << matrix[i*(7+1)+x] << " ";
+  //for(int i = 0;i < 9+1;i++){
+  //  for(int x = 0;x < 8+1;x++){
+  //    cerr << matrix[i*(8+1)+x] << " ";
   //  }cerr << endl;
   //}cerr << endl;
   
