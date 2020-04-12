@@ -11,10 +11,14 @@ ALGORITMOS = NW SW
 ALGORITMOS_OBJ = $(addsuffix _C.o, $(ALGORITMOS)) $(addsuffix _AVX.o, $(ALGORITMOS)) $(addsuffix _SSE.o, $(ALGORITMOS)) $(addsuffix _LIN.o, $(ALGORITMOS))
 ALGORITMOS_OBJ_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(ALGORITMOS_OBJ))
 
+AUX = Types Utility
+AUX_OBJ = $(addsuffix .o, $(AUX))
+AUX_OBJ_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(AUX_OBJ))
+
 all: cli
 
-cli: $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(BUILD_DIR)/Types.o
-	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(BUILD_DIR)/Types.o
+cli: $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(AUX_OBJ_CON_PATH)
+	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(AUX_OBJ_CON_PATH)
 
 $(BUILD_DIR)/%.o: %.cpp
 	mkdir -p $(BUILD_DIR)
@@ -23,6 +27,9 @@ $(BUILD_DIR)/%.o: %.cpp
 $(BUILD_DIR)/%.o: %.asm
 	mkdir -p $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) -o $@ $<
+
+# $(BUILD_DIR)/Utility.o: Utility.cpp
+# 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 clean:
 	rm -f $(BUILD_DIR)/*
