@@ -23,7 +23,7 @@ global SWLIN
 %define sizeOf_short 2
 %define best_y 0
 %define best_x 8
-;RNA_Sequence
+;Sequence
 %define length 0
 %define sequence 8
 ;Parameters
@@ -42,7 +42,7 @@ global SWLIN
 %define parameters 16
 %define result 24
 
-;struct RNA_Sequence{
+;struct Sequence{
 ;  unsigned int length;-->4
 ;  char* sequence;-->8
 ;};
@@ -74,7 +74,7 @@ global SWLIN
 extern printf
 extern malloc 
 extern free 
-extern new_RNA_Sequence
+extern new_Sequence_from_string
 extern new_result
 extern destroy_result
 extern new_alignment
@@ -499,16 +499,16 @@ SWLIN:
     call free
     ;tengo que asignar a la estructura alignment el length y las secuencias resultantes
     mov rdi, [rbp-8]    ;[rbp-8]=best_sequence1
-    call new_RNA_Sequence     ;rax=RNA_Sequence*(best_sequence1)
+    call new_Sequence_from_string     ;rax=Sequence*(best_sequence1)
     mov r9, [alignment_ptr+result]
     mov rdi, debuggingW
-    mov qword [r9+result_sequence_1], rax        ;(result->sequence_1)=new_RNA_Sequence(best_sequence1)
+    mov qword [r9+result_sequence_1], rax        ;(result->sequence_1)=new_Sequence_from_string(best_sequence1)
     
 
     mov rdi, [rbp-16]   ;[rbp-16]=best_sequence2
-    call new_RNA_Sequence     ;rax=RNA_Sequence*(best_sequence1)
+    call new_Sequence_from_string     ;rax=Sequence*(best_sequence1)
     mov r9, [alignment_ptr+result]
-    mov [r9+result_sequence_2], rax      ;(result->sequence_1)=new_RNA_Sequence(best_sequence2)
+    mov [r9+result_sequence_2], rax      ;(result->sequence_1)=new_Sequence_from_string(best_sequence2)
 
 
 .skip:

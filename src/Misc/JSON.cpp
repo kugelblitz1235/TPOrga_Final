@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include "Types.hpp"
 #include "JSON.hpp"
 
 using namespace std;

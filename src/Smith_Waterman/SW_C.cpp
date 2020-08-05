@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../Misc/Types.cpp"
+#include "SW_C.hpp"
 
 using namespace std;
 
@@ -9,8 +9,8 @@ void find_scores(
 	unsigned int &best_y,unsigned int &best_x,
 	bool debug = false
 ){
-	RNA_Sequence* seq1 = alignment.sequence_1;
-	RNA_Sequence* seq2 = alignment.sequence_2;
+	Sequence* seq1 = alignment.sequence_1;
+	Sequence* seq2 = alignment.sequence_2;
 	
 	for(unsigned int y = 1;y < alignment.sequence_1->length+1;y++){
 		for(unsigned int x = 1;x < alignment.sequence_2->length+1;x++){
@@ -54,11 +54,11 @@ void backtrack_solution(
 	bool debug = false
 ){
 	
-	RNA_Sequence* seq1 = alignment.sequence_1;
-	RNA_Sequence* seq2 = alignment.sequence_2;
+	Sequence* seq1 = alignment.sequence_1;
+	Sequence* seq2 = alignment.sequence_2;
 	
-	RNA_Sequence* best_seq_1 = alignment.result->sequence_1;
-	RNA_Sequence* best_seq_2 = alignment.result->sequence_2;
+	Sequence* best_seq_1 = alignment.result->sequence_1;
+	Sequence* best_seq_2 = alignment.result->sequence_2;
 
 	unsigned int length = 0;
 	
@@ -72,7 +72,7 @@ void backtrack_solution(
 		
 		if(y > 0 && x > 0){
 
-			short score_left = scores[y][x-1] + alignment.parameters->gap;
+			//short score_left = scores[y][x-1] + alignment.parameters->gap;
 			short score_up = scores[y-1][x] + alignment.parameters->gap;
 			short score_diag = scores[y-1][x-1] + 
 						  alignment.parameters->missmatch*(seq1->sequence[y-1] != seq2->sequence[x-1]) + 
@@ -109,10 +109,10 @@ void backtrack_solution(
 	}
 
 	//creamos los nuevos strings y destruimos los anteriores
-	best_seq_1 = new_RNA_Sequence(best_seq_1->sequence);
-	best_seq_2 = new_RNA_Sequence(best_seq_2->sequence);
-	destroy_RNA_Sequence(alignment.result->sequence_1);
-	destroy_RNA_Sequence(alignment.result->sequence_2);
+	best_seq_1 = new_Sequence_from_string(best_seq_1->sequence);
+	best_seq_2 = new_Sequence_from_string(best_seq_2->sequence);
+	destroy_Sequence(alignment.result->sequence_1);
+	destroy_Sequence(alignment.result->sequence_2);
 	alignment.result->sequence_1 = best_seq_1;
 	alignment.result->sequence_2 = best_seq_2;
 }
@@ -145,8 +145,8 @@ void SW(
 		debug
 	);
 
-	alignment.result->sequence_1 = new_RNA_Sequence_length(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
-	alignment.result->sequence_2 = new_RNA_Sequence_length(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
+	alignment.result->sequence_1 = new_Sequence(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
+	alignment.result->sequence_2 = new_Sequence(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
 
 	backtrack_solution(
 		scores,
@@ -155,10 +155,13 @@ void SW(
 	);
 
 	if(debug){
-		for(int i = 0;i < alignment.result->sequence_1->length;i++)
+		for(unsigned int i = 0;i < alignment.result->sequence_1->length;i++){
 			cerr << alignment.result->sequence_1->sequence[i];cerr << endl;
-		for(int i = 0;i < alignment.result->sequence_2->length;i++)
+		}
+		
+		for(unsigned int i = 0;i < alignment.result->sequence_2->length;i++){
 			cerr << alignment.result->sequence_1->sequence[i];cerr << endl;
+		}
 	}
 		
 	for(unsigned int y = 0;y < alignment.sequence_1->length+1;y++)

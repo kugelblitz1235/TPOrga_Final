@@ -84,20 +84,20 @@ int main (int argc, char **argv)
   short gap_pen=-2;
   short missmatch_pen=-3;
   short match_score=3;
-  alignment->sequence_1=new_RNA_Sequence(seq2);
-  alignment->sequence_2=new_RNA_Sequence(seq1);
+  alignment->sequence_1=new_Sequence_from_string(seq2);
+  alignment->sequence_2=new_Sequence_from_string(seq1);
   (alignment->parameters)->match=match_score;
   (alignment->parameters)->missmatch=missmatch_pen;
   (alignment->parameters)->gap=gap_pen;
   SWLIN(alignment);
   //NWLIN(alignment);
-  RNA_Sequence* res_seq_1 = alignment->result->sequence_1;
+  Sequence* res_seq_1 = alignment->result->sequence_1;
   cout<<res_seq_1->length<< endl;
   for(unsigned int i = 0;i < res_seq_1->length;i++){
       cout << res_seq_1->sequence[i];
   }cout << endl;
   
-  RNA_Sequence* res_seq_2 = alignment->result->sequence_2;
+  Sequence* res_seq_2 = alignment->result->sequence_2;
   for(unsigned int i = 0;i < res_seq_2->length;i++){
       cout << res_seq_2->sequence[i];
   }cout << endl;
@@ -117,7 +117,7 @@ int main (int argc, char **argv)
 	for(int i = 0;i < 100000;i++)
 	scores[i] = i-1000/(i+1);
 
-  printScoreMatrix(scores,alignment,4);
+  //printScoreMatrix(scores,alignment,4);
 
   return 0;
 }

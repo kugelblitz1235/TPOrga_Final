@@ -6,51 +6,45 @@ ASMFLAGS = -felf64 -g -F dwarf
 
 BUILD_DIR = ../build
 
-ALGORITMOS = NW SW
-
-ALGORITMOS_OBJ = $(addsuffix _C.o, $(ALGORITMOS)) $(addsuffix _AVX.o, $(ALGORITMOS)) $(addsuffix _SSE.o, $(ALGORITMOS)) $(addsuffix _LIN.o, $(ALGORITMOS))
-ALGORITMOS_OBJ_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(ALGORITMOS_OBJ))
-
-AUX = Types Utility
-AUX_OBJ = $(addsuffix .o, $(AUX))
-AUX_OBJ_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(AUX_OBJ))
-
 MISC_FILES =  Types.o  Utility.o
-NEEDLMAN_FILES = NW_AVX.o  NW_C.o  NW_LIN.o  NW_SSE.o
-SMITH_FILES = SW_AVX.o  SW_C.o  SW_LIN.o  SW_SSE.o 
+MISC_FILES_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(MISC_FILES))
+NEEDLMAN_C_FILES = NW_C.o
+NEEDLMAN_C_FILES_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(NEEDLMAN_C_FILES))
+SMITH_C_FILES = SW_C.o
+SMITH_C_FILES_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(SMITH_C_FILES))
+NEEDLMAN_ASM_FILES = NW_AVX.o  NW_LIN.o  NW_SSE.o
+NEEDLMAN_ASM_FILES_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(NEEDLMAN_ASM_FILES))
+SMITH_ASM_FILES = SW_AVX.o  SW_LIN.o  SW_SSE.o 
+SMITH_ASM_FILES_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(SMITH_ASM_FILES))
 
 all: cli
 
-cli: $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(AUX_OBJ_CON_PATH)
-	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/cli.o $(ALGORITMOS_OBJ_CON_PATH) $(AUX_OBJ_CON_PATH)
+cli: $(BUILD_DIR)/cli.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
+	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/cli.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
 
 $(BUILD_DIR)/cli.o: cli.cpp
 	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
-
-$(filter $(BUILD_DIR)/%.o, $(MISC_FILES)): Misc/%.cpp
+	
+$(filter $(BUILD_DIR)/%.o, $(MISC_FILES_CON_PATH)): $(BUILD_DIR)/%.o: Misc/%.cpp
 	mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ -c Misc/$<
-
-$(filter $(BUILD_DIR)/%.o, $(NEEDLMAN_FILES)): Needleman_Wunsch/%.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	
+$(filter $(BUILD_DIR)/%.o, $(NEEDLMAN_C_FILES_CON_PATH)): $(BUILD_DIR)/%.o: Needleman_Wunsch/%.cpp
 	mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ -c Needleman_Wunsch/$<
-
-$(filter $(BUILD_DIR)/%.o, $(SMITH_FILES)): Smith_Waterman/%.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	
+$(filter $(BUILD_DIR)/%.o, $(SMITH_C_FILES_CON_PATH)): $(BUILD_DIR)/%.o: Smith_Waterman/%.cpp
 	mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ -c Smith_Waterman/$<
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-$(filter $(BUILD_DIR)/%.o, $(NEEDLMAN_FILES)): Needleman_Wunsch/%.asm
+$(filter $(BUILD_DIR)/%.o, $(NEEDLMAN_ASM_FILES_CON_PATH)): $(BUILD_DIR)/%.o: Needleman_Wunsch/%.asm
 	mkdir -p $(BUILD_DIR)
-	$(ASM) $(ASMFLAGS) -o $@ Needleman_Wunsch/$<
+	$(ASM) $(ASMFLAGS) -o $@ $<
 
-$(filter $(BUILD_DIR)/%.o, $(SMITH_FILES)): Smith_Waterman/%.asm
+$(filter $(BUILD_DIR)/%.o, $(SMITH_ASM_FILES_CON_PATH)): $(BUILD_DIR)/%.o: Smith_Waterman/%.asm
 	mkdir -p $(BUILD_DIR)
-	$(ASM) $(ASMFLAGS) -o $@ Smith_Waterman/$<
-
-
-# $(BUILD_DIR)/Utility.o: Utility.cpp
-# 	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(ASM) $(ASMFLAGS) -o $@ $<
 
 clean:
 	rm -f $(BUILD_DIR)/*

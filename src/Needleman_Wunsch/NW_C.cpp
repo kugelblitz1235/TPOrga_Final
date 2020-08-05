@@ -1,5 +1,4 @@
 #include <iostream>
-#include "../Misc/Types.cpp"
 #include "NW_C.hpp"
 
 using namespace std;
@@ -65,7 +64,7 @@ void NW(Alignment& alignment){
 						  alignment.parameters->missmatch*(alignment.sequence_1->sequence[y-1]!= alignment.sequence_2->sequence[x-1]) + 
 						  alignment.parameters->match*(alignment.sequence_1->sequence[y-1] == alignment.sequence_2->sequence[x-1]);
 			
-			short score_left = scores[y][x-1] + alignment.parameters->gap;
+			//short score_left = scores[y][x-1] + alignment.parameters->gap;
 			
 			short score_up = scores[y-1][x] + alignment.parameters->gap;
 			
@@ -97,7 +96,7 @@ void NW(Alignment& alignment){
 		length++;
 	}
 	
-	for(int i = 0;i < length/2;i++){
+	for(unsigned int i = 0;i < length/2;i++){
 		char swap = best_sequence_1[i];
 		best_sequence_1[i] = best_sequence_1[length-1-i];
 		best_sequence_1[length-1-i] = swap;
@@ -107,15 +106,15 @@ void NW(Alignment& alignment){
 	}
 	
 	cerr << "Best sequences" << endl;
-	for(int i = 0;i < length;i++){
+	for(unsigned int i = 0;i < length;i++){
 		cerr << best_sequence_1[i];
 	}cerr << endl;
-	for(int i = 0;i < length;i++){
+	for(unsigned int i = 0;i < length;i++){
 		cerr << best_sequence_2[i];
 	}cerr << endl;
 
-	alignment.result->sequence_1 = new_RNA_Sequence(best_sequence_1);
-	alignment.result->sequence_2 = new_RNA_Sequence(best_sequence_2);
+	alignment.result->sequence_1 = new_Sequence_from_string(best_sequence_1);
+	alignment.result->sequence_2 = new_Sequence_from_string(best_sequence_2);
 	alignment.result->score = scores[alignment.sequence_1->length][alignment.sequence_2->length];
 
 	for(unsigned int y = 0;y < alignment.sequence_1->length+1;y++)
