@@ -4,15 +4,15 @@
 
 using namespace std;
 
-extern "C" String* new_string(char *s) {
-    String* str = (String*) malloc(sizeof(String));
+extern "C" RNA_Sequence* new_RNA_Sequence(char *s) {
+    RNA_Sequence* str = (RNA_Sequence*) malloc(sizeof(RNA_Sequence));
     char* new_s = (char*) malloc(strlen(s)+2);
     //pongo en primer lugar el guion
     new_s[0]='-';
     //avanzo el puntero
     new_s++;
     strcpy(new_s, s);
-    //retrocedo el puntero para que el string completo tenga el guion
+    //retrocedo el puntero para que el RNA_Sequence completo tenga el guion
     new_s--;
     str->sequence = new_s;
     str->length = strlen(s);
@@ -22,13 +22,39 @@ extern "C" String* new_string(char *s) {
     return str;
 }
 
-void destroy_string(String* str) {
+extern "C" RNA_Sequence* new_RNA_Sequence_length(unsigned int length){
+    RNA_Sequence* str = (RNA_Sequence*) malloc(sizeof(RNA_Sequence));
+    char* new_s = (char*) malloc(sizeof(char)*length);
+    //pongo en primer lugar el guion
+    new_s[0]='-';
+    //avanzo el puntero
+    new_s++;
+    //retrocedo el puntero para que el RNA_Sequence completo tenga el guion
+    new_s--;
+    //la secuencia va a apuntar al espacio reservado por el malloc, es un RNA_Sequence vacio
+    str->sequence = new_s;
+    str->length = length;
+    //por el guion dado que no lo cuenta el strlen
+    str->length++;
+
+    return str;
+}
+
+void destroy_RNA_Sequence(RNA_Sequence* str) {
     if (str != NULL) {
         if (str->sequence != NULL){
             free(str->sequence);
         };
         free(str);
     };
+}
+
+void reverse_RNA_Sequence(RNA_Sequence* seq){
+	for(unsigned int i = 0;i < seq->length/2;i++){
+		char swap = seq->sequence[i];
+		seq->sequence[i] = seq->sequence[seq->length-1-i];
+		seq->sequence[seq->length-1-i] = swap;
+	}
 }
 
 Result* new_result(){
@@ -42,9 +68,9 @@ Result* new_result(){
 
 void destroy_result(Result* result){
     if(result->sequence_1 != NULL)
-        destroy_string(result->sequence_1);
+        destroy_RNA_Sequence(result->sequence_1);
     if(result->sequence_2 != NULL)
-        destroy_string(result->sequence_2);
+        destroy_RNA_Sequence(result->sequence_2);
     free(result);
 }
 
@@ -66,16 +92,16 @@ Alignment* new_alignment() {
 void destroy_alignment(Alignment* a) {
     if (a != NULL) {
         if (a->sequence_1 != NULL) {
-            destroy_string(a->sequence_1);
+            destroy_RNA_Sequence(a->sequence_1);
         }
         if (a->sequence_2 != NULL) {
-            destroy_string(a->sequence_2);
+            destroy_RNA_Sequence(a->sequence_2);
         }
         if (a->result != NULL) {
             destroy_result(a->result);
         }
         if (a->parameters->algorithm != NULL) {
-            destroy_string(a->parameters->algorithm);
+            destroy_RNA_Sequence(a->parameters->algorithm);
         }
         free(a->parameters);
         free(a);

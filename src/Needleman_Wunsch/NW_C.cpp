@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Types.hpp"
+#include "../Misc/Types.cpp"
 #include "NW_C.hpp"
 
 using namespace std;
@@ -114,8 +114,8 @@ void NW(Alignment& alignment){
 		cerr << best_sequence_2[i];
 	}cerr << endl;
 
-	alignment.result->sequence_1 = new_string(best_sequence_1);
-	alignment.result->sequence_2 = new_string(best_sequence_2);
+	alignment.result->sequence_1 = new_RNA_Sequence(best_sequence_1);
+	alignment.result->sequence_2 = new_RNA_Sequence(best_sequence_2);
 	alignment.result->score = scores[alignment.sequence_1->length][alignment.sequence_2->length];
 
 	for(unsigned int y = 0;y < alignment.sequence_1->length+1;y++)

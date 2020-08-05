@@ -1,17 +1,16 @@
 #include <unistd.h>
 #include <iostream>
 #include <string.h>
-#include "Types.hpp"
-#include "NW_C.hpp"
-#include "SW_C.hpp"
-#include "JSON.hpp"
-#include "AlignAlgo.hpp"
-#include "Utility.hpp"
+#include "Misc/Types.hpp"
+#include "Needleman_Wunsch/NW_C.hpp"
+#include "Smith_Waterman/SW_C.hpp"
+#include "Misc/JSON.hpp"
+#include "Misc/AlignAlgo.hpp"
+#include "Misc/Utility.hpp"
 
 using namespace std;
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
   // Alignment* a = new_alignment();
 
@@ -78,28 +77,28 @@ main (int argc, char **argv)
   // }
 
   Alignment* alignment = new_alignment();
-  char* seq1 = "TGTTACGG";
-  char* seq2 = "GGTTGACTA";
+  char* seq1 =(char*) "TGTTACGG";
+  char* seq2 =(char*) "GGTTGACTA";
   //char* seq1 = "GCATGCU";
   //char* seq2 = "GATTACA";
   short gap_pen=-2;
   short missmatch_pen=-3;
   short match_score=3;
-  alignment->sequence_1=new_string(seq2);
-  alignment->sequence_2=new_string(seq1);
+  alignment->sequence_1=new_RNA_Sequence(seq2);
+  alignment->sequence_2=new_RNA_Sequence(seq1);
   (alignment->parameters)->match=match_score;
   (alignment->parameters)->missmatch=missmatch_pen;
   (alignment->parameters)->gap=gap_pen;
   SWLIN(alignment);
   //NWLIN(alignment);
-  String* res_seq_1 = alignment->result->sequence_1;
+  RNA_Sequence* res_seq_1 = alignment->result->sequence_1;
   cout<<res_seq_1->length<< endl;
-  for(int i = 0;i < res_seq_1->length;i++){
+  for(unsigned int i = 0;i < res_seq_1->length;i++){
       cout << res_seq_1->sequence[i];
   }cout << endl;
   
-  String* res_seq_2 = alignment->result->sequence_2;
-  for(int i = 0;i < res_seq_2->length;i++){
+  RNA_Sequence* res_seq_2 = alignment->result->sequence_2;
+  for(unsigned int i = 0;i < res_seq_2->length;i++){
       cout << res_seq_2->sequence[i];
   }cout << endl;
   

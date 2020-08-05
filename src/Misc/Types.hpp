@@ -1,39 +1,43 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-struct String{
+struct RNA_Sequence{
   unsigned int length;
   char* sequence;
 };
 
+extern "C" RNA_Sequence* new_RNA_Sequence(char* s);
+extern "C" RNA_Sequence* new_RNA_Sequence_length(unsigned int length);
+void destroy_RNA_Sequence(RNA_Sequence* seq);
+void reverse_RNA_Sequence(RNA_Sequence* seq);
+
 struct Parameters{
-  String* algorithm;
+  RNA_Sequence* algorithm;
   short match;
   short missmatch;
   short gap;
 };
 
 struct Result{
-  String* sequence_1;
-  String* sequence_2;
+  RNA_Sequence* sequence_1;
+  RNA_Sequence* sequence_2;
   short score;
 };
+
+Result* new_result();
+void destroy_result(Result* result);
 
 struct Metrics{
 // long long cycles;
 };
 
 struct Alignment{
-  String* sequence_1;
-  String* sequence_2;
+  RNA_Sequence* sequence_1;
+  RNA_Sequence* sequence_2;
   Parameters* parameters;
   Result* result;
 };
 
-extern "C" String* new_string(char *s);
-void destroy_string(String* seq);
-Result* new_result();
-void destroy_result(Result* result);
 Alignment* new_alignment();
 void destroy_alignment(Alignment* a);
 
