@@ -76,21 +76,9 @@ int main (int argc, char **argv)
   //     exit(1);
   // }
 
-  Alignment* alignment = new_alignment();
-  char* seq1 =(char*) "TGTTACGG";
-  char* seq2 =(char*) "GGTTGACTA";
-  //char* seq1 = "GCATGCU";
-  //char* seq2 = "GATTACA";
-  short gap_pen=-2;
-  short missmatch_pen=-3;
-  short match_score=3;
-  alignment->sequence_1=new_Sequence_from_string(seq2);
-  alignment->sequence_2=new_Sequence_from_string(seq1);
-  (alignment->parameters)->match=match_score;
-  (alignment->parameters)->missmatch=missmatch_pen;
-  (alignment->parameters)->gap=gap_pen;
-  SWLIN(alignment);
-  //NWLIN(alignment);
+  //Alignment* alignment = alignment_by_SW((char*) "TGTTACGG",(char*) "GGTTGACTA", -2,-3,3 );
+  Alignment* alignment = alignment_by_NW((char*) "GCATGCU",(char*) "GATTACA", -1,-1,1 );
+  
   Sequence* res_seq_1 = alignment->result->sequence_1;
   cout<<res_seq_1->length<< endl;
   for(unsigned int i = 0;i < res_seq_1->length;i++){
@@ -102,22 +90,26 @@ int main (int argc, char **argv)
       cout << res_seq_2->sequence[i];
   }cout << endl;
   
-  //cerr << (long long)matrix << endl;
-  //for(int i = 0;i < 9+1;i++){
-  //  for(int x = 0;x < 8+1;x++){
-  //    cerr << matrix[i*(8+1)+x] << " ";
-  //  }cerr << endl;
-  //}cerr << endl;
+  /*
+   cerr << (long long)matrix << endl;
+   for(int i = 0;i < 9+1;i++){
+     for(int x = 0;x < 8+1;x++){
+       cerr << matrix[i*(8+1)+x] << " ";
+     }cerr << endl;
+   }cerr << endl;
   
- // char file[] = "./test.json";
-  // save_object_as_JSON(a, file);
+   char file[] = "./test.json";
+   save_object_as_JSON(a, file);
   
-  // destroy_alignment(a);
+   destroy_alignment(a);
+*/
+//cd src && make clean && make && cd .. && ./cli
+/*
   short scores[100000];
 	for(int i = 0;i < 100000;i++)
 	scores[i] = i-1000/(i+1);
 
-  //printScoreMatrix(scores,alignment,4);
-
+  printScoreMatrix(scores,alignment,4);
+*/
   return 0;
 }

@@ -170,3 +170,20 @@ void SW(
 	free(scores);
 }
 
+Alignment* alignment_by_SW(char * sequence_1, char* sequence_2, short gap, short missmatch, short match){
+	//creo la estructura vacia
+	Alignment* alignment = new_alignment();
+	
+	//relleno la estructura con los valores correspondientes
+	alignment->sequence_1=new_Sequence_from_string(sequence_1);
+	alignment->sequence_2=new_Sequence_from_string(sequence_2);
+	(alignment->parameters)->match=match;
+	(alignment->parameters)->missmatch=missmatch;
+	(alignment->parameters)->gap=gap;
+
+	//ejecuto el algoritmo en asm lineal
+	SWLIN(alignment);
+
+	//devuelvo la estructura modificada
+	return alignment;
+}
