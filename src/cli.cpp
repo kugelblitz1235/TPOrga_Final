@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <string.h>
+#include <string>
 #include "Misc/Types.hpp"
 #include "Needleman_Wunsch/NW_C.hpp"
 #include "Smith_Waterman/SW_C.hpp"
@@ -9,6 +10,35 @@
 #include "Misc/Utility.hpp"
 
 using namespace std;
+
+//funcion que selecciona el algoritmo, la implementacion y recibe los parametros para ejecutarla
+Alignment* align_sequences (std::string algorithm, std::string implementation, char* sequence_1, char* sequence_2, short gap, short missmatch, short match){
+	
+  try
+  {
+    
+      //los cambio a mayusculas para una mejor comparacion
+      for (auto & c: algorithm) c = toupper(c);
+      for (auto & c: implementation) c = toupper(c);
+
+      if(algorithm.compare("NW") == 0){
+        
+        return alignment_by_NW(implementation, sequence_1, sequence_2, gap, missmatch, match);
+
+      }
+      else if (algorithm.compare("SW") == 0)
+      {
+        return alignment_by_SW(implementation, sequence_1, sequence_2, gap, missmatch, match);
+      }
+      else{
+        throw "Los parámetros ingresados son inválidos.";
+      }
+
+  }catch(char * ex){
+    std::cout<<ex;
+  }
+	
+}
 
 int main (int argc, char **argv)
 {
@@ -77,7 +107,7 @@ int main (int argc, char **argv)
   // }
 
   //Alignment* alignment = alignment_by_SW((char*) "TGTTACGG",(char*) "GGTTGACTA", -2,-3,3 );
-  Alignment* alignment = alignment_by_NW((char*) "GCATGCU",(char*) "GATTACA", -1,-1,1 );
+/*Alignment* alignment = align_sequences("NW", "LIN",(char*) "GCATGCU",(char*) "GATTACA", -1,-1,1 );
   
   Sequence* res_seq_1 = alignment->result->sequence_1;
   cout<<res_seq_1->length<< endl;
@@ -89,6 +119,11 @@ int main (int argc, char **argv)
   for(unsigned int i = 0;i < res_seq_2->length;i++){
       cout << res_seq_2->sequence[i];
   }cout << endl;
+*/
+  Alignment* alignment = new_alignment();
+  alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
+	alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACCA");
+  NW_C_SSE(*alignment);
   
   /*
    cerr << (long long)matrix << endl;

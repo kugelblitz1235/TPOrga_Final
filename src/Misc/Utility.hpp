@@ -10,7 +10,9 @@
 using namespace std;
 
 void printSpaceLine(int dataSize,int columns);
+
 void printDivisionLine(int dataSize,int columns);
+
 void printScoreMatrix(short* matrix,Alignment* alignment,int vec);
 
 #endif

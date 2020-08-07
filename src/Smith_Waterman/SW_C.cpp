@@ -170,7 +170,7 @@ void SW(
 	free(scores);
 }
 
-Alignment* alignment_by_SW(char * sequence_1, char* sequence_2, short gap, short missmatch, short match){
+Alignment* alignment_by_SW(std::string implementation, char * sequence_1, char* sequence_2, short gap, short missmatch, short match){
 	//creo la estructura vacia
 	Alignment* alignment = new_alignment();
 	
@@ -181,8 +181,19 @@ Alignment* alignment_by_SW(char * sequence_1, char* sequence_2, short gap, short
 	(alignment->parameters)->missmatch=missmatch;
 	(alignment->parameters)->gap=gap;
 
-	//ejecuto el algoritmo en asm lineal
-	SWLIN(alignment);
+	if(implementation.compare("C") == 0){
+		//ejecuto la implementación en c con debug
+		SW(*alignment, false);
+	
+	}else if(implementation.compare("LIN") == 0){
+		
+		//ejecuto el algoritmo en asm lineal
+		SWLIN(alignment);
+	}
+	else{
+		throw "No existe la implementación ingresada.";
+	}
+
 
 	//devuelvo la estructura modificada
 	return alignment;

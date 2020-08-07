@@ -24,10 +24,11 @@ void printDivisionLine(int dataSize,int columns){
 }
 
 void printScoreMatrix(short* matrix,Alignment* alignment,int vec){
-	int s1,s2;
-	char* s1s;
-	char* s2s;
-	if(alignment->sequence_1->length >alignment->sequence_2->length){
+	int s1 = alignment->sequence_1->length;
+	int s2 = alignment->sequence_2->length;;
+	char* s1s = alignment->sequence_1->sequence;
+	char* s2s = alignment->sequence_2->sequence;
+	/*if(alignment->sequence_1->length >alignment->sequence_2->length){
 		s1 = alignment->sequence_1->length;
 		s1s = alignment->sequence_1->sequence;
 	}else{
@@ -42,7 +43,7 @@ void printScoreMatrix(short* matrix,Alignment* alignment,int vec){
 		s2 = alignment->sequence_2->length;
 		s2s = alignment->sequence_2->sequence;
 	}
-	
+	*/
 	
 	int dataSize = 6;
 	
@@ -116,3 +117,5 @@ void printScoreMatrix(short* matrix,Alignment* alignment,int vec){
 	}
 	printDivisionLine(dataSize,columns+1);
 }
+
+

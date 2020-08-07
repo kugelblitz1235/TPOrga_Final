@@ -3,7 +3,7 @@
 
 using namespace std;
 
-void NW(Alignment& alignment){
+void NW_C_LIN(Alignment& alignment){
 	
 	short** scores = (short**)malloc((alignment.sequence_1->length+1)*sizeof(short*));
 	
@@ -129,7 +129,7 @@ void NW(Alignment& alignment){
 
 }
 
-Alignment* alignment_by_NW(char * sequence_1, char* sequence_2, short gap, short missmatch, short match){
+Alignment* alignment_by_NW(std::string implementation, char* sequence_1, char* sequence_2, short gap, short missmatch, short match){
 	//creo la estructura vacia
 	Alignment* alignment = new_alignment();
 	
@@ -140,9 +140,142 @@ Alignment* alignment_by_NW(char * sequence_1, char* sequence_2, short gap, short
 	(alignment->parameters)->missmatch = missmatch;
 	(alignment->parameters)->gap = gap;
 
-	//ejecuto el algoritmo en asm lineal
-	NWLIN(alignment);
+	if(implementation.compare("C") == 0){
+		//ejecuto la implementación en c
+		NW_C_LIN(*alignment);
+	
+	}else if(implementation.compare("LIN") == 0){
+		
+		//ejecuto el algoritmo en asm lineal
+		NWLIN(alignment);
+
+	}
+	else{
+		throw "No existe la implementación ingresada.";
+	}
 
 	//devuelvo la estructura modificada
 	return alignment;
+}
+
+
+
+void NW_C_SSE (Alignment& alignment){
+	char* seq1 = alignment.sequence_1->sequence;
+	char* seq2 = alignment.sequence_2->sequence;
+	unsigned int seq1_len = alignment.sequence_1->length;
+	unsigned int seq2_len = alignment.sequence_2->length;
+	
+	//en este caso hardcodeamos el tamaño del vector
+	int vector_len = 4;
+	
+	int height = ((seq2_len + vector_len - 1)/ vector_len); //cantidad de "franjas" de diagonales
+	int width = (1 + seq1_len + vector_len - 1); //cantidad de diagonales por franja
+	int score_matrix_sz = height * width * vector_len; // largo de diagonal
+		
+	short* score_matrix =  (short*)malloc(score_matrix_sz*sizeof(short));
+	
+	short* v_aux = (short*)malloc((width-1)*sizeof(short));
+	//llenamos el vector auxiliar
+	for(int i = 0;i < width-1;i++){
+		v_aux[i] = SHRT_MIN;
+	}
+
+	int count=0;
+	for(int i = 0 ; i < height ; i++){
+		unsigned int offset_y = i * width * vector_len;
+		for( int j = 0; j < 2 ; j++){
+			unsigned int offset_x = j * vector_len;
+			//emulamos simd
+			for( int k = 0;k < vector_len;k++){
+				if( j==1 && k == vector_len-1)
+					score_matrix[offset_y + offset_x + k] = 0;
+				else
+					score_matrix[offset_y + offset_x + k] = SHRT_MIN;
+				count++;
+			}			
+		}
+	}
+	/******************************************************************************************************/
+	//arrays auxiliares para el calculo de los scores
+	char* str_row = (char*)malloc((vector_len+1) * sizeof(char)); //vector_len+1 es por debuggeo
+	char* str_col = (char*)malloc((vector_len+1) * sizeof(char));
+	str_row[vector_len]=0;
+	str_col[vector_len]=0;
+
+	for( int i = 0 ; i < height ; i++){
+		int offset_y = i * width * vector_len;
+		for( int j = 2; j < width ; j++){
+			int offset_x = j * vector_len;
+			//emulamos simd
+			
+			//cerr<<"j-vector_len :"<<j<<"-"<<vector_len<<"="<<j-vector_len<<"\n";	
+			if(j-vector_len < 0){ //desborde por izquierda
+				cerr<<"izq"<<endl;
+				//simd : desplazamiento de puntero y levantar datos de memoria
+				//levantamos el string con el puntero offseteado para no acceder afuera
+				
+				int offset_str_row = vector_len - j;
+			//	cerr<<offset_str_row<<"\n";	
+				
+				for(int k = 0;k < vector_len;k++){
+			//		cerr<<k<<endl;
+					str_row[k] = seq1[offset_y + offset_x + k - vector_len + offset_str_row];
+				}
+				//simd : shift
+				//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
+				for(int s = 0;s < offset_str_row; s++){
+					for(int k = vector_len-1;k > 0;k--){
+						str_row[k+1] = str_row[k];
+					}
+				}
+			}else if(j-vector_len >= width-vector_len){ // desborde por derecha
+				cerr<<"der"<<endl;
+				//simd : desplazamiento de puntero y levantar datos de memoria
+				//levantamos el string con el puntero offseteado para no acceder afuera
+				int offset_str_row = j - width-vector_len + 1;
+			//	cerr<<offset_str_row<<"\n";	
+
+				for(int k = 0;k < vector_len;k++){
+			//		cerr<<k<<endl;
+					str_row[k] = seq1[offset_y + offset_x + k - vector_len - offset_str_row];
+				}
+				//simd : shift
+				//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
+				for(int s = 0;s < offset_str_row; s++){
+					for(int k = 1;k < vector_len;k++){
+						str_row[k-1] = str_row[k];
+					}
+				}
+
+			}else{ //caso feliz
+			//	cerr<<"centro"<<endl;
+				for(int k = 0;k < vector_len;k++){
+					str_row[k] = seq1[offset_y + offset_x + k - vector_len];
+				}
+			}
+			printf("%s\n", str_row);
+			
+			for(int k = 0;k < vector_len;k++){
+				int val = 0;
+				if(str_row[k]=='A')
+					val=1;
+				else if(str_row[k]=='G')
+					val=2;
+				else if(str_row[k]=='T')
+					val=3;
+				else if(str_row[k]=='U')
+					val=4;
+				else
+					val=5;
+				score_matrix[offset_y + offset_x + k] = val;
+				count++;
+			}			
+		}
+	}
+
+	printScoreMatrix(score_matrix, &alignment, (int)vector_len);
+
+	free(str_row);
+	free(str_col);
 }
