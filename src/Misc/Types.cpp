@@ -76,7 +76,7 @@ void destroy_result(Result* result){
 
 Alignment* new_alignment() {
     Parameters* p = (Parameters*) malloc(sizeof(Parameters));
-    p->match = 2;
+    p->match = 1;
     p->gap = -1;
     p->missmatch = -1;
     p->algorithm = NULL;

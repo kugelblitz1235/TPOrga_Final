@@ -122,7 +122,7 @@ int main (int argc, char **argv)
 */
   Alignment* alignment = new_alignment();
   alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
-	alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACCA");
+	alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
   NW_C_SSE(*alignment);
   
   /*

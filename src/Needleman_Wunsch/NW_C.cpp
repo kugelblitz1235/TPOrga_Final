@@ -1,6 +1,8 @@
 #include <iostream>
 #include "NW_C.hpp"
 
+#define DBG(x) cerr << #x << " = " << (x) <<"\n"
+
 using namespace std;
 
 void NW_C_LIN(Alignment& alignment){
@@ -161,10 +163,11 @@ Alignment* alignment_by_NW(std::string implementation, char* sequence_1, char* s
 
 
 void NW_C_SSE (Alignment& alignment){
-	char* seq1 = alignment.sequence_1->sequence;
+	char* seq1 = alignment.sequence_1->sequence;	
 	char* seq2 = alignment.sequence_2->sequence;
 	unsigned int seq1_len = alignment.sequence_1->length;
 	unsigned int seq2_len = alignment.sequence_2->length;
+	
 	
 	//en este caso hardcodeamos el tamaño del vector
 	int vector_len = 4;
@@ -178,7 +181,7 @@ void NW_C_SSE (Alignment& alignment){
 	short* v_aux = (short*)malloc((width-1)*sizeof(short));
 	//llenamos el vector auxiliar
 	for(int i = 0;i < width-1;i++){
-		v_aux[i] = SHRT_MIN;
+		v_aux[i] = SHRT_MIN/2;
 	}
 
 	int count=0;
@@ -189,88 +192,228 @@ void NW_C_SSE (Alignment& alignment){
 			//emulamos simd
 			for( int k = 0;k < vector_len;k++){
 				if( j==1 && k == vector_len-1)
-					score_matrix[offset_y + offset_x + k] = 0;
+					score_matrix[offset_y + offset_x + k] = i * vector_len * alignment.parameters->gap;
 				else
-					score_matrix[offset_y + offset_x + k] = SHRT_MIN;
+					score_matrix[offset_y + offset_x + k] = SHRT_MIN/2;
 				count++;
 			}			
 		}
 	}
 	/******************************************************************************************************/
 	//arrays auxiliares para el calculo de los scores
-	char* str_row = (char*)malloc((vector_len+1) * sizeof(char)); //vector_len+1 es por debuggeo
-	char* str_col = (char*)malloc((vector_len+1) * sizeof(char));
-	str_row[vector_len]=0;
-	str_col[vector_len]=0;
+	char* str_row = (char*)malloc(vector_len * sizeof(char)); 
+	char* str_col = (char*)malloc(vector_len * sizeof(char));
+	short* left_score = (short*)malloc(vector_len * sizeof(short));
+	short* up_score =(short*)malloc(vector_len * sizeof(short));
+	short* diag_score =(short*)malloc(vector_len * sizeof(short));
+	short* constant_gap = (short*)malloc(vector_len * sizeof(short));
+	short* cmp_missmatch = (short*)malloc(vector_len * sizeof(short));
+	short* cmp_match = (short*)malloc(vector_len * sizeof(short));
+
+	for( int k = 0;k < vector_len;k++){
+		constant_gap[k] = alignment.parameters->gap;
+	}
 
 	for( int i = 0 ; i < height ; i++){
 		int offset_y = i * width * vector_len;
+
+		if((i+1)*vector_len >= seq2_len){
+			int offset_col = (i+1)*vector_len - seq2_len;
+			//simd : leer de memoria (movdqu)
+			//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más 
+			for( int k = 0;k < vector_len;k++){
+				str_col[vector_len - 1 - k] = seq2[i * vector_len - offset_col + k];
+			}
+
+			//simd : shift
+			//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
+			for(int s = 0;s < offset_col; s++){
+				for(int k = vector_len-2;k >= 0;k--){
+					str_col[k+1] = str_col[k];
+				}
+			}
+
+
+		}else{
+			//simd : leer de memoria (movdqu)
+			//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
+			for( int k = 0;k < vector_len;k++){
+				str_col[vector_len - 1 - k] = seq2[i * vector_len + k];
+			}
+		}
+
+		//simd : shuffle
+		for (int i = 0 ; i < vector_len / 2; i++){
+			char temp = str_col[i];
+			str_col[i] = str_col[vector_len - i - 1];
+			str_col[vector_len - i - 1] = temp;
+		}
+
 		for( int j = 2; j < width ; j++){
 			int offset_x = j * vector_len;
 			//emulamos simd
-			
-			//cerr<<"j-vector_len :"<<j<<"-"<<vector_len<<"="<<j-vector_len<<"\n";	
 			if(j-vector_len < 0){ //desborde por izquierda
-				cerr<<"izq"<<endl;
 				//simd : desplazamiento de puntero y levantar datos de memoria
 				//levantamos el string con el puntero offseteado para no acceder afuera
 				
 				int offset_str_row = vector_len - j;
-			//	cerr<<offset_str_row<<"\n";	
-				
+				//simd : leer de memoria (movdqu)
+				//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
 				for(int k = 0;k < vector_len;k++){
 			//		cerr<<k<<endl;
-					str_row[k] = seq1[offset_y + offset_x + k - vector_len + offset_str_row];
+					//Esto se simplifica haciendo seq1[k], porque siempre queremos
+					//empezar desde el principio del string por izquierda
+					str_row[vector_len - 1 - k] = seq1[j - vector_len + offset_str_row + k ];
 				}
 				//simd : shift
-				//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
 				for(int s = 0;s < offset_str_row; s++){
-					for(int k = vector_len-1;k > 0;k--){
-						str_row[k+1] = str_row[k];
-					}
-				}
-			}else if(j-vector_len >= width-vector_len){ // desborde por derecha
-				cerr<<"der"<<endl;
-				//simd : desplazamiento de puntero y levantar datos de memoria
-				//levantamos el string con el puntero offseteado para no acceder afuera
-				int offset_str_row = j - width-vector_len + 1;
-			//	cerr<<offset_str_row<<"\n";	
-
-				for(int k = 0;k < vector_len;k++){
-			//		cerr<<k<<endl;
-					str_row[k] = seq1[offset_y + offset_x + k - vector_len - offset_str_row];
-				}
-				//simd : shift
-				//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
-				for(int s = 0;s < offset_str_row; s++){
-					for(int k = 1;k < vector_len;k++){
+					for(int k = 1;k < vector_len ;k++){
 						str_row[k-1] = str_row[k];
 					}
+			}
+			}else if(j > width-vector_len){ // desborde por derecha
+				//simd : desplazamiento de puntero y levantar datos de memoria
+				//levantamos el string con el puntero offseteado para no acceder afuera
+				int offset_str_row = j - (width-vector_len) ;
+				
+				//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
+				for(int k = 0;k < vector_len;k++){
+					//Es lo mismo levantar siempre en este caso los ultimos vector_len caracteres
+					str_row[vector_len - 1 - k] = seq1[j - vector_len - offset_str_row + k];
 				}
+				//simd : shift
+				//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
+				for(int s = 0;s < offset_str_row; s++){
+				for(int k = vector_len-2;k >= 0;k--){
+					str_row[k+1] = str_row[k];
+				}
+			}	
 
 			}else{ //caso feliz
-			//	cerr<<"centro"<<endl;
+			//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
 				for(int k = 0;k < vector_len;k++){
-					str_row[k] = seq1[offset_y + offset_x + k - vector_len];
+					str_row[vector_len - 1 - k] = seq1[j - vector_len + k];
 				}
 			}
-			printf("%s\n", str_row);
+
+			//vemos como los strings que levantamos se comparan en cada iteracion
+			cerr<<"str_row = ";
+			for(int i=0;i<vector_len;i++)
+				cerr<<str_row[i];cerr<<endl;
 			
-			for(int k = 0;k < vector_len;k++){
-				int val = 0;
-				if(str_row[k]=='A')
-					val=1;
-				else if(str_row[k]=='G')
-					val=2;
-				else if(str_row[k]=='T')
-					val=3;
-				else if(str_row[k]=='U')
-					val=4;
-				else
-					val=5;
-				score_matrix[offset_y + offset_x + k] = val;
-				count++;
-			}			
+			cerr<<"str_col = ";
+			for(int i=0;i<vector_len;i++)
+				cerr<<str_col[i];cerr<<endl;
+			
+			//left score
+			//simd : leer de memoria (movdqu)
+			for( int k = 0;k < vector_len;k++){
+				left_score[vector_len - 1 - k] = score_matrix[offset_y + offset_x - vector_len + k];
+			}
+			
+			//simd : padddw
+			for( int k = 0;k < vector_len;k++){
+				left_score[k] += constant_gap[k];
+			}
+
+			//up score
+			//simd : copiar registro
+			for( int k = 0;k < vector_len;k++){
+				up_score[vector_len - 1 - k] = score_matrix[offset_y + offset_x - vector_len + k];
+			}
+			//simd : shift
+			for(int k = vector_len-2;k >= 0;k--){
+				up_score[k+1] = up_score[k];
+			}
+			//simd : insert
+			up_score[0] = v_aux[j-1];
+
+			//simd : padddw
+			for( int k = 0;k < vector_len;k++){
+				up_score[k] += constant_gap[k];
+			}
+
+			//diag score
+			//simd : leer de memoria (movdqu)
+			for( int k = 0;k < vector_len;k++){
+				diag_score[vector_len - 1 - k] = score_matrix[offset_y + offset_x - 2*vector_len + k];
+			}
+
+			//simd : shift
+			for(int k = vector_len-2;k >= 0;k--){
+				diag_score[k+1] = diag_score[k];
+			}
+
+			//simd : insert
+			diag_score[0] = v_aux[j-2];
+		
+			//simd : PUNPCKLBW
+			for( int k = 0;k < vector_len;k++){
+				cmp_missmatch[k] = str_row[k];
+			}
+
+			//simd : PUNPCKLBW
+			for( int k = 0;k < vector_len;k++){
+				cmp_match[k] = str_col[k];
+			}
+
+			//simd : compare
+			for( int k = 0;k < vector_len;k++){
+				cmp_match[k] = (cmp_match[k] == cmp_missmatch[k]);
+			}
+
+			//simd : pandn
+			for( int k = 0;k < vector_len;k++){
+				cmp_missmatch[k] = 1-cmp_match[k];
+			}
+
+			//simd : pmult por match
+			for( int k = 0;k < vector_len;k++){
+				cmp_match[k] *= alignment.parameters->match;
+			}
+
+			//simd : pmult por missmatch
+			for( int k = 0;k < vector_len;k++){
+				cmp_missmatch[k] *= alignment.parameters->missmatch;
+			}
+
+			//simd : padddw
+			for( int k = 0;k < vector_len;k++){
+				diag_score[k] += cmp_match[k] + cmp_missmatch[k];
+			}
+			
+			cerr<<"Left_score : ";
+			for( int k = 0;k < vector_len;k++){
+				cerr << left_score[k] << " ";
+			}cerr<<endl;
+
+			cerr<<"up score : ";
+			for( int k = 0;k < vector_len;k++){
+				cerr << up_score[k] << " ";
+			}cerr<<endl;
+			cerr<<"diag score : ";
+			for( int k = 0;k < vector_len;k++){
+				cerr << diag_score[k] << " ";
+			}cerr<<endl;
+
+			//PMAXSW
+			for( int k = 0;k < vector_len;k++){
+				diag_score[k] = max(diag_score[k],up_score[k]);
+			}
+			
+			//PMAXSW
+			for( int k = 0;k < vector_len;k++){
+				diag_score[k] = max(diag_score[k],left_score[k]);
+			}
+
+			//simd : mover a memoria
+			for( int k = 0;k < vector_len;k++){
+				score_matrix[offset_y + offset_x + k] = diag_score[vector_len - 1 - k];
+			}
+
+			//simd : PEXTRW
+			if(j-vector_len >= 0)
+				v_aux[j-vector_len] = diag_score[vector_len-1];
 		}
 	}
 
@@ -278,4 +421,10 @@ void NW_C_SSE (Alignment& alignment){
 
 	free(str_row);
 	free(str_col);
+	free(left_score);
+	free(up_score);
+	free(diag_score);
+	free(constant_gap);
+	free(cmp_missmatch);
+	free(cmp_match);
 }
