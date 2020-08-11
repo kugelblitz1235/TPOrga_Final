@@ -75,8 +75,8 @@ void backtrack_solution(
 			//short score_left = scores[y][x-1] + alignment.parameters->gap;
 			short score_up = scores[y-1][x] + alignment.parameters->gap;
 			short score_diag = scores[y-1][x-1] + 
-						  alignment.parameters->missmatch*(seq1->sequence[y-1] != seq2->sequence[x-1]) + 
-						  alignment.parameters->match*(seq1->sequence[y-1] == seq2->sequence[x-1]);
+						  alignment.parameters->missmatch*(seq1->sequence[y] != seq2->sequence[x]) + 
+						  alignment.parameters->match*(seq1->sequence[y] == seq2->sequence[x]);
 			
 			if(scores[y][x] == 0){
 				break;

@@ -5,6 +5,7 @@
 
 using namespace std;
 
+
 void NW_C_LIN(Alignment& alignment){
 	
 	short** scores = (short**)malloc((alignment.sequence_1->length+1)*sizeof(short*));
@@ -226,7 +227,6 @@ void NW_C_SSE (Alignment& alignment){
 			}
 
 			//simd : shift
-			//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
 			for(int s = 0;s < offset_col; s++){
 				for(int k = vector_len-2;k >= 0;k--){
 					str_col[k+1] = str_col[k];
@@ -274,7 +274,7 @@ void NW_C_SSE (Alignment& alignment){
 			}else if(j > width-vector_len){ // desborde por derecha
 				//simd : desplazamiento de puntero y levantar datos de memoria
 				//levantamos el string con el puntero offseteado para no acceder afuera
-				int offset_str_row = j - (width-vector_len) ;
+				int offset_str_row = j - (width-vector_len);
 				
 				//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
 				for(int k = 0;k < vector_len;k++){
@@ -414,7 +414,8 @@ void NW_C_SSE (Alignment& alignment){
 			//simd : PEXTRW
 			if(j-vector_len >= 0)
 				v_aux[j-vector_len] = diag_score[vector_len-1];
-		}
+			
+		}	
 	}
 
 	printScoreMatrix(score_matrix, &alignment, (int)vector_len);
@@ -427,4 +428,129 @@ void NW_C_SSE (Alignment& alignment){
 	free(constant_gap);
 	free(cmp_missmatch);
 	free(cmp_match);
+	
+	backtrack_solution_NW_C(
+		score_matrix,
+		alignment,
+		vector_len,
+		alignment.sequence_1->length-1,alignment.sequence_2->length-1,
+		false,
+		(score_fun_t)get_score_SSE,
+		false
+	);
+
+	free(score_matrix);
+}
+
+
+void backtrack_solution_NW_C(
+	short *score_matrix,
+	Alignment& alignment,
+	int vector_len,
+	unsigned int x,unsigned int y,
+	bool SW,
+	score_fun_t score_fun,
+	bool debug = false
+){
+	
+	char* seq1 = alignment.sequence_1->sequence;
+	char* seq2 = alignment.sequence_2->sequence;
+
+	int seq1_len = alignment.sequence_1->length;
+	int seq2_len = alignment.sequence_2->length;
+	
+	Sequence* best_seq_1 = alignment.result->sequence_1;
+	Sequence* best_seq_2 = alignment.result->sequence_2;
+
+	char* best_sequence_1 = (char*)malloc(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
+	char* best_sequence_2 = (char*)malloc(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
+	
+	unsigned int length = 0;
+	
+	while(y != 0 || x != 0){
+
+		if(y > 0 && x > 0){
+			if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0)
+				break;
+
+			short score_diag = score_fun(score_matrix, seq1_len,y-1,x-1,vector_len) + 
+						  alignment.parameters->missmatch*(seq2[y] != seq1[x]) + 
+						  alignment.parameters->match*(seq2[y] == seq1[x]);
+			
+			//short score_left = scores[y][x-1] + alignment.parameters->gap;
+			
+			short score_up = score_fun(score_matrix, seq1_len,y-1,x,vector_len) + alignment.parameters->gap;
+			
+			if(score_diag ==  score_fun(score_matrix, seq1_len,y,x,vector_len)){
+				best_sequence_1[length] = seq2[y];
+				best_sequence_2[length] = seq1[x];
+				x--;
+				y--;
+			}else if(score_up == score_fun(score_matrix, seq1_len,y,x,vector_len)){
+				best_sequence_1[length] = seq2[y];
+				best_sequence_2[length] = '_';
+				y--;
+			}else{
+				best_sequence_1[length] = '_';
+				best_sequence_2[length] = seq1[x];
+				x--;
+			}
+		}else if(x > 0){
+			best_sequence_1[length] = '_';
+			best_sequence_2[length] = seq2[x-1];
+			x--;
+		}else if(y > 0){
+			best_sequence_1[length] = seq1[y-1];
+			best_sequence_2[length] = '_';
+			y--;
+		}
+		
+		length++;
+	}
+	
+	for(unsigned int i = 0;i < length/2;i++){
+		char swap = best_sequence_1[i];
+		best_sequence_1[i] = best_sequence_1[length-1-i];
+		best_sequence_1[length-1-i] = swap;
+		swap = best_sequence_2[i];
+		best_sequence_2[i] = best_sequence_2[length-1-i];
+		best_sequence_2[length-1-i] = swap;
+	}
+	
+	cerr << "Best sequences" << endl;
+	best_sequence_1[length]=0;
+	best_sequence_2[length]=0;
+	DBG(best_sequence_2);
+	DBG(best_sequence_1);
+	alignment.result->sequence_1 = new_Sequence_from_string(best_sequence_1);
+	alignment.result->sequence_2 = new_Sequence_from_string(best_sequence_2);
+	alignment.result->score = score_fun(score_matrix, seq1_len,alignment.sequence_2->length-1,alignment.sequence_1->length-1,vector_len);
+
+	//creamos los nuevos strings y destruimos los anteriores
+	best_seq_1 = new_Sequence_from_string(best_sequence_1);
+	best_seq_2 = new_Sequence_from_string(best_sequence_2);
+
+	destroy_Sequence(alignment.result->sequence_1);
+	destroy_Sequence(alignment.result->sequence_2);
+	alignment.result->sequence_1 = best_seq_1;
+	alignment.result->sequence_2 = best_seq_2;
+
+}
+
+short get_score_SSE(short* score_matrix, int seq_row_len, int y,int x, int vector_len=4){
+	int width = (1 + seq_row_len + vector_len - 1); //cantidad de diagonales por franja
+
+	int franja = y / vector_len;	
+	int offset_y = franja * width * vector_len;
+
+	int diagonal = y % vector_len + x + 1;
+	int cell = vector_len - 1 - y % vector_len;
+	int offset_x = diagonal * vector_len + cell;
+
+	return score_matrix[offset_y + offset_x];
+}
+
+short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vector_len=4){
+	short** matrix_ptr = (short**) score_matrix;
+	return matrix_ptr[y][x];
 }
