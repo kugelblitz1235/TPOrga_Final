@@ -1,14 +1,14 @@
 #include <unistd.h>
 #include <iostream>
-#include <string.h>
 #include <string>
+#include <emmintrin.h>
+
 #include "Misc/Types.hpp"
 #include "Needleman_Wunsch/NW_C.hpp"
 #include "Smith_Waterman/SW_C.hpp"
 #include "Misc/JSON.hpp"
 #include "Misc/AlignAlgo.hpp"
 #include "Misc/Utility.hpp"
-
 using namespace std;
 
 //funcion que selecciona el algoritmo, la implementacion y recibe los parametros para ejecutarla
@@ -108,43 +108,34 @@ int main (int argc, char **argv)
 
   //Alignment* alignment = alignment_by_SW((char*) "TGTTACGG",(char*) "GGTTGACTA", -2,-3,3 );
 /*Alignment* alignment = align_sequences("NW", "LIN",(char*) "GCATGCU",(char*) "GATTACA", -1,-1,1 );
-  
-  Sequence* res_seq_1 = alignment->result->sequence_1;
-  cout<<res_seq_1->length<< endl;
-  for(unsigned int i = 0;i < res_seq_1->length;i++){
-      cout << res_seq_1->sequence[i];
-  }cout << endl;
-  
-  Sequence* res_seq_2 = alignment->result->sequence_2;
-  for(unsigned int i = 0;i < res_seq_2->length;i++){
-      cout << res_seq_2->sequence[i];
-  }cout << endl;
 */
   Alignment* alignment = new_alignment();
   alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
 	alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
   NW_C_SSE(*alignment);
-  
   /*
-   cerr << (long long)matrix << endl;
-   for(int i = 0;i < 9+1;i++){
-     for(int x = 0;x < 8+1;x++){
-       cerr << matrix[i*(8+1)+x] << " ";
-     }cerr << endl;
-   }cerr << endl;
-  
-   char file[] = "./test.json";
-   save_object_as_JSON(a, file);
-  
-   destroy_alignment(a);
-*/
-//cd src && make clean && make && cd .. && ./cli
-/*
-  short scores[100000];
-	for(int i = 0;i < 100000;i++)
-	scores[i] = i-1000/(i+1);
+  short nums[8];
+  for(int i = 0;i < 8;i++)
+    nums[i] = i;
 
-  printScoreMatrix(scores,alignment,4);
-*/
+  __m128i a = _mm_loadu_si128((__m128i*)nums);
+
+  a = _mm_add_epi16(a,a);
+
+  _mm_storeu_si128((__m128i*)nums,a);
+  
+  for(int i = 0;i < 8;i++)
+    cerr << nums[i] << " ";
+    cerr<<endl;
+  */
+ /*char str[9] = {'A','B','C','D','E','F','G','H','\0'};
+  __m128i a = char_to_word8(str);
+  print128_hex(a);
+  char str2[9];
+  str2[8]='\0';
+  word_to_char8(str2,a);
+  printf("%s\n",str2);
+  */
   return 0;
 }
+

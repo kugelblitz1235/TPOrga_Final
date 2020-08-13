@@ -2,8 +2,12 @@
 #define SW_C_H
 
 #include "../Misc/Types.hpp"
+#include "../Misc/Utility.hpp"
 #include "../Misc/AlignAlgo.hpp"
 #include <string>
+#include <limits.h>
+#include <emmintrin.h>
+#include <immintrin.h>
 
 void SW(Alignment& alignment,bool debug);
 
