@@ -14,4 +14,6 @@ void SW(Alignment& alignment,bool debug);
 //se le pasa por parametro la secuencia a alinear y los scores
 Alignment* alignment_by_SW(std::string implementation,char * sequence_1, char* sequence_2, short gap, short missmatch, short match);
 
+void SW_C_withLogicSSE (Alignment& alignment);
+
 #endif // SW_C_H

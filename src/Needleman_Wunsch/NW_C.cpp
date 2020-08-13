@@ -395,15 +395,20 @@ void NW_C_SSE (Alignment& alignment){
 		}
 	}
 	/******************************************************************************************************/
+	__m128i constant_gap_xmm;
+	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
+	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
+	__m128i constant_missmatch_xmm = _mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
+	constant_missmatch_xmm = _mm_broadcastw_epi16(constant_missmatch_xmm);
+	__m128i constant_match_xmm = _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
+	constant_match_xmm = _mm_broadcastw_epi16(constant_match_xmm);
+
 	//arrays auxiliares para el calculo de los scores
-	char* str_row = (char*)malloc(vector_len * sizeof(char)); 
-	char* str_col = (char*)malloc(vector_len * sizeof(char));
-	short* left_score = (short*)malloc(vector_len * sizeof(short));
-	short* up_score =(short*)malloc(vector_len * sizeof(short));
-	short* diag_score =(short*)malloc(vector_len * sizeof(short));
-	short* constant_gap = (short*)malloc(vector_len * sizeof(short));
-	short* cmp_missmatch = (short*)malloc(vector_len * sizeof(short));
-	short* cmp_match = (short*)malloc(vector_len * sizeof(short));
+	__m128i str_row_xmm;
+	__m128i str_col_xmm;
+	__m128i left_score_xmm;
+	__m128i up_score_xmm;
+	__m128i diag_score_xmm;
 	
 	char identity_shift_mask[16] = {0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF};
 
@@ -411,16 +416,6 @@ void NW_C_SSE (Alignment& alignment){
 	char reverse_mask[16] = {0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1};
 	__m128i reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
 	__m128i identity_shift_mask_xmm =  _mm_loadu_si128((__m128i*)identity_shift_mask);
-	__m128i str_row_xmm;
-	__m128i str_col_xmm;
-
-	__m128i constant_gap_xmm;
-	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
-	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
-
-	for( int k = 0;k < vector_len;k++){
-		constant_gap[k] = alignment.parameters->gap;
-	}
 
 	for( int i = 0 ; i < height ; i++){
 		int offset_y = i * width * vector_len;
@@ -455,8 +450,6 @@ void NW_C_SSE (Alignment& alignment){
 
 		str_col_xmm = _mm_shuffle_epi8(str_col_xmm,reverse_mask_xmm);
 		
-		word_to_char8(str_col,str_col_xmm);
-
 		for( int j = 2; j < width ; j++){
 			int offset_x = j * vector_len;
 			//emulamos simd
@@ -501,117 +494,43 @@ void NW_C_SSE (Alignment& alignment){
 
 			}
 
-			word_to_char8(str_row,str_row_xmm);
-			
-			///************************************************************************************************************************************************************************//
 			//left score
-			//simd : leer de memoria (movdqu)
-			for( int k = 0;k < vector_len;k++){
-				left_score[k] = score_matrix[offset_y + offset_x - vector_len + k];
-			}
+			left_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
+			left_score_xmm = _mm_add_epi16(left_score_xmm, constant_gap_xmm);
 			
-			//simd : padddw
-			for( int k = 0;k < vector_len;k++){
-				left_score[k] += constant_gap[k];
-			}
-
 			//up score
-			//simd : copiar registro
-			for( int k = 0;k < vector_len;k++){
-				up_score[k] = score_matrix[offset_y + offset_x - vector_len + k];
-			}
-			//simd : shift right
-			for(int k = 1;k < vector_len ;k++){
-				up_score[k-1] = up_score[k];
-			}
-
-			//simd : insert
-			up_score[vector_len - 1] = v_aux[j-1];
-
-			//simd : padddw
-			for( int k = 0;k < vector_len;k++){
-				up_score[k] += constant_gap[k];
-			}
+			up_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
+			up_score_xmm = _mm_srli_si128(up_score_xmm, 2);
+			up_score_xmm = _mm_insert_epi8(up_score_xmm,v_aux[j-1],0b1111);
+			up_score_xmm = _mm_add_epi16(up_score_xmm, constant_gap_xmm);
+			
 
 			//diag score
-			//simd : leer de memoria (movdqu)
-			for( int k = 0;k < vector_len;k++){
-				diag_score[k] = score_matrix[offset_y + offset_x - 2*vector_len + k];
-			}
+			diag_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - 2*vector_len));
+			diag_score_xmm = _mm_srli_si128(diag_score_xmm, 2);
+			diag_score_xmm = _mm_insert_epi8(diag_score_xmm,v_aux[j-1],0b1111);
 
-			//simd : shift
-			for(int k = 1;k < vector_len ;k++){
-				diag_score[k-1] = diag_score[k];
-			}
-
-			//simd : insert
-			diag_score[vector_len - 1] = v_aux[j-2];
-		
-			//simd : PUNPCKLBW
-			for( int k = 0;k < vector_len;k++){
-				cmp_missmatch[k] = str_row[k];
-			}
-
-			//simd : PUNPCKLBW
-			for( int k = 0 ; k < vector_len ; k++){
-				cmp_match[k] = str_col[k];
-			}
-
-			//simd : compare
-			for( int k = 0 ; k < vector_len ; k++){
-				cmp_match[k] = (cmp_match[k] == cmp_missmatch[k]);
-			}
-
-			//simd : pandn
-			for( int k = 0 ; k < vector_len ; k++){
-				cmp_missmatch[k] = 1-cmp_match[k];
-			}
-
-			//simd : pmult por match
-			for( int k = 0 ; k < vector_len ; k++){
-				cmp_match[k] *= alignment.parameters->match;
-			}
-
-			//simd : pmult por missmatch
-			for( int k = 0;k < vector_len;k++){
-				cmp_missmatch[k] *= alignment.parameters->missmatch;
-			}
-
-			//simd : padddw
-			for( int k = 0;k < vector_len;k++){
-				diag_score[k] += cmp_match[k] + cmp_missmatch[k];
-			}
-			//PMAXSW
-			for( int k = 0;k < vector_len;k++){
-				diag_score[k] = max(diag_score[k],up_score[k]);
-			}
+			//compare the 2 strings and put the right penalty (match or missmatch) on each position
+			__m128i cmp_match_xmm = str_col_xmm;
+			cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
+			str_row_xmm = _mm_andnot_si128(cmp_match_xmm,constant_missmatch_xmm);
+			cmp_match_xmm = _mm_and_si128(cmp_match_xmm,constant_match_xmm);
 			
-			//PMAXSW
-			for( int k = 0;k < vector_len;k++){
-				diag_score[k] = max(diag_score[k],left_score[k]);
-			}
+			//get the max score of diag,up,left
+			diag_score_xmm = _mm_add_epi16(diag_score_xmm, cmp_match_xmm);
+			diag_score_xmm = _mm_add_epi16(diag_score_xmm, str_row_xmm);
 
-			//simd : mover a memoria
-			for( int k = 0;k < vector_len;k++){
-				score_matrix[offset_y + offset_x + k] = diag_score[k];
-			}
+			diag_score_xmm = _mm_max_epi16(diag_score_xmm,up_score_xmm);
+			diag_score_xmm = _mm_max_epi16(diag_score_xmm,left_score_xmm);
 
-			//simd : PEXTRW
-			if(j-vector_len >= 0)
-				v_aux[j-vector_len] = diag_score[0];
+			//save the max score in the right position of score matrix
+			_mm_storeu_si128((__m128i*)(score_matrix + offset_y + offset_x), diag_score_xmm);
+
+			v_aux[j - vector_len] =  _mm_extract_epi16 (diag_score_xmm, 0b0000);
 
 		}	
 	}
 
-	free(str_row);
-	free(str_col);
-	free(left_score);
-	free(up_score);
-	free(diag_score);
-	free(constant_gap);
-	free(cmp_missmatch);
-	free(cmp_match);
-	
 	backtracking_C(
 		score_matrix,
 		alignment,

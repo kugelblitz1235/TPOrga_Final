@@ -33,6 +33,8 @@ short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vecto
 
 void print128_hex(__m128i var);
 
+void word_to_arr8(short* p,__m128i reg);
+
 void word_to_char8(char* p,__m128i reg);
 __m128i char_to_word8(char* p);
 

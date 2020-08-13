@@ -242,6 +242,11 @@ void print128_hex(__m128i var)
            val[6], val[7]);
 }
 
+void word_to_arr8(short* p,__m128i reg){
+	_mm_storeu_si128((__m128i*)p,reg);
+}
+
+
 void word_to_char8(char* p,__m128i reg){
   __m128i a = _mm_packus_epi16(reg,reg);
   _mm_storeu_si64((__m128i*)p,a);
