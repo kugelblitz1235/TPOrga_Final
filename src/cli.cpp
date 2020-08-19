@@ -110,9 +110,19 @@ int main (int argc, char **argv)
 /*Alignment* alignment = align_sequences("NW", "LIN",(char*) "GCATGCU",(char*) "GATTACA", -1,-1,1 );
 */
   Alignment* alignment = new_alignment();
+
+/*
+  alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
+	alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
+  NW_C_SSE(*alignment);
+  */
   alignment->sequence_1 = new_Sequence_from_string((char*) "TGTTACGG");
 	alignment->sequence_2 = new_Sequence_from_string((char*) "GGTTGACTA");
-  SW_C_withLogicSSE(*alignment);
+  alignment->parameters->gap = -2;
+  alignment->parameters->match = 3;
+  alignment->parameters->missmatch = -3;
+  SW_C_SSE(*alignment);
+  
   /*
   short nums[8];
   for(int i = 0;i < 8;i++)

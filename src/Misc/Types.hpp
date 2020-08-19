@@ -31,20 +31,21 @@ struct Metrics{
 // long long cycles;
 };
 
+struct AlignmentMatrix{
+  short* matrix;
+};
+
+AlignmentMatrix* new_alignment_matrix(int vector_length,int seq_length_1,int seq_length_2);
+
 struct Alignment{
   Sequence* sequence_1;
   Sequence* sequence_2;
   Parameters* parameters;
   Result* result;
+  AlignmentMatrix* matrix;
 };
 
 Alignment* new_alignment();
 void destroy_alignment(Alignment* a);
-
-struct AlignmentMatrix{
-  short* matrix;
-};
-
-AlignmentMatrix* new_alignment_matrix(unsigned int vector_length,unsigned int seq_length_1,unsigned int seq_length_2);
 
 #endif

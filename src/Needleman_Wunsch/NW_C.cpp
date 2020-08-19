@@ -6,7 +6,7 @@
 using namespace std;
 
 
-void NW_C_LIN(Alignment& alignment){
+void NW_C_LIN(Alignment& alignment, bool debug){
 	
 	unsigned int seq1_len = alignment.sequence_1->length;
 	unsigned int seq2_len = alignment.sequence_2->length;
@@ -18,6 +18,7 @@ void NW_C_LIN(Alignment& alignment){
 	for(unsigned int y = 0;y < seq2_len;y++)
 		scores[y] = (short*)malloc((seq1_len)*sizeof(short));
 	
+
 	scores[0][0] = 0;
 	
 	for(unsigned int y = 1;y < seq2_len;y++){
@@ -47,13 +48,17 @@ void NW_C_LIN(Alignment& alignment){
 		}
 	}
 	
-	cerr << "Score Matrix" << endl;
-	for(unsigned int y = 0;y < seq2_len;y++){
-		for(unsigned int x = 0;x < seq1_len;x++){
-			cerr << (int)scores[y][x] << " ";
-		}
-		cerr << endl << endl;
-	}	
+	if(debug){
+		alignment.matrix = new_alignment_matrix(1, seq1_len, seq2_len);
+		alignment.matrix->matrix = (short *) scores;
+		cerr << "Score Matrix" << endl;
+		for(unsigned int y = 0;y < seq2_len;y++){
+			for(unsigned int x = 0;x < seq1_len;x++){
+				cerr << (int)scores[y][x] << " ";
+			}
+			cerr << endl << endl;
+		}	
+	}
 	
 	backtracking_C(
 		(short*)scores,
@@ -65,12 +70,15 @@ void NW_C_LIN(Alignment& alignment){
 		false
 	);
 
-	
-	for(unsigned int y = 0;y < seq2_len;y++){
-		free(scores[y]);
+	if ( !debug ){
+		for(unsigned int y = 0;y < seq2_len;y++){
+			free(scores[y]);
+		}
+		free(scores);
+
 	}
 	
-	free(scores);
+	
 
 }
 
@@ -87,7 +95,7 @@ Alignment* alignment_by_NW(std::string implementation, char* sequence_1, char* s
 
 	if(implementation.compare("C") == 0){
 		//ejecuto la implementación en c
-		NW_C_LIN(*alignment);
+		NW_C_LIN(*alignment, true);
 	
 	}else if(implementation.compare("LIN") == 0){
 		
@@ -103,7 +111,7 @@ Alignment* alignment_by_NW(std::string implementation, char* sequence_1, char* s
 	return alignment;
 }
 
-void NW_C_withLogicSSE (Alignment& alignment){
+void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;	
 	char* seq2 = alignment.sequence_2->sequence;
 	unsigned int seq1_len = alignment.sequence_1->length;
@@ -111,7 +119,7 @@ void NW_C_withLogicSSE (Alignment& alignment){
 	
 	
 	//en este caso hardcodeamos el tamaño del vector
-	int vector_len = 16;
+	int vector_len = 8;
 	
 	int height = ((seq2_len + vector_len - 1)/ vector_len); //cantidad de "franjas" de diagonales
 	int width = (1 + seq1_len + vector_len - 1); //cantidad de diagonales por franja
@@ -344,6 +352,18 @@ void NW_C_withLogicSSE (Alignment& alignment){
 	free(cmp_missmatch);
 	free(cmp_match);
 	
+	if(debug){
+		for(int i=0;i<seq2_len;i++){
+			for(int j=0;j<seq1_len;j++){
+				cerr<<get_score_SSE(score_matrix,seq1_len,i,j,vector_len)<<" ";
+			}cerr<<endl;
+		}
+
+		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
+		alignment.matrix->matrix = score_matrix;
+
+	}
+
 	backtracking_C(
 		score_matrix,
 		alignment,
@@ -354,10 +374,10 @@ void NW_C_withLogicSSE (Alignment& alignment){
 		false
 	);
 
-	free(score_matrix);
+	if(!debug)free(score_matrix);
 }
 
-void NW_C_SSE (Alignment& alignment){
+void NW_C_SSE (Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;	
 	char* seq2 = alignment.sequence_2->sequence;
 	unsigned int seq1_len = alignment.sequence_1->length;
@@ -437,7 +457,7 @@ void NW_C_SSE (Alignment& alignment){
 			__m128i offset_str_col_xmm = _mm_insert_epi8(offset_str_col_xmm,2*offset_col,0);
 			offset_str_col_xmm = _mm_broadcastb_epi8(offset_str_col_xmm);
 			offset_str_col_xmm = _mm_add_epi8(identity_shift_mask_xmm,offset_str_col_xmm);
-			str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_col_xmm);
+			str_col_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_col_xmm);
 			
 
 		}else{
@@ -501,15 +521,14 @@ void NW_C_SSE (Alignment& alignment){
 			//up score
 			up_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
 			up_score_xmm = _mm_srli_si128(up_score_xmm, 2);
-			up_score_xmm = _mm_insert_epi8(up_score_xmm,v_aux[j-1],0b1111);
+			up_score_xmm = _mm_insert_epi16(up_score_xmm,v_aux[j-1],0b111);
 			up_score_xmm = _mm_add_epi16(up_score_xmm, constant_gap_xmm);
 			
-
 			//diag score
 			diag_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - 2*vector_len));
 			diag_score_xmm = _mm_srli_si128(diag_score_xmm, 2);
-			diag_score_xmm = _mm_insert_epi8(diag_score_xmm,v_aux[j-1],0b1111);
-
+			diag_score_xmm = _mm_insert_epi16(diag_score_xmm,v_aux[j-2],0b111);
+		
 			//compare the 2 strings and put the right penalty (match or missmatch) on each position
 			__m128i cmp_match_xmm = str_col_xmm;
 			cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
@@ -530,6 +549,11 @@ void NW_C_SSE (Alignment& alignment){
 
 		}	
 	}
+	if(debug){
+		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
+		alignment.matrix->matrix = score_matrix;
+
+	}
 
 	backtracking_C(
 		score_matrix,
@@ -541,7 +565,7 @@ void NW_C_SSE (Alignment& alignment){
 		false
 	);
 
-	free(score_matrix);
+	if(!debug) free(score_matrix);
 }
 
 

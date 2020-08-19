@@ -35,7 +35,9 @@ void backtracking_C(
 	unsigned int length = 0;
 	
 	while(y != 0 || x != 0){
-
+		cerr<<"step"<<endl;
+		DBG(x);
+		DBG(y);
 		if(y > 0 && x > 0){
 			if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0)
 				break;
@@ -233,6 +235,12 @@ short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vecto
 	return matrix_ptr[y][x];
 }
 
+void print_arr(short* p, unsigned int len){
+	for(int i=0;i<len;i++)
+		cerr<<p[i]<<" ";
+	cerr<<endl;
+}
+
 void print128_hex(__m128i var)
 {
     uint16_t val[8];
@@ -240,6 +248,10 @@ void print128_hex(__m128i var)
     printf("Reg content: %04X %04X %04X %04X %04X %04X %04X %04X \n", 
            val[0], val[1], val[2], val[3], val[4], val[5], 
            val[6], val[7]);
+}
+
+void reg_to_arr(short* p,__m128i reg){
+	_mm_storeu_si128((__m128i*)p,reg);
 }
 
 void word_to_arr8(short* p,__m128i reg){

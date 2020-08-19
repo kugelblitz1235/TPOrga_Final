@@ -16,4 +16,6 @@ Alignment* alignment_by_SW(std::string implementation,char * sequence_1, char* s
 
 void SW_C_withLogicSSE (Alignment& alignment);
 
+void SW_C_SSE (Alignment& alignment);
+
 #endif // SW_C_H

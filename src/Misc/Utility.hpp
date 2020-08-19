@@ -31,7 +31,11 @@ void backtracking_C(
 short get_score_SSE(short* score_matrix, int seq_row_len, int y,int x, int vector_len=4);
 short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vector_len=4);
 
+void print_arr(short* p, unsigned int len);
+
 void print128_hex(__m128i var);
+
+void reg_to_arr(short* p,__m128i reg);
 
 void word_to_arr8(short* p,__m128i reg);
 

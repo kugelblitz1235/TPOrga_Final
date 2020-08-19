@@ -76,15 +76,16 @@ void destroy_result(Result* result){
 
 Alignment* new_alignment() {
     Parameters* p = (Parameters*) malloc(sizeof(Parameters));
-    p->match = 3;
-    p->gap = -2;
-    p->missmatch = -3;
+    p->match = 1;
+    p->gap = -1;
+    p->missmatch = -1;
     p->algorithm = NULL;
     Alignment* a = (Alignment*) malloc(sizeof(Alignment));
     a->sequence_1 = NULL;
     a->sequence_2 = NULL;
     a->parameters = p;
-    a->result = new_result();      
+    a->result = new_result();
+    a->matrix = NULL;
     
     return a;
 }
@@ -104,12 +105,14 @@ void destroy_alignment(Alignment* a) {
             free(a->parameters->algorithm);
         }
         free(a->parameters);
+        free(a->matrix);
         free(a);
+
     };    
 }
 
-AlignmentMatrix* new_alignment_matrix(unsigned int vector_length,unsigned int seq_length_1,unsigned int seq_length_2){
+AlignmentMatrix* new_alignment_matrix(int vector_length,int seq_length_1,int seq_length_2){
     AlignmentMatrix* alignment_matrix = (AlignmentMatrix*)malloc(sizeof(AlignmentMatrix));
-    alignment_matrix->matrix = (short*)malloc((1+seq_length_1+vector_length-1)*((seq_length_2+vector_length-1)/vector_length)*sizeof(short));
+    alignment_matrix->matrix = (short*)malloc((1+seq_length_1+vector_length-1) * ((seq_length_2+vector_length-1)/vector_length) * vector_length * sizeof(short));
     return alignment_matrix;
 }

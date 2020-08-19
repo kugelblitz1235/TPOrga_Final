@@ -8,9 +8,9 @@
 #include <emmintrin.h>
 #include <immintrin.h>
 
-void NW_C_LIN (Alignment& alignment);
-void NW_C_SSE (Alignment& alignment);
-void NW_C_withLogicSSE (Alignment& alignment);
+void NW_C_LIN (Alignment& alignment, bool debug);
+void NW_C_SSE (Alignment& alignment, bool debug);
+void NW_C_withLogicSSE (Alignment& alignment, bool debug);
 //se le pasa por parametro la secuencia a alinear y los scores
 Alignment* alignment_by_NW(std::string implementation, char * sequence_1, char* sequence_2, short gap, short missmatch, short match);
 
