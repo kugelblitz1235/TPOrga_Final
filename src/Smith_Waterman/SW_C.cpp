@@ -610,12 +610,16 @@ void SW_C_SSE (Alignment& alignment){
 			
 			int max_index = __builtin_ffsll(index_mask)/8;
 			short max_local_score =  _mm_extract_epi16 (nums_xmm, 0b0000);
-			
+		
+			DBG(i);
+			DBG(j);
+			short sarr[8];
+			reg_to_arr(sarr,diag_score_xmm);
+			cerr<<"scores: ";print_arr(sarr,8);
 			if(best_global < max_local_score){
+				
 				best_global = max_local_score;
 				DBG(max_index);
-				DBG(i);
-				DBG(j);
 				DBG(max_local_score);
 				best_y = vector_len * i + (vector_len-1) - max_index;
 				best_x = j - vector_len + max_index;

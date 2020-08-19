@@ -35,9 +35,9 @@ void backtracking_C(
 	unsigned int length = 0;
 	
 	while(y != 0 || x != 0){
-		cerr<<"step"<<endl;
-		DBG(x);
-		DBG(y);
+		// cerr<<"step"<<endl;
+		// DBG(x);
+		// DBG(y);
 		if(y > 0 && x > 0){
 			if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0)
 				break;
@@ -86,11 +86,11 @@ void backtracking_C(
 		best_sequence_2[length-1-i] = swap;
 	}
 	
-	cerr << "Best sequences" << endl;
+	// cerr << "Best sequences" << endl;
 	best_sequence_1[length]=0;
 	best_sequence_2[length]=0;
-	DBG(best_sequence_2);
-	DBG(best_sequence_1);
+	// DBG(best_sequence_2);
+	// DBG(best_sequence_1);
 	alignment.result->sequence_1 = new_Sequence_from_string(best_sequence_1);
 	alignment.result->sequence_2 = new_Sequence_from_string(best_sequence_2);
 	alignment.result->score = score_fun(score_matrix, seq1_len,alignment.sequence_2->length-1,alignment.sequence_1->length-1,vector_len);
