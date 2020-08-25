@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <string.h>
+#include <vector>
 
 #include "Utility.hpp"
 
@@ -14,7 +15,7 @@ void backtracking_C(
 	short *score_matrix,
 	Alignment& alignment,
 	int vector_len,
-	unsigned int x,unsigned int y,
+	unsigned int best_x,unsigned int best_y,
 	bool SW,
 	score_fun_t score_fun,
 	bool debug = false
@@ -29,10 +30,13 @@ void backtracking_C(
 	Sequence* best_seq_1 = alignment.result->sequence_1;
 	Sequence* best_seq_2 = alignment.result->sequence_2;
 
-	char* best_sequence_1 = (char*)malloc(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
-	char* best_sequence_2 = (char*)malloc(alignment.sequence_1->length+1+alignment.sequence_2->length+1);
+	char* best_sequence_1 = (char*)malloc(seq1_len+1+seq2_len+1);
+	char* best_sequence_2 = (char*)malloc(seq1_len+1+seq2_len+1);
 	
 	unsigned int length = 0;
+	
+	unsigned int x = best_x;
+	unsigned int y = best_y;
 	
 	while(y != 0 || x != 0){
 		// cerr<<"step"<<endl;
@@ -89,11 +93,12 @@ void backtracking_C(
 	// cerr << "Best sequences" << endl;
 	best_sequence_1[length]=0;
 	best_sequence_2[length]=0;
-	// DBG(best_sequence_2);
-	// DBG(best_sequence_1);
+	DBG(best_sequence_2);
+	DBG(best_sequence_1);
 	alignment.result->sequence_1 = new_Sequence_from_string(best_sequence_1);
 	alignment.result->sequence_2 = new_Sequence_from_string(best_sequence_2);
-	alignment.result->score = score_fun(score_matrix, seq1_len,alignment.sequence_2->length-1,alignment.sequence_1->length-1,vector_len);
+	
+	alignment.result->score = score_fun(score_matrix, seq1_len,best_y,best_x,vector_len);
 
 	//creamos los nuevos strings y destruimos los anteriores
 	best_seq_1 = new_Sequence_from_string(best_sequence_1);
@@ -107,114 +112,180 @@ void backtracking_C(
 }
 
 
-void printSpaceLine(int dataSize,int columns){
-	for(int x = 0;x < columns*(dataSize+1);x++){
-		if(x%(dataSize+1)==0)cout<<"|";
-		else cout << " ";
+void printStartLine(int row, int vector_len){
+	int espacios = (vector_len-1)-(row % vector_len);
+	for	(int i = 0; i < espacios; i++){
+		cout << "   ";
 	}
-	cout << "|" << endl;
 }
 
-void printDivisionLine(int dataSize,int columns){
-	for(int x = 0;x < columns*(dataSize+1);x++){
-		if(x%(dataSize+1)==0)cout<<"+";
-		else cout << "-";
+void printEndLine(int row, int vector_len){
+	int espacios = (row % vector_len);
+	for	(int i = 0; i < espacios; i++){
+		cout << "   ";
 	}
-	cout << "+" << endl;
+	cout << endl;
 }
 
-void printScoreMatrix(short* matrix,Alignment* alignment,int vec){
-	int s1 = alignment->sequence_1->length;
-	int s2 = alignment->sequence_2->length;;
-	char* s1s = alignment->sequence_1->sequence;
-	char* s2s = alignment->sequence_2->sequence;
-	/*if(alignment->sequence_1->length >alignment->sequence_2->length){
-		s1 = alignment->sequence_1->length;
-		s1s = alignment->sequence_1->sequence;
-	}else{
-		s1 = alignment->sequence_2->length;
-		s1s = alignment->sequence_2->sequence;
-	}
-	
-	if(alignment->sequence_1->length <= alignment->sequence_2->length){
-		s2 = alignment->sequence_1->length;
-		s2s = alignment->sequence_1->sequence;
-	}else{
-		s2 = alignment->sequence_2->length;
-		s2s = alignment->sequence_2->sequence;
-	}
+void paintLine(vector<vector<char>>& canvasMatrix, int squareHeight, int squareWidth, int x, int y, int length, bool orientation){
+	/*
+		orientation = false ---> vertical
+		orientation = true ----> horizontal
 	*/
 	
-	int dataSize = 6;
-	
-	int rows =  ((s2 + vec - 1) / vec)*vec;
-	int columns = s1 + vec + vec - 1;
-	
-	printDivisionLine(dataSize,columns+1);
-	for(int i = 0;i < dataSize/4;i++)
-		printSpaceLine(dataSize,columns+1);
-		
-	for(int x = 0;x < columns;x++){
-		cout << "|";
-		string number = "";
-		if(vec <= x && x < columns-vec+1)
-			number = string(1,s1s[x-vec]);
-		
-		for(int i = 0;i < dataSize/2;i++)
-			cout << " ";
-		cout << number;
-		for(int i = 0;i < (dataSize+1)/2;i++)
-			cout << " ";
-	}
-	cout << "|" << endl;
-	for(int i = 0;i < dataSize/4;i++)
-		printSpaceLine(dataSize,columns+1);
-
-	for(int y = 0;y < rows;y++){
-		printDivisionLine(dataSize,columns+1);
-		for(int i = 0;i < dataSize/4;i++)
-			printSpaceLine(dataSize,columns+1);
-		
-		cout << "|";
-		string number = "";
-		if(y < s2)
-			number = string(1,s2s[y]);
-		int space = dataSize-number.size();
-		
-		for(int i = 0;i < space/2;i++)
-			cout << " ";
-		cout << number;
-		for(int i = 0;i < (space+1)/2;i++)
-			cout << " ";
-			
-		for(int x = 0;x < columns;x++){
-			cout << "|";
-			string number;
-			if(x < (vec-1-(y%vec)) || (columns-(y%vec) - 1)< x){
-				number = " ";
-			}else{
-				int xx = x-vec;
-				int yy = y;
-				int index = 0;
-				index += (yy/vec)*(s1+vec)*vec;
-				index += vec*(xx+4);
-				index += (1-vec)*(vec-1-yy%vec);
-				number = to_string(matrix[index]);
-			}
-			
-			int space = dataSize-number.size();
-			
-			for(int i = 0;i < space/2;i++)
-				cout << " ";
-			cout << number;
-			for(int i = 0;i < (space+1)/2;i++)
-				cout << " ";
+	if(orientation == true){
+		for (int j = 0; j < (squareWidth-1)*length+1; j++)
+		{
+			if(j % (squareWidth-1) == 0)
+				canvasMatrix[y][x+j] =  '@';
+			else
+				canvasMatrix[y][x+j] =  '@';
 		}
-		cout << "|" << endl;
-		for(int i = 0;i < dataSize/4;i++)
-			printSpaceLine(dataSize,columns+1);
+	}else{
+		for (int i = 0; i < (squareHeight-1)*length+1; i++)
+		{
+			if(i % (squareHeight-1) == 0)
+				canvasMatrix[y+i][x] =  '@';
+			else
+				canvasMatrix[y+i][x] =  '@';
+		}
 	}
-	printDivisionLine(dataSize,columns+1);
+	
+}
+
+void paintSquare(vector<vector<char>>& canvasMatrix, int squareHeight, int squareWidth, int x, int y, string data){
+	int size = data.size();
+	int start_pos = (squareWidth - size)/2;
+	int end_pos = start_pos + size;
+	
+	for (int i = 0; i < squareHeight; i++)
+	{
+		for (int j = 0; j < squareWidth; j++)
+		{
+			if (i == 0 || i == squareHeight-1)
+			{
+				// borde superior e inferior
+				canvasMatrix[y+i][x+j] =  '-';
+			} else if (j == 0 || j == squareWidth-1)
+			{
+				// borde lateral
+				canvasMatrix[y+i][x+j] = '|';
+			} else if (i == squareHeight / 2 && j >= start_pos && j < end_pos)
+			{
+				// tengo que imprimir el nro
+				canvasMatrix[y+i][x+j] = data[j-start_pos];
+			} else {
+				// espacio vacio
+				canvasMatrix[y+i][x+j] = ' ';
+			}
+		}
+		
+	}
+
+	canvasMatrix[y][x] = '+';
+	canvasMatrix[y][x+squareWidth-1] = '+';
+	canvasMatrix[y+squareHeight-1][x] = '+';
+	canvasMatrix[y+squareHeight-1][x+squareWidth-1] = '+'; 	
+}
+
+void printScoreMatrix2(short* matrix,Alignment* alignment,int vec){
+	unsigned int seq1_len = alignment->sequence_1->length;
+	unsigned int seq2_len = alignment->sequence_2->length;
+	//en este caso hardcodeamos el tamaño del vector
+	int vector_len = vec;
+	
+	int height = ((seq2_len + vector_len - 1)/ vector_len); //cantidad de "franjas" de diagonales
+	int width = (1 + seq1_len + vector_len - 1); //cantidad de diagonales por franja
+	
+	vector<vector<int>> score_matrix(height*vector_len,vector<int>(width,-100000));
+	
+	for(int i = 0 ; i < height ; i++){
+		unsigned int offset_y = i * width * vector_len;
+		for( int j = 0; j < width ; j++){
+			unsigned int offset_x = j * vector_len;
+
+			for(int k = 0;k < vector_len;k++){
+				score_matrix[i*vector_len+k][j] = matrix[offset_y+offset_x+vector_len-1-k];
+			}			
+		}
+	}
+
+	int squareWidth = 8;
+	int squareHeight = 3;
+	int canvasHeight = height*vector_len*squareHeight;
+	int canvasWidth = (width+vector_len-1)*squareWidth;
+
+	vector<vector<char>> canvasMatrix(canvasHeight,vector<char>(canvasWidth,' '));
+	for(int i = 0 ; i < height ; i++){
+		for(int k=0;k < vector_len; k++){
+			for(int j = 0; j < width ; j++){
+				int mx = j+(vector_len-1-(i*vector_len+k)%vector_len)+1;
+				int my = (i*vector_len+k)+1;
+				
+				paintSquare(
+					canvasMatrix,
+					squareHeight,squareWidth,
+					mx*(squareWidth-1),
+					my*(squareHeight-1),
+					to_string(score_matrix[i*vector_len+k][j])
+				);	
+			}	 
+		}
+	}
+
+	for(unsigned int i = 0; i < seq1_len; i++){
+		paintSquare(
+			canvasMatrix,
+			squareHeight,squareWidth,
+			(i+vector_len+1)*(squareWidth-1),
+			0,
+			string(1,alignment->sequence_1->sequence[i])
+		);	
+	}
+
+	for(unsigned int i = 0; i < seq2_len; i++){
+		paintSquare(
+			canvasMatrix,
+			squareHeight,squareWidth,
+			0,
+			(i+1)*(squareHeight-1),
+			string(1,alignment->sequence_2->sequence[i])
+		);	
+	}
+
+	paintLine(
+		canvasMatrix,
+		squareHeight,squareWidth,
+		(vector_len+1)*(squareWidth-1),(0+1)*(squareHeight-1),
+		seq2_len,
+		false);
+	
+	paintLine(
+		canvasMatrix,
+		squareHeight,squareWidth,
+		(vector_len+1)*(squareWidth-1),(0+1)*(squareHeight-1),
+		seq1_len,
+		true);
+
+	paintLine(
+		canvasMatrix,
+		squareHeight,squareWidth,
+		(vector_len+seq1_len+1)*(squareWidth-1),(0+1)*(squareHeight-1),
+		seq2_len,
+		false);
+		
+	paintLine(
+		canvasMatrix,
+		squareHeight,squareWidth,
+		(vector_len+1)*(squareWidth-1),(seq2_len+1)*(squareHeight-1),
+		seq1_len,
+		true);
+
+	for(auto& row : canvasMatrix){
+		for(char c : row){
+			cout<<c;
+		}cout<<endl;
+	}
 }
 
 short get_score_SSE(short* score_matrix, int seq_row_len, int y,int x, int vector_len){
@@ -235,7 +306,7 @@ short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vecto
 	return matrix_ptr[y][x];
 }
 
-void print_arr(short* p, unsigned int len){
+void print_arr(short* p, int len){
 	for(int i=0;i<len;i++)
 		cerr<<p[i]<<" ";
 	cerr<<endl;

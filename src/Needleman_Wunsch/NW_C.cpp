@@ -13,11 +13,12 @@ void NW_C_LIN(Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;
 	char* seq2 = alignment.sequence_2->sequence;
 	
+		
 	short** scores = (short**)malloc((seq2_len)*sizeof(short*));
+	short* tmp_scores = (short*)malloc((seq2_len*seq1_len)*sizeof(short));
 	
 	for(unsigned int y = 0;y < seq2_len;y++)
-		scores[y] = (short*)malloc((seq1_len)*sizeof(short));
-	
+		scores[y] = &tmp_scores[y*seq1_len];
 
 	scores[0][0] = 0;
 	
@@ -70,13 +71,14 @@ void NW_C_LIN(Alignment& alignment, bool debug){
 		false
 	);
 
-	if ( !debug ){
-		for(unsigned int y = 0;y < seq2_len;y++){
-			free(scores[y]);
-		}
+	
+	if(!debug){
+		free(tmp_scores);
 		free(scores);
-
 	}
+
+
+	
 	
 	
 
@@ -552,7 +554,6 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	if(debug){
 		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
 		alignment.matrix->matrix = score_matrix;
-
 	}
 
 	backtracking_C(

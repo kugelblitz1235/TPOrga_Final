@@ -113,6 +113,6 @@ void destroy_alignment(Alignment* a) {
 
 AlignmentMatrix* new_alignment_matrix(int vector_length,int seq_length_1,int seq_length_2){
     AlignmentMatrix* alignment_matrix = (AlignmentMatrix*)malloc(sizeof(AlignmentMatrix));
-    alignment_matrix->matrix = (short*)malloc((1+seq_length_1+vector_length-1) * ((seq_length_2+vector_length-1)/vector_length) * vector_length * sizeof(short));
+    alignment_matrix->matrix;// = (short*)malloc((1+seq_length_1+vector_length-1) * ((seq_length_2+vector_length-1)/vector_length) * vector_length * sizeof(short));
     return alignment_matrix;
 }

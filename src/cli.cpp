@@ -14,30 +14,31 @@ using namespace std;
 //funcion que selecciona el algoritmo, la implementacion y recibe los parametros para ejecutarla
 Alignment* align_sequences (std::string algorithm, std::string implementation, char* sequence_1, char* sequence_2, short gap, short missmatch, short match){
 	
-  try
-  {
-    
-      //los cambio a mayusculas para una mejor comparacion
-      for (auto & c: algorithm) c = toupper(c);
-      for (auto & c: implementation) c = toupper(c);
+    try
+    {
+      
+          //los cambio a mayusculas para una mejor comparacion
+          for (auto & c: algorithm) c = toupper(c);
+          for (auto & c: implementation) c = toupper(c);
 
-      if(algorithm.compare("NW") == 0){
-        
-        return alignment_by_NW(implementation, sequence_1, sequence_2, gap, missmatch, match);
+          if(algorithm.compare("NW") == 0){
+            
+            return alignment_by_NW(implementation, sequence_1, sequence_2, gap, missmatch, match);
 
-      }
-      else if (algorithm.compare("SW") == 0)
-      {
-        return alignment_by_SW(implementation, sequence_1, sequence_2, gap, missmatch, match);
-      }
-      else{
-        throw "Los parámetros ingresados son inválidos.";
-      }
+          }
+          else if (algorithm.compare("SW") == 0)
+          {
+            return alignment_by_SW(implementation, sequence_1, sequence_2, gap, missmatch, match);
+          }
+          else{
+            throw "Los parámetros ingresados son inválidos.";
+          }
 
-  }catch(char * ex){
-    std::cout<<ex;
-  }
-	
+    }
+    catch(char * ex){
+      std::cout<<ex;
+    }
+	return NULL;
 }
 
 int main (int argc, char **argv)
@@ -121,31 +122,8 @@ int main (int argc, char **argv)
   alignment->parameters->gap = -2;
   alignment->parameters->match = 3;
   alignment->parameters->missmatch = -3;
-  SW_C_SSE(*alignment);
-  
-  /*
-  short nums[8];
-  for(int i = 0;i < 8;i++)
-    nums[i] = i;
+  SW(*alignment, true);
 
-  __m128i a = _mm_loadu_si128((__m128i*)nums);
-
-  a = _mm_add_epi16(a,a);
-
-  _mm_storeu_si128((__m128i*)nums,a);
-  
-  for(int i = 0;i < 8;i++)
-    cerr << nums[i] << " ";
-    cerr<<endl;
-  */
- /*char str[9] = {'A','B','C','D','E','F','G','H','\0'};
-  __m128i a = char_to_word8(str);
-  print128_hex(a);
-  char str2[9];
-  str2[8]='\0';
-  word_to_char8(str2,a);
-  printf("%s\n",str2);
-  */
   return 0;
 }
 

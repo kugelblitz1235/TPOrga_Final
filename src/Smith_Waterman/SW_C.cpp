@@ -16,13 +16,14 @@ void SW(
 	char* seq2 = alignment.sequence_2->sequence;
 	
 	short** scores = (short**)malloc((seq2_len)*sizeof(short*));
+	short* tmp_scores = (short*)malloc((seq2_len*seq1_len)*sizeof(short));
 	
 	for(unsigned int y = 0;y < seq2_len;y++)
-		scores[y] = (short*)malloc((seq1_len)*sizeof(short));
+		scores[y] = &tmp_scores[y*seq1_len];
 	
 	for(unsigned int y = 0;y < seq2_len;y++)
 		scores[y][0] = 0;
-	
+		
 	for(unsigned int x = 0;x < seq1_len;x++)
 		scores[0][x] = 0;
 	
@@ -65,6 +66,12 @@ void SW(
 		}	
 	}
 	
+
+	if(debug){
+		alignment.matrix = new_alignment_matrix(1, seq1_len, seq2_len);
+		alignment.matrix->matrix = (short *)scores;
+	}
+
 	backtracking_C(
 		(short*)scores,
 		alignment,
@@ -75,11 +82,10 @@ void SW(
 		false
 	);
 
-	
-	for(unsigned int y = 0;y < seq2_len;y++)
-		free(scores[y]);
-	
-	free(scores);
+	if(!debug){
+		free(tmp_scores);
+		free(scores);
+	}
 }
 
 Alignment* alignment_by_SW(std::string implementation, char * sequence_1, char* sequence_2, short gap, short missmatch, short match){
@@ -151,7 +157,6 @@ void SW_C_withLogicSSE (Alignment& alignment){
 	}
 	/******************************************************************************************************/
 	short best_global = 0;
-	unsigned int best_index = 0;
 	unsigned int best_x;
 	unsigned int best_y;
 
@@ -382,8 +387,8 @@ void SW_C_withLogicSSE (Alignment& alignment){
 	
 	DBG(best_global);
 
-	for(int i=0;i<seq2_len;i++){
-		for(int j=0;j<seq1_len;j++){
+	for(unsigned int i=0;i<seq2_len;i++){
+		for(unsigned int j=0;j<seq1_len;j++){
 			cerr<<get_score_SSE(score_matrix,seq1_len,i,j,vector_len)<<" ";
 		}cerr<<endl;
 	}
@@ -401,7 +406,7 @@ void SW_C_withLogicSSE (Alignment& alignment){
 	free(score_matrix);
 }
 
-void SW_C_SSE (Alignment& alignment){
+void SW_C_SSE (Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;	
 	char* seq2 = alignment.sequence_2->sequence;
 	unsigned int seq1_len = alignment.sequence_1->length;
@@ -424,6 +429,7 @@ void SW_C_SSE (Alignment& alignment){
 	}
 
 	int count=0;
+
 	for(int i = 0 ; i < height ; i++){
 		unsigned int offset_y = i * width * vector_len;
 		for( int j = 0; j < 2 ; j++){
@@ -434,11 +440,12 @@ void SW_C_SSE (Alignment& alignment){
 					score_matrix[offset_y + offset_x + k] = 0;
 				else
 					score_matrix[offset_y + offset_x + k] = SHRT_MIN/2;
+				
 				count++;
 			}			
 		}
 	}
-	/******************************************************************************************************/
+/******************************************************************************************************/
 	__m128i constant_gap_xmm;
 	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
 	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
@@ -455,7 +462,9 @@ void SW_C_SSE (Alignment& alignment){
 	__m128i up_score_xmm;
 	__m128i diag_score_xmm;
 
-	char identity_shift_mask[16] = {0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF};
+	//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
+	char identity_shift_mask[16] = {0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F};
+
 	//|0001|0000|0003|0002|0005|0004|0007|0006|0009|0008|000B|000A|000D|000C|000F|000E|
 	char reverse_mask[16] = {0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1};
 	__m128i reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
@@ -485,13 +494,18 @@ void SW_C_SSE (Alignment& alignment){
 			__m128i offset_str_col_xmm = _mm_insert_epi8(offset_str_col_xmm,2*offset_col,0);
 			offset_str_col_xmm = _mm_broadcastb_epi8(offset_str_col_xmm);
 			offset_str_col_xmm = _mm_add_epi8(identity_shift_mask_xmm,offset_str_col_xmm);
-			str_col_xmm = _mm_shuffle_epi8(str_col_xmm,offset_str_col_xmm);
 			
+			//las posiciones que se correspondan con caracteres basura (que no existen) van a tener un 1 en la posicion mas significativa
+			__m128i ones_mask = _mm_srai_epi16 (offset_str_col_xmm, 15);
+			
+			str_col_xmm = _mm_shuffle_epi8(str_col_xmm,offset_str_col_xmm);
+
+			//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
+			str_col_xmm = _mm_or_si128(str_col_xmm,ones_mask);
 
 		}else{
 			//simd : leer de memoria (movdqu)
 			str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
-			__m128i zeroes_xmm = _mm_setzero_si128();
 			str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
 			
 		}
@@ -513,22 +527,12 @@ void SW_C_SSE (Alignment& alignment){
 				//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
 				//simd : shift left
 				
-				cerr<<"-----------"<<endl;
-				DBG(i);
-				DBG(j);
-				short carr[8];
-				short rarr[8];
-
 				__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
 				offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
 				offset_str_row_xmm = _mm_sub_epi8(identity_shift_mask_xmm,offset_str_row_xmm);
 		
-				reg_to_arr(rarr,str_row_xmm);
-				print_arr(rarr,8);
 				str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
 			
-				reg_to_arr(rarr,str_row_xmm);
-				print_arr(rarr,8);
 			}else if(j > width-vector_len){ // desborde por derecha
 				//simd : desplazamiento de puntero y levantar datos de memoria
 				int offset_str_row = j - (width-vector_len);
@@ -565,11 +569,6 @@ void SW_C_SSE (Alignment& alignment){
 			diag_score_xmm = _mm_srli_si128(diag_score_xmm, 2);
 			diag_score_xmm = _mm_insert_epi16(diag_score_xmm,v_aux[j-2],0b111);
 			
-			short carr[8];
-			reg_to_arr(carr,str_col_xmm);
-			cerr<<"carr: ";print_arr(carr,8);
-			
-
 			//compare the 2 strings and put the right penalty (match or missmatch) on each position
 			__m128i cmp_match_xmm = str_col_xmm;
 			cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
@@ -591,50 +590,38 @@ void SW_C_SSE (Alignment& alignment){
 				v_aux[j - vector_len] =  _mm_extract_epi16 (diag_score_xmm, 0b0000);
 			}
 			
-			__m128i nums_xmm =  diag_score_xmm;
-			__m128i nums_copy_xmm = nums_xmm;
-			__m128i nums_s_xmm;
+			//find the index of the maximum word in the 128bit register
+			__m128i diag_score_copy_xmm = diag_score_xmm;
+			__m128i diag_score_shifted_xmm;
 			
-			nums_s_xmm = _mm_srli_si128(nums_xmm,1*2);	
-			nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);	
-			nums_s_xmm = _mm_srli_si128 (nums_xmm,2*2);
-			nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);
-			nums_s_xmm = _mm_srli_si128 (nums_xmm,4*2);
-			nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);
+			diag_score_shifted_xmm = _mm_srli_si128(diag_score_xmm,1*2);	
+			diag_score_xmm = _mm_max_epi16(diag_score_xmm,diag_score_shifted_xmm);	
+			diag_score_shifted_xmm = _mm_srli_si128 (diag_score_xmm,2*2);
+			diag_score_xmm = _mm_max_epi16(diag_score_xmm,diag_score_shifted_xmm);
+			diag_score_shifted_xmm = _mm_srli_si128 (diag_score_xmm,4*2);
+			diag_score_xmm = _mm_max_epi16(diag_score_xmm,diag_score_shifted_xmm);
 			
-			nums_xmm = _mm_set1_epi16(_mm_extract_epi16(nums_xmm,0b0));//_mm_broadcastb_epi8(nums_xmm);
+			diag_score_xmm = _mm_broadcastb_epi8(diag_score_xmm); //_mm_set1_epi16(_mm_extract_epi16(diag_score_xmm,0b0));
 			
-			__m128i index_xmm = _mm_cmpeq_epi16(nums_xmm,nums_copy_xmm);
+			__m128i index_xmm = _mm_cmpeq_epi16(diag_score_xmm,diag_score_copy_xmm);
 			index_xmm = _mm_packs_epi16(index_xmm,index_xmm);
 			int64_t index_mask = _mm_extract_epi64(index_xmm,0);
 			
 			int max_index = __builtin_ffsll(index_mask)/8;
-			short max_local_score =  _mm_extract_epi16 (nums_xmm, 0b0000);
+			short max_local_score =  _mm_extract_epi16 (diag_score_xmm, 0b0000);
 		
-			DBG(i);
-			DBG(j);
-			short sarr[8];
-			reg_to_arr(sarr,diag_score_xmm);
-			cerr<<"scores: ";print_arr(sarr,8);
 			if(best_global < max_local_score){
 				
 				best_global = max_local_score;
-				DBG(max_index);
-				DBG(max_local_score);
 				best_y = vector_len * i + (vector_len-1) - max_index;
 				best_x = j - vector_len + max_index;
 			}
 		}	
 	}
 
-	best_x =0;
-	best_y=0;
-	DBG(best_global);
-
-	for(int i=0;i<seq2_len;i++){
-		for(int j=0;j<seq1_len;j++){
-			cerr<<get_score_SSE(score_matrix,seq1_len,i,j,vector_len)<<" ";
-		}cerr<<endl;
+	if(debug){
+		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
+		alignment.matrix->matrix = score_matrix;
 	}
 
 	backtracking_C(
@@ -647,7 +634,7 @@ void SW_C_SSE (Alignment& alignment){
 		false
 	);
 
-	free(score_matrix);
+	if(!debug) free(score_matrix);
 }
 
 
