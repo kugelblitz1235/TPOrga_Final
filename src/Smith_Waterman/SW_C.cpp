@@ -56,7 +56,7 @@ void SW(
 		}
 	}
 	
-	if(debug){
+	/*if(debug){
 		cerr << "Score Matrix" << endl;
 		for(unsigned int y = 0;y < seq2_len;y++){
 			for(unsigned int x = 0;x < seq1_len;x++){
@@ -64,7 +64,7 @@ void SW(
 			}
 			cerr << endl << endl;
 		}	
-	}
+	}*/
 	
 
 	if(debug){
@@ -118,7 +118,7 @@ Alignment* alignment_by_SW(std::string implementation, char * sequence_1, char* 
 }
 
 
-void SW_C_withLogicSSE (Alignment& alignment){
+void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;	
 	char* seq2 = alignment.sequence_2->sequence;
 	unsigned int seq1_len = alignment.sequence_1->length;
@@ -357,9 +357,6 @@ void SW_C_withLogicSSE (Alignment& alignment){
 
 			if(best_global < best_score){
 				best_global = best_score;
-				DBG(index);
-				DBG(i);
-				DBG(j);
 				best_y = vector_len * i + (vector_len-1) - index;
 				best_x = j - vector_len + index;
 			}
@@ -387,11 +384,12 @@ void SW_C_withLogicSSE (Alignment& alignment){
 	
 	DBG(best_global);
 
-	for(unsigned int i=0;i<seq2_len;i++){
-		for(unsigned int j=0;j<seq1_len;j++){
-			cerr<<get_score_SSE(score_matrix,seq1_len,i,j,vector_len)<<" ";
-		}cerr<<endl;
+	if(debug){
+		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
+		alignment.matrix->matrix = score_matrix;
+
 	}
+
 
 	backtracking_C(
 		score_matrix,
@@ -403,7 +401,7 @@ void SW_C_withLogicSSE (Alignment& alignment){
 		false
 	);
 
-	free(score_matrix);
+	if(!debug)free(score_matrix);
 }
 
 void SW_C_SSE (Alignment& alignment, bool debug){
@@ -591,34 +589,41 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 			}
 			
 			//find the index of the maximum word in the 128bit register
-			__m128i diag_score_copy_xmm = diag_score_xmm;
-			__m128i diag_score_shifted_xmm;
+			__m128i nums_xmm =  diag_score_xmm;
+			__m128i nums_copy_xmm = nums_xmm;
+			__m128i nums_s_xmm;
 			
-			diag_score_shifted_xmm = _mm_srli_si128(diag_score_xmm,1*2);	
-			diag_score_xmm = _mm_max_epi16(diag_score_xmm,diag_score_shifted_xmm);	
-			diag_score_shifted_xmm = _mm_srli_si128 (diag_score_xmm,2*2);
-			diag_score_xmm = _mm_max_epi16(diag_score_xmm,diag_score_shifted_xmm);
-			diag_score_shifted_xmm = _mm_srli_si128 (diag_score_xmm,4*2);
-			diag_score_xmm = _mm_max_epi16(diag_score_xmm,diag_score_shifted_xmm);
+			nums_s_xmm = _mm_srli_si128(nums_xmm,1*2);	
+			nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);	
+			nums_s_xmm = _mm_srli_si128 (nums_xmm,2*2);
+			nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);
+			nums_s_xmm = _mm_srli_si128 (nums_xmm,4*2);
+			nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);
 			
-			diag_score_xmm = _mm_broadcastb_epi8(diag_score_xmm); //_mm_set1_epi16(_mm_extract_epi16(diag_score_xmm,0b0));
+			nums_xmm = _mm_set1_epi16(_mm_extract_epi16(nums_xmm,0b0));//_mm_broadcastb_epi8(nums_xmm);
 			
-			__m128i index_xmm = _mm_cmpeq_epi16(diag_score_xmm,diag_score_copy_xmm);
+			__m128i index_xmm = _mm_cmpeq_epi16(nums_xmm,nums_copy_xmm);
 			index_xmm = _mm_packs_epi16(index_xmm,index_xmm);
 			int64_t index_mask = _mm_extract_epi64(index_xmm,0);
 			
 			int max_index = __builtin_ffsll(index_mask)/8;
-			short max_local_score =  _mm_extract_epi16 (diag_score_xmm, 0b0000);
-		
+			short max_local_score =  _mm_extract_epi16 (nums_xmm, 0b0000);
 			if(best_global < max_local_score){
 				
 				best_global = max_local_score;
 				best_y = vector_len * i + (vector_len-1) - max_index;
 				best_x = j - vector_len + max_index;
+				DBG(best_x);
+				DBG(best_y);
+				DBG(best_global);
 			}
 		}	
 	}
 
+	//printScoreMatrix2(score_matrix,&alignment,vector_len);
+	DBG(best_x);
+	DBG(best_y);
+	DBG(best_global);
 	if(debug){
 		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
 		alignment.matrix->matrix = score_matrix;

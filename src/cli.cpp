@@ -117,12 +117,12 @@ int main (int argc, char **argv)
 	alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
   NW_C_SSE(*alignment);
   */
-  alignment->sequence_1 = new_Sequence_from_string((char*) "TGTTACGG");
-	alignment->sequence_2 = new_Sequence_from_string((char*) "GGTTGACTA");
+  alignment->sequence_1 = new_Sequence_from_string((char*) "ATGCATCCCATGAC");
+	alignment->sequence_2 = new_Sequence_from_string((char*) "TCTATATCCGT");
   alignment->parameters->gap = -2;
-  alignment->parameters->match = 3;
+  alignment->parameters->match = 2;
   alignment->parameters->missmatch = -3;
-  SW(*alignment, true);
+  SW_C_SSE(*alignment, true);
 
   return 0;
 }

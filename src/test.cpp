@@ -24,7 +24,7 @@ void tear_down() {}
 
 LT_END_SUITE(TestNW)
 
-LT_BEGIN_TEST(TestNW, C_LIN)
+LT_BEGIN_TEST(TestNW, NW_LIN)
 //===========================Needleman wunsch===========================================
 
     Alignment* alignment = new_alignment();
@@ -70,10 +70,99 @@ LT_BEGIN_TEST(TestNW, C_LIN)
     
     LT_CHECK( check_nw );
     free(alignment->matrix->matrix);
-	
 //======================================================================================
+LT_END_TEST(NW_LIN)
+
+LT_BEGIN_TEST(TestNW, NW_withLogicSSE)
+    Alignment* alignment = new_alignment();
+    alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
+    alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
+    
+    NW_C_withLogicSSE(*alignment, true);
+
+    bool res1 = strcmp(alignment->result->sequence_1->sequence, "-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCAT_GCU") == 0;
+    bool res2 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCA_TGCU") == 0;
+    bool res3 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCATG_CU") == 0;
+
+    LT_CHECK((res1 || res2 || res3) && alignment->result->score == 0);
+
+    short matrix_nw[8][8] = {{0,-1,-2,-3,-4,-5,-6,-7},
+                              {-1,1,0,-1,-2,-3,-4,-5},
+                              {-2,0,0,1,0,-1,-2,-3},
+                              {-3,-1,-1,0,2,1,0,-1},
+                              {-4,-2,-2,-1,1,1,0,-1},
+                              {-5,-3,-3,-1,0,0,0,-1},
+                              {-6,-4,-2,-2,-1,-1,1,0},
+                              {-7,-5,-3,-1,-2,-2,0,0}};
+    bool equals = true;
+    for(int i = 0 ; i < 8 ; i++){
+        for(int j = 0 ; j < 8 ; j++){
+            equals &= matrix_nw[i][j] == get_score_SSE(alignment->matrix->matrix,8,i,j,8);
+            if (!equals){
+                DBG(i);
+                DBG(j);
+                DBG(matrix_nw[i][j]);
+                DBG(get_score_SSE(alignment->matrix->matrix,8,i,j,8));
+                break;       
+            }
+        
+
+        }
+        if (!equals)
+            break; 
+    }
+    
+    LT_CHECK( equals );
+    
+LT_END_TEST(NW_withLogicSSE)
+
+LT_BEGIN_TEST(TestNW, NW_SSE)
+    Alignment* alignment = new_alignment();
+    alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
+    alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
+    
+    NW_C_SSE(*alignment, true);
+
+    bool res1 = strcmp(alignment->result->sequence_1->sequence, "-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCAT_GCU") == 0;
+    bool res2 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCA_TGCU") == 0;
+    bool res3 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCATG_CU") == 0;
+
+    LT_CHECK((res1 || res2 || res3) && alignment->result->score == 0);
+
+    short matrix_res[8][8] = {{0,-1,-2,-3,-4,-5,-6,-7},
+                              {-1,1,0,-1,-2,-3,-4,-5},
+                              {-2,0,0,1,0,-1,-2,-3},
+                              {-3,-1,-1,0,2,1,0,-1},
+                              {-4,-2,-2,-1,1,1,0,-1},
+                              {-5,-3,-3,-1,0,0,0,-1},
+                              {-6,-4,-2,-2,-1,-1,1,0},
+                              {-7,-5,-3,-1,-2,-2,0,0}};
+    bool equals = true;
+    for(int i = 0 ; i < 8 ; i++){
+        for(int j = 0 ; j < 8 ; j++){
+            equals &= matrix_res[i][j] == get_score_SSE(alignment->matrix->matrix,8,i,j,8);
+            if (!equals){
+                DBG(i);
+                DBG(j);
+                DBG(matrix_res[i][j]);
+                DBG(get_score_SSE(alignment->matrix->matrix,8,i,j,8));
+                break;       
+            }
+        
+
+        }
+        if (!equals)
+            break; 
+    }
+
+    
+    LT_CHECK( equals );
+    
+LT_END_TEST(NW_SSE)
+
+LT_BEGIN_TEST(TestNW, SW_C_LIN)
 //===================================Smith waterman=====================================
-    alignment = new_alignment();
+    Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
     alignment->parameters->missmatch = -3;
@@ -116,97 +205,103 @@ LT_BEGIN_TEST(TestNW, C_LIN)
     
     LT_CHECK( check_sw );
 
-    free(alignment->matrix->matrix);    
+    free(alignment->matrix->matrix);   
+LT_END_TEST(SW_C_LIN) 
 
-LT_END_TEST(C_LIN)
-
-
-LT_BEGIN_TEST(TestNW, C_withLogicSSE)
-    Alignment* alignment = new_alignment();
-    alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
-    alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
+LT_BEGIN_TEST(TestNW, SW_withLogicSSE)
+     Alignment* alignment = new_alignment();
+    alignment->parameters->gap = -2;
+    alignment->parameters->match = 3;
+    alignment->parameters->missmatch = -3;
+    alignment->sequence_1 = new_Sequence_from_string((char*) "TGTTACGG");
+    alignment->sequence_2 = new_Sequence_from_string((char*) "GGTTGACTA");
     
-    NW_C_withLogicSSE(*alignment, true);
+    SW_C_withLogicSSE(*alignment, true);
 
-    bool res1 = strcmp(alignment->result->sequence_1->sequence, "-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCAT_GCU") == 0;
-    bool res2 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCA_TGCU") == 0;
-    bool res3 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCATG_CU") == 0;
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTTGAC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTT_AC") == 0;
+    
+    LT_CHECK(res && alignment->result->score == 13);
 
-    LT_CHECK((res1 || res2 || res3) && alignment->result->score == 0);
-
-    short matrix_nw[8][8] = {{0,-1,-2,-3,-4,-5,-6,-7},
-                              {-1,1,0,-1,-2,-3,-4,-5},
-                              {-2,0,0,1,0,-1,-2,-3},
-                              {-3,-1,-1,0,2,1,0,-1},
-                              {-4,-2,-2,-1,1,1,0,-1},
-                              {-5,-3,-3,-1,0,0,0,-1},
-                              {-6,-4,-2,-2,-1,-1,1,0},
-                              {-7,-5,-3,-1,-2,-2,0,0}};
-    bool equals = true;
-    for(int i = 0 ; i < 8 ; i++){
-        for(int j = 0 ; j < 8 ; j++){
-            equals &= matrix_nw[i][j] == get_score_SSE(alignment->matrix->matrix,8,i,j,8);
-            if (!equals){
+    short matrix_sw[10][9] = {{0,0,0,0,0,0,0,0,0},
+                              {0,0,3,1,0,0,0,3,3},
+                              {0,0,3,1,0,0,0,3,6},
+                              {0,3,1,6,4,2,0,1,4},
+                              {0,3,1,4,9,7,5,3,2},
+                              {0,1,6,4,7,6,4,8,6},
+                              {0,0,4,3,5,10,8,6,5},
+                              {0,0,2,1,3,8,13,11,9},
+                              {0,3,1,5,4,6,11,10,8},
+                              {0,1,0,3,2,7,9,8,7}};
+    bool check_sw = true;
+    for(int i = 0 ; i < 10 ; i++){
+        for(int j = 0 ; j < 9 ; j++){
+            check_sw &= matrix_sw[i][j] == get_score_SSE(alignment->matrix->matrix,9,i,j);
+            if (!check_sw){
                 DBG(i);
                 DBG(j);
-                DBG(matrix_nw[i][j]);
-                DBG(get_score_SSE(alignment->matrix->matrix,8,i,j,8));
+                DBG(matrix_sw[i][j]);
+                DBG(get_score_SSE(alignment->matrix->matrix,9,i,j));
                 break;       
             }
         
 
         }
-        if (!equals)
+        if (!check_sw)
             break; 
     }
     
-    LT_CHECK( equals );
+    LT_CHECK( check_sw );
+
+    free(alignment->matrix->matrix);   
+LT_END_TEST(SW_withLogicSSE)
+
+LT_BEGIN_TEST(TestNW, SW_SSE)
+     Alignment* alignment = new_alignment();
+    alignment->parameters->gap = -2;
+    alignment->parameters->match = 3;
+    alignment->parameters->missmatch = -3;
+    alignment->sequence_1 = new_Sequence_from_string((char*) "TGTTACGG");
+    alignment->sequence_2 = new_Sequence_from_string((char*) "GGTTGACTA");
     
-LT_END_TEST(C_withLogicSSE)
+    SW_C_SSE(*alignment, true);
 
-LT_BEGIN_TEST(TestNW, C_SSE)
-    Alignment* alignment = new_alignment();
-    alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
-    alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTTGAC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTT_AC") == 0;
     
-    NW_C_SSE(*alignment, true);
+    LT_CHECK(res && alignment->result->score == 13);
 
-    bool res1 = strcmp(alignment->result->sequence_1->sequence, "-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCAT_GCU") == 0;
-    bool res2 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCA_TGCU") == 0;
-    bool res3 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCATG_CU") == 0;
-
-    LT_CHECK((res1 || res2 || res3) && alignment->result->score == 0);
-
-    short matrix_res[8][8] = {{0,-1,-2,-3,-4,-5,-6,-7},
-                              {-1,1,0,-1,-2,-3,-4,-5},
-                              {-2,0,0,1,0,-1,-2,-3},
-                              {-3,-1,-1,0,2,1,0,-1},
-                              {-4,-2,-2,-1,1,1,0,-1},
-                              {-5,-3,-3,-1,0,0,0,-1},
-                              {-6,-4,-2,-2,-1,-1,1,0},
-                              {-7,-5,-3,-1,-2,-2,0,0}};
-    bool equals = true;
-    for(int i = 0 ; i < 8 ; i++){
-        for(int j = 0 ; j < 8 ; j++){
-            equals &= matrix_res[i][j] == get_score_SSE(alignment->matrix->matrix,8,i,j,8);
-            if (!equals){
+    short matrix_sw[10][9] = {{0,0,0,0,0,0,0,0,0},
+                              {0,0,3,1,0,0,0,3,3},
+                              {0,0,3,1,0,0,0,3,6},
+                              {0,3,1,6,4,2,0,1,4},
+                              {0,3,1,4,9,7,5,3,2},
+                              {0,1,6,4,7,6,4,8,6},
+                              {0,0,4,3,5,10,8,6,5},
+                              {0,0,2,1,3,8,13,11,9},
+                              {0,3,1,5,4,6,11,10,8},
+                              {0,1,0,3,2,7,9,8,7}};
+    bool check_sw = true;
+    for(int i = 0 ; i < 10 ; i++){
+        for(int j = 0 ; j < 9 ; j++){
+            check_sw &= matrix_sw[i][j] == get_score_SSE(alignment->matrix->matrix,9,i,j,8);
+            if (!check_sw){
                 DBG(i);
                 DBG(j);
-                DBG(matrix_res[i][j]);
-                DBG(get_score_SSE(alignment->matrix->matrix,8,i,j,8));
+                DBG(matrix_sw[i][j]);
+                DBG(get_score_SSE(alignment->matrix->matrix,9,i,j,8));
                 break;       
             }
         
 
         }
-        if (!equals)
+        if (!check_sw)
             break; 
     }
+    
+    LT_CHECK( check_sw );
 
-    
-    LT_CHECK( equals );
-    
-LT_END_TEST(C_SSE)
+    free(alignment->matrix->matrix);   
+LT_END_TEST(SW_SSE)
+
 
 // Ejecutar tests
 LT_BEGIN_AUTO_TEST_ENV()
