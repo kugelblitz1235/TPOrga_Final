@@ -36,9 +36,9 @@ LT_BEGIN_TEST(TestNW, NW_LIN)
     
     NW_C_LIN(*alignment, true);
 
-    bool res1 = strcmp(alignment->result->sequence_1->sequence, "-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCAT_GCU") == 0;
-    bool res2 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCA_TGCU") == 0;
-    bool res3 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCATG_CU") == 0;
+    bool res1 = strcmp(alignment->result->sequence_2->sequence, "-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCAT-GCU") == 0;
+    bool res2 = strcmp(alignment->result->sequence_2->sequence,"-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCA-TGCU") == 0;
+    bool res3 = strcmp(alignment->result->sequence_2->sequence,"-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCATG-CU") == 0;
 
     LT_CHECK((res1 || res2 || res3) && alignment->result->score == 0);
 
@@ -80,9 +80,9 @@ LT_BEGIN_TEST(TestNW, NW_withLogicSSE)
     
     NW_C_withLogicSSE(*alignment, true);
 
-    bool res1 = strcmp(alignment->result->sequence_1->sequence, "-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCAT_GCU") == 0;
-    bool res2 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCA_TGCU") == 0;
-    bool res3 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCATG_CU") == 0;
+    bool res1 = strcmp(alignment->result->sequence_2->sequence, "-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCAT-GCU") == 0;
+    bool res2 = strcmp(alignment->result->sequence_2->sequence,"-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCA-TGCU") == 0;
+    bool res3 = strcmp(alignment->result->sequence_2->sequence,"-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCATG-CU") == 0;
 
     LT_CHECK((res1 || res2 || res3) && alignment->result->score == 0);
 
@@ -123,9 +123,9 @@ LT_BEGIN_TEST(TestNW, NW_SSE)
     
     NW_C_SSE(*alignment, true);
 
-    bool res1 = strcmp(alignment->result->sequence_1->sequence, "-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCAT_GCU") == 0;
-    bool res2 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCA_TGCU") == 0;
-    bool res3 = strcmp(alignment->result->sequence_1->sequence,"-G_ATTACA") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GCATG_CU") == 0;
+    bool res1 = strcmp(alignment->result->sequence_2->sequence, "-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCAT-GCU") == 0;
+    bool res2 = strcmp(alignment->result->sequence_2->sequence,"-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCA-TGCU") == 0;
+    bool res3 = strcmp(alignment->result->sequence_2->sequence,"-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCATG-CU") == 0;
 
     LT_CHECK((res1 || res2 || res3) && alignment->result->score == 0);
 
@@ -171,7 +171,7 @@ LT_BEGIN_TEST(TestNW, SW_C_LIN)
     
     SW(*alignment, true);
 
-    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTTGAC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTT_AC") == 0;
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTT-AC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTTGAC") == 0;
     
     LT_CHECK(res && alignment->result->score == 13);
 
@@ -218,7 +218,7 @@ LT_BEGIN_TEST(TestNW, SW_withLogicSSE)
     
     SW_C_withLogicSSE(*alignment, true);
 
-    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTTGAC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTT_AC") == 0;
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTT-AC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTTGAC") == 0;
     
     LT_CHECK(res && alignment->result->score == 13);
 
@@ -265,7 +265,7 @@ LT_BEGIN_TEST(TestNW, SW_SSE)
     
     SW_C_SSE(*alignment, true);
 
-    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTTGAC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTT_AC") == 0;
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTT-AC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTTGAC") == 0;
     
     LT_CHECK(res && alignment->result->score == 13);
 
@@ -301,6 +301,61 @@ LT_BEGIN_TEST(TestNW, SW_SSE)
 
     free(alignment->matrix->matrix);   
 LT_END_TEST(SW_SSE)
+
+LT_BEGIN_TEST(TestNW, SW_SSE_EQUAL_STRINGS)
+     Alignment* alignment = new_alignment();
+    alignment->parameters->gap = -2;
+    alignment->parameters->match = 3;
+    alignment->parameters->missmatch = -3;
+    alignment->sequence_1 = new_Sequence_from_string((char*) "TTTTTTTTT");
+    alignment->sequence_2 = new_Sequence_from_string((char*) "TTTTTTTTT");
+    
+    SW_C_SSE(*alignment, true);
+
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-TTTTTTTTT") == 0 && strcmp(alignment->result->sequence_2->sequence, "-TTTTTTTTT") == 0;
+    printf("%s\n",alignment->result->sequence_1->sequence);
+    printf("%s\n",alignment->result->sequence_2->sequence);
+    LT_CHECK(res);
+
+    free(alignment->matrix->matrix);   
+LT_END_TEST(SW_SSE_EQUAL_STRINGS)
+
+
+LT_BEGIN_TEST(TestNW, SW_SSE_TEST1)
+     Alignment* alignment = new_alignment();
+    alignment->parameters->gap = -2;
+    alignment->parameters->match = 3;
+    alignment->parameters->missmatch = -3;
+    alignment->sequence_1 = new_Sequence_from_string((char*) "TTTTTATT");
+    alignment->sequence_2 = new_Sequence_from_string((char*) "TTTTTTTATT");
+    
+    SW_C_SSE(*alignment, true);
+
+    bool res = strcmp(alignment->result->sequence_1->sequence, "---TTTTTATT") == 0 && strcmp(alignment->result->sequence_2->sequence, "-TTTTTTTATT") == 0;
+    printf("%s\n",alignment->result->sequence_1->sequence);
+    printf("%s\n",alignment->result->sequence_2->sequence);
+    LT_CHECK(res);
+
+    free(alignment->matrix->matrix);   
+LT_END_TEST(SW_SSE_TEST1)
+
+LT_BEGIN_TEST(TestNW, SW_SSE_FINALTEST)
+     Alignment* alignment = new_alignment();
+    alignment->parameters->gap = -2;
+    alignment->parameters->match = 3;
+    alignment->parameters->missmatch = -3;
+    alignment->sequence_1 = new_Sequence_from_string((char*) "TGTTACGG");
+    alignment->sequence_2 = new_Sequence_from_string((char*) "GGTTGACTA");
+    
+    SW_C_SSE(*alignment, true);
+
+    printf("%s\n",alignment->result->sequence_1->sequence);
+    printf("%s\n",alignment->result->sequence_2->sequence);
+    
+    LT_CHECK( check_sw );
+
+    free(alignment->matrix->matrix);   
+LT_END_TEST(SW_SSE_FINALTEST)
 
 
 // Ejecutar tests

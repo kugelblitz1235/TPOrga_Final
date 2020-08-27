@@ -6,7 +6,7 @@ ASMFLAGS = -felf64 -g -F dwarf
 
 BUILD_DIR = ../build
 
-MISC_FILES =  Types.o  Utility.o
+MISC_FILES =  Types.o  Utility.o FASTA.o
 MISC_FILES_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(MISC_FILES))
 NEEDLMAN_C_FILES = NW_C.o
 NEEDLMAN_C_FILES_CON_PATH = $(addprefix  $(BUILD_DIR)/, $(NEEDLMAN_C_FILES))

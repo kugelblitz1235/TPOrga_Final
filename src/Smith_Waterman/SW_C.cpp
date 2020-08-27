@@ -461,12 +461,14 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 	__m128i diag_score_xmm;
 
 	//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
-	char identity_shift_mask[16] = {0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F};
+	char shift_mask_col[16] = {0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F};
+	char shift_mask_row[16] = {0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF};
 
 	//|0001|0000|0003|0002|0005|0004|0007|0006|0009|0008|000B|000A|000D|000C|000F|000E|
 	char reverse_mask[16] = {0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1};
 	__m128i reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
-	__m128i identity_shift_mask_xmm =  _mm_loadu_si128((__m128i*)identity_shift_mask);
+	__m128i shift_mask_col_xmm =  _mm_loadu_si128((__m128i*)shift_mask_col);
+	__m128i shift_mask_row_xmm =  _mm_loadu_si128((__m128i*)shift_mask_row);
 
 	int best_global=0;
 	int best_y;
@@ -491,11 +493,13 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 			
 			__m128i offset_str_col_xmm = _mm_insert_epi8(offset_str_col_xmm,2*offset_col,0);
 			offset_str_col_xmm = _mm_broadcastb_epi8(offset_str_col_xmm);
-			offset_str_col_xmm = _mm_add_epi8(identity_shift_mask_xmm,offset_str_col_xmm);
+			offset_str_col_xmm = _mm_add_epi8(shift_mask_col_xmm,offset_str_col_xmm);
 			
 			//las posiciones que se correspondan con caracteres basura (que no existen) van a tener un 1 en la posicion mas significativa
 			__m128i ones_mask = _mm_srai_epi16 (offset_str_col_xmm, 15);
+			ones_mask = _mm_slli_epi16(ones_mask,15);
 			
+
 			str_col_xmm = _mm_shuffle_epi8(str_col_xmm,offset_str_col_xmm);
 
 			//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
@@ -527,7 +531,7 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 				
 				__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
 				offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-				offset_str_row_xmm = _mm_sub_epi8(identity_shift_mask_xmm,offset_str_row_xmm);
+				offset_str_row_xmm = _mm_sub_epi8(shift_mask_row_xmm,offset_str_row_xmm);
 		
 				str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
 			
@@ -544,14 +548,21 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 				//simd : shift right
 				__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
 				offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-				offset_str_row_xmm = _mm_add_epi8(identity_shift_mask_xmm,offset_str_row_xmm);
+				offset_str_row_xmm = _mm_add_epi8(shift_mask_col_xmm,offset_str_row_xmm);
+				
+				__m128i ones_mask = _mm_srai_epi16 (offset_str_row_xmm, 15);
+				ones_mask = _mm_slli_epi16(ones_mask,14);
+
 				str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
 				
+				str_row_xmm = _mm_or_si128(str_row_xmm,ones_mask);
+			
 			}else{ //caso feliz
 				str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );
 				str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 
 			}
+
 			//left score
 			left_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
 			left_score_xmm = _mm_add_epi16(left_score_xmm, constant_gap_xmm);
@@ -600,7 +611,7 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 			nums_s_xmm = _mm_srli_si128 (nums_xmm,4*2);
 			nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);
 			
-			nums_xmm = _mm_set1_epi16(_mm_extract_epi16(nums_xmm,0b0));//_mm_broadcastb_epi8(nums_xmm);
+			nums_xmm = _mm_broadcastw_epi16(nums_xmm);
 			
 			__m128i index_xmm = _mm_cmpeq_epi16(nums_xmm,nums_copy_xmm);
 			index_xmm = _mm_packs_epi16(index_xmm,index_xmm);
@@ -613,22 +624,19 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 				best_global = max_local_score;
 				best_y = vector_len * i + (vector_len-1) - max_index;
 				best_x = j - vector_len + max_index;
-				DBG(best_x);
-				DBG(best_y);
-				DBG(best_global);
 			}
 		}	
 	}
 
 	//printScoreMatrix2(score_matrix,&alignment,vector_len);
-	DBG(best_x);
-	DBG(best_y);
-	DBG(best_global);
 	if(debug){
 		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
 		alignment.matrix->matrix = score_matrix;
 	}
 
+	printf("%s\n",seq1);
+	printf("%s\n",seq2);
+	
 	backtracking_C(
 		score_matrix,
 		alignment,

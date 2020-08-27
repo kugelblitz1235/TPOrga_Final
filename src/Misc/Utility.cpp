@@ -55,26 +55,26 @@ void backtracking_C(
 			short score_up = score_fun(score_matrix, seq1_len,y-1,x,vector_len) + alignment.parameters->gap;
 			
 			if(score_diag ==  score_fun(score_matrix, seq1_len,y,x,vector_len)){
-				best_sequence_1[length] = seq2[y];
-				best_sequence_2[length] = seq1[x];
+				best_sequence_1[length] = seq1[x];
+				best_sequence_2[length] = seq2[y];
 				x--;
 				y--;
 			}else if(score_up == score_fun(score_matrix, seq1_len,y,x,vector_len)){
-				best_sequence_1[length] = seq2[y];
-				best_sequence_2[length] = '_';
+				best_sequence_1[length] = '-';
+				best_sequence_2[length] = seq2[y];
 				y--;
 			}else{
-				best_sequence_1[length] = '_';
-				best_sequence_2[length] = seq1[x];
+				best_sequence_1[length] = seq1[x];
+				best_sequence_2[length] = '-';
 				x--;
 			}
 		}else if(x > 0){
-			best_sequence_1[length] = '_';
-			best_sequence_2[length] = seq2[x-1];
+			best_sequence_1[length] = seq1[x];
+			best_sequence_2[length] = '-';
 			x--;
 		}else if(y > 0){
-			best_sequence_1[length] = seq1[y-1];
-			best_sequence_2[length] = '_';
+			best_sequence_1[length] = '-';
+			best_sequence_2[length] = seq2[y];
 			y--;
 		}
 		
@@ -93,21 +93,12 @@ void backtracking_C(
 	// cerr << "Best sequences" << endl;
 	best_sequence_1[length]=0;
 	best_sequence_2[length]=0;
-	DBG(best_sequence_2);
 	DBG(best_sequence_1);
+	DBG(best_sequence_2);
 	alignment.result->sequence_1 = new_Sequence_from_string(best_sequence_1);
 	alignment.result->sequence_2 = new_Sequence_from_string(best_sequence_2);
 	
 	alignment.result->score = score_fun(score_matrix, seq1_len,best_y,best_x,vector_len);
-
-	//creamos los nuevos strings y destruimos los anteriores
-	best_seq_1 = new_Sequence_from_string(best_sequence_1);
-	best_seq_2 = new_Sequence_from_string(best_sequence_2);
-
-	destroy_Sequence(alignment.result->sequence_1);
-	destroy_Sequence(alignment.result->sequence_2);
-	alignment.result->sequence_1 = best_seq_1;
-	alignment.result->sequence_2 = best_seq_2;
 
 }
 

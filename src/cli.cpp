@@ -9,6 +9,8 @@
 #include "Misc/JSON.hpp"
 #include "Misc/AlignAlgo.hpp"
 #include "Misc/Utility.hpp"
+#include "Misc/FASTA.hpp"
+
 using namespace std;
 
 //funcion que selecciona el algoritmo, la implementacion y recibe los parametros para ejecutarla
@@ -112,17 +114,16 @@ int main (int argc, char **argv)
 */
   Alignment* alignment = new_alignment();
 
-/*
-  alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
-	alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
-  NW_C_SSE(*alignment);
-  */
-  alignment->sequence_1 = new_Sequence_from_string((char*) "ATGCATCCCATGAC");
-	alignment->sequence_2 = new_Sequence_from_string((char*) "TCTATATCCGT");
+  FASTA_to_alignment(alignment,"bdnf_hsa.FASTA","bdnf_mmu.FASTA");
+  NW_C_SSE(*alignment, true);
+  
+  /*
+  alignment->sequence_1 = new_Sequence_from_string((char*) "TTTTTTTTT");
+	alignment->sequence_2 = new_Sequence_from_string((char*) "TTTTTTTTT");
   alignment->parameters->gap = -2;
   alignment->parameters->match = 2;
   alignment->parameters->missmatch = -3;
-  SW_C_SSE(*alignment, true);
+  SW_C_SSE(*alignment, true);*/
 
   return 0;
 }
