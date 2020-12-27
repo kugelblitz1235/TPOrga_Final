@@ -151,6 +151,7 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 		}
 	}
 	/******************************************************************************************************/
+	
 	//arrays auxiliares para el calculo de los scores
 	char* str_row = (char*)malloc(vector_len * sizeof(char)); 
 	char* str_col = (char*)malloc(vector_len * sizeof(char));
@@ -168,7 +169,13 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 	for( int i = 0 ; i < height ; i++){
 		int offset_y = i * width * vector_len;
 
+		// Levantar strings -------------------------------------------------------------------
+		// String vertical --------------------------------------------------------------------
 		if((i+1)*vector_len >= (int)seq2_len){
+			// Desborde por abajo
+			// Evita levantar de mas en la secuencia vertical
+			// lee el tamanio del vector sin pasarse
+			// y corrije shifteando
 			int offset_col = (i+1)*vector_len - seq2_len;
 			//simd : leer de memoria (movdqu)
 			//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más 
@@ -192,6 +199,8 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 			}
 		}
 
+		// hace reverse de la secuencia vertical
+		// para poder comparar directamente con la horizontal
 		//simd : shuffle
 		for (int i = 0 ; i < vector_len / 2; i++){
 			char temp = str_col[i];
@@ -199,12 +208,16 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 			str_col[vector_len - i - 1] = temp;
 		}
 
+		// String horizontal ------------------------------------------------------------------
 		for( int j = 2; j < width ; j++){
+			// Procesamiento de las diagonales dentro de la franja
 			int offset_x = j * vector_len;
 			//emulamos simd
-			if(j-vector_len < 0){ //desborde por izquierda
-				//simd : desplazamiento de puntero y levantar datos de memoria
-				//levantamos el string con el puntero offseteado para no acceder afuera
+			if(j-vector_len < 0){ 
+				// desborde por izquierda
+				// parte del vector cae fuera de la matriz
+				// levantamos el string con el puntero offseteado para no acceder afuera
+				// shifteamos para corregir.
 				
 				int offset_str_row = vector_len - j;
 				//simd : leer de memoria (movdqu)
@@ -220,10 +233,12 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 					for(int k = 1;k < vector_len ;k++){
 						str_row[k-1] = str_row[k];
 					}
-			}
-			}else if(j > width-vector_len){ // desborde por derecha
-				//simd : desplazamiento de puntero y levantar datos de memoria
-				//levantamos el string con el puntero offseteado para no acceder afuera
+				}
+			} else if(j > width-vector_len){ 
+				// desborde por derecha
+				// levantamos el string con el puntero offseteado para no acceder afuera
+				// shifteamos para corregir.
+
 				int offset_str_row = j - (width-vector_len);
 				
 				//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
@@ -234,11 +249,10 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 				//simd : shift
 				//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
 				for(int s = 0;s < offset_str_row; s++){
-				for(int k = vector_len-2;k >= 0;k--){
+					for(int k = vector_len-2;k >= 0;k--){
 					str_row[k+1] = str_row[k];
+					}
 				}
-			}	
-
 			}else{ //caso feliz
 			//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
 				for(int k = 0;k < vector_len;k++){
@@ -246,6 +260,7 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 				}
 			}
 
+			// Calculo scores --------------------------------------------------------------------
 			//left score
 			//simd : leer de memoria (movdqu)
 			for( int k = 0;k < vector_len;k++){
@@ -288,6 +303,7 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 			//simd : insert
 			diag_score[0] = v_aux[j-2];
 		
+			// Comparacion de secuencias
 			//simd : PUNPCKLBW
 			for( int k = 0;k < vector_len;k++){
 				cmp_missmatch[k] = str_row[k];
@@ -401,6 +417,7 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 		v_aux[i] = SHRT_MIN/2;
 	}
 
+	//inicializar caso base
 	int count=0;
 	for(int i = 0 ; i < height ; i++){
 		unsigned int offset_y = i * width * vector_len;
@@ -442,12 +459,17 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	__m128i reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
 	__m128i shift_mask_col_xmm =  _mm_loadu_si128((__m128i*)shift_mask_col);
 	__m128i shift_mask_row_xmm =  _mm_loadu_si128((__m128i*)shift_mask_row);
-
+	
+		// Levantar strings -------------------------------------------------------------------
+		// String vertical --------------------------------------------------------------------
 	for( int i = 0 ; i < height ; i++){
 		int offset_y = i * width * vector_len;
 
 		if((i+1)*vector_len >= (int)seq2_len){
-			
+			// Desborde por abajo
+			// Evita levantar de mas en la secuencia vertical
+			// lee el tamanio del vector sin pasarse
+			// y corrije shifteando
 			int offset_col = (i+1)*vector_len - seq2_len;
 			
 			//simd : leer de memoria (movdqu)
@@ -479,13 +501,14 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 		}else{
 			//simd : leer de memoria (movdqu)
 			str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
-			__m128i zeroes_xmm = _mm_setzero_si128();
 			str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
 			
 		}
 
+		// Reverse de la secuencia vertical
 		str_col_xmm = _mm_shuffle_epi8(str_col_xmm,reverse_mask_xmm);
 
+		// String horizontal ------------------------------------------------------------------
 		for( int j = 2; j < width ; j++){
 			int offset_x = j * vector_len;
 			//emulamos simd
@@ -528,6 +551,8 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 				str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 
 			}
+
+			// Calculo scores --------------------------------------------------------------------
 			//left score
 			left_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
 			left_score_xmm = _mm_add_epi16(left_score_xmm, constant_gap_xmm);
@@ -544,7 +569,7 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 			diag_score_xmm = _mm_insert_epi16(diag_score_xmm,v_aux[j-2],0b111);
 			
 			//compare the 2 strings and put the right penalty (match or missmatch) on each position
-			__m128i cmp_match_xmm = str_col_xmm;
+			__m128i cmp_match_xmm;
 			cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
 			str_row_xmm = _mm_andnot_si128(cmp_match_xmm,constant_missmatch_xmm);
 			cmp_match_xmm = _mm_and_si128(cmp_match_xmm,constant_match_xmm);

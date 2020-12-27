@@ -10,3 +10,9 @@ struct Alignment{
   char* sequence_2;
 };
 ~~~~
+
+## TODO:
+
+- [ ] Ver si no se puede shiftear bytes y luego desempaquetar para evitar usar las mascaras raras.
+- [ ] Macro para reemplazar for loops en las versiones "withlogic".
+- [ ] Dividir version SSE en subrutinas para facilitar el pasaje a ASM.
