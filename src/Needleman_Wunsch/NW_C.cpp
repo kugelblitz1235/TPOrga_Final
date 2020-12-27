@@ -208,11 +208,11 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 			str_col[vector_len - i - 1] = temp;
 		}
 
-		// String horizontal ------------------------------------------------------------------
 		for( int j = 2; j < width ; j++){
 			// Procesamiento de las diagonales dentro de la franja
 			int offset_x = j * vector_len;
 			//emulamos simd
+			// String horizontal ------------------------------------------------------------------
 			if(j-vector_len < 0){ 
 				// desborde por izquierda
 				// parte del vector cae fuera de la matriz
@@ -395,6 +395,169 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 	if(!debug)free(score_matrix);
 }
 
+void inicializar_casos_base(int width, int height, int vector_len, short* v_aux, short* score_matrix, Alignment& alignment){
+	//llenamos el vector auxiliar
+	for(int i = 0;i < width-1;i++){
+		v_aux[i] = SHRT_MIN/2;
+	}
+
+	//inicializar caso base
+	for(int i = 0 ; i < height ; i++){
+		unsigned int offset_y = i * width * vector_len;
+		for( int j = 0; j < 2 ; j++){
+			unsigned int offset_x = j * vector_len;
+			//emulamos simd
+			for( int k = 0;k < vector_len;k++){
+				if( j==1 && k == vector_len-1)
+					score_matrix[offset_y + offset_x + k] = i * vector_len * alignment.parameters->gap;
+				else
+					score_matrix[offset_y + offset_x + k] = SHRT_MIN/2;
+			}			
+		}
+	}
+}
+
+__m128i leer_secuencia_columna(
+	int i,
+	int vector_len,
+	int seq2_len,
+	char* seq2,
+	__m128i zeroes_xmm,
+	__m128i shift_mask_col_xmm,
+	__m128i reverse_mask_xmm){
+
+	__m128i str_col_xmm;
+	if((i+1)*vector_len >= (int)seq2_len){
+		// Desborde por abajo
+		// Evita levantar de mas en la secuencia vertical
+		// lee el tamanio del vector sin pasarse
+		// y corrije shifteando
+		int offset_col = (i+1)*vector_len - seq2_len;
+		//simd : leer de memoria (movdqu)
+		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len - offset_col) );
+		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
+		//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
+		//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
+		//para realizar un shift a derecha se realiza la suma del offset y la mascara y luego con eso realizamos el shuffle b
+		//simd : shift right
+		__m128i offset_str_col_xmm = _mm_insert_epi8(offset_str_col_xmm,2*offset_col,0);
+		offset_str_col_xmm = _mm_broadcastb_epi8(offset_str_col_xmm);
+		offset_str_col_xmm = _mm_add_epi8(shift_mask_col_xmm,offset_str_col_xmm);
+		//las posiciones que se correspondan con caracteres basura (que no existen) van a tener un 1 en la posicion mas significativa
+		__m128i ones_mask = _mm_srai_epi16 (offset_str_col_xmm, 15);
+		ones_mask = _mm_slli_epi16(ones_mask,15);
+		
+		str_col_xmm = _mm_shuffle_epi8(str_col_xmm,offset_str_col_xmm);
+		//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
+		str_col_xmm = _mm_or_si128(str_col_xmm,ones_mask);
+		
+
+	}else{
+		//simd : leer de memoria (movdqu)
+		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
+		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
+		
+	}
+
+	// Reverse de la secuencia vertical
+	str_col_xmm = _mm_shuffle_epi8(str_col_xmm,reverse_mask_xmm);
+	
+	return str_col_xmm;
+}
+
+__m128i leer_secuencia_fila(
+	int j,
+	int vector_len,
+	int width,
+	char* seq1,
+	__m128i zeroes_xmm,
+	__m128i shift_mask_row_xmm
+) {
+	__m128i str_row_xmm;
+	
+	if(j-vector_len < 0){ //desborde por izquierda
+			//simd : desplazamiento de puntero y levantar datos de memoria
+			int offset_str_row = vector_len - j;
+			//simd : leer de memoria (movdqu)
+			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len + offset_str_row) );
+			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
+			//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
+			//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
+			//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
+			//simd : shift left
+			__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
+			offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
+			offset_str_row_xmm = _mm_sub_epi8(shift_mask_row_xmm,offset_str_row_xmm);
+			str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
+
+	}else if(j > width-vector_len){ // desborde por derecha
+			//simd : desplazamiento de puntero y levantar datos de memoria
+			int offset_str_row = j - (width-vector_len);
+			
+			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len - offset_str_row) );
+			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
+			//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
+			//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
+			//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
+			//simd : shift right
+			__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
+			offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
+			offset_str_row_xmm = _mm_add_epi8(shift_mask_row_xmm,offset_str_row_xmm);
+			str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
+			
+	}else{ //caso feliz
+			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );
+			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
+	}
+	
+	return str_row_xmm;
+}
+
+void calcular_scores(
+	__m128i& left_score_xmm,
+	__m128i& up_score_xmm,
+	__m128i& diag_score_xmm,
+	short* score_matrix,
+	short* v_aux,
+	int j,
+	int offset_y,
+	int offset_x,
+	int vector_len,
+	__m128i constant_gap_xmm,
+	__m128i str_col_xmm,
+	__m128i str_row_xmm,
+	__m128i constant_missmatch_xmm,
+	__m128i constant_match_xmm
+	){
+
+		
+	//left score
+	left_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
+	left_score_xmm = _mm_add_epi16(left_score_xmm, constant_gap_xmm);
+	
+	//up score
+	up_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
+	up_score_xmm = _mm_srli_si128(up_score_xmm, 2);
+	up_score_xmm = _mm_insert_epi16(up_score_xmm,v_aux[j-1],0b111);
+	up_score_xmm = _mm_add_epi16(up_score_xmm, constant_gap_xmm);
+	
+	//diag score
+	diag_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - 2*vector_len));
+	diag_score_xmm = _mm_srli_si128(diag_score_xmm, 2);
+	diag_score_xmm = _mm_insert_epi16(diag_score_xmm,v_aux[j-2],0b111);
+	
+	//compare the 2 strings and put the right penalty (match or missmatch) on each position
+	__m128i cmp_match_xmm;
+	cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
+	str_row_xmm = _mm_andnot_si128(cmp_match_xmm,constant_missmatch_xmm);
+	cmp_match_xmm = _mm_and_si128(cmp_match_xmm,constant_match_xmm);
+
+	//get the max score of diag,up,left
+	diag_score_xmm = _mm_add_epi16(diag_score_xmm, cmp_match_xmm);
+	diag_score_xmm = _mm_add_epi16(diag_score_xmm, str_row_xmm);
+}
+
+
 void NW_C_SSE (Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;	
 	char* seq2 = alignment.sequence_2->sequence;
@@ -412,27 +575,9 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	short* score_matrix =  (short*)malloc(score_matrix_sz*sizeof(short));
 	
 	short* v_aux = (short*)malloc((width-1)*sizeof(short));
-	//llenamos el vector auxiliar
-	for(int i = 0;i < width-1;i++){
-		v_aux[i] = SHRT_MIN/2;
-	}
 
-	//inicializar caso base
-	int count=0;
-	for(int i = 0 ; i < height ; i++){
-		unsigned int offset_y = i * width * vector_len;
-		for( int j = 0; j < 2 ; j++){
-			unsigned int offset_x = j * vector_len;
-			//emulamos simd
-			for( int k = 0;k < vector_len;k++){
-				if( j==1 && k == vector_len-1)
-					score_matrix[offset_y + offset_x + k] = i * vector_len * alignment.parameters->gap;
-				else
-					score_matrix[offset_y + offset_x + k] = SHRT_MIN/2;
-				count++;
-			}			
-		}
-	}
+	inicializar_casos_base(width, height, vector_len, v_aux, score_matrix, alignment);
+
 	/******************************************************************************************************/
 	__m128i constant_gap_xmm;
 	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
@@ -444,11 +589,7 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	__m128i zeroes_xmm = _mm_setzero_si128();
 
 	//arrays auxiliares para el calculo de los scores
-	__m128i str_row_xmm;
-	__m128i str_col_xmm;
-	__m128i left_score_xmm;
-	__m128i up_score_xmm;
-	__m128i diag_score_xmm;
+	__m128i str_row_xmm, str_col_xmm, left_score_xmm, up_score_xmm, diag_score_xmm;
 
 	//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
 	char shift_mask_col[16] = {0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F};
@@ -459,125 +600,37 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	__m128i reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
 	__m128i shift_mask_col_xmm =  _mm_loadu_si128((__m128i*)shift_mask_col);
 	__m128i shift_mask_row_xmm =  _mm_loadu_si128((__m128i*)shift_mask_row);
-	
-		// Levantar strings -------------------------------------------------------------------
-		// String vertical --------------------------------------------------------------------
+
 	for( int i = 0 ; i < height ; i++){
 		int offset_y = i * width * vector_len;
 
-		if((i+1)*vector_len >= (int)seq2_len){
-			// Desborde por abajo
-			// Evita levantar de mas en la secuencia vertical
-			// lee el tamanio del vector sin pasarse
-			// y corrije shifteando
-			int offset_col = (i+1)*vector_len - seq2_len;
-			
-			//simd : leer de memoria (movdqu)
-			str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len - offset_col) );
-			
-			str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
-			
-			//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-			//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-			//para realizar un shift a derecha se realiza la suma del offset y la mascara y luego con eso realizamos el shuffle b
-			//simd : shift right
-			
-		
-			__m128i offset_str_col_xmm = _mm_insert_epi8(offset_str_col_xmm,2*offset_col,0);
-			offset_str_col_xmm = _mm_broadcastb_epi8(offset_str_col_xmm);
-			offset_str_col_xmm = _mm_add_epi8(shift_mask_col_xmm,offset_str_col_xmm);
-			
-			//las posiciones que se correspondan con caracteres basura (que no existen) van a tener un 1 en la posicion mas significativa
-			__m128i ones_mask = _mm_srai_epi16 (offset_str_col_xmm, 15);
-			ones_mask = _mm_slli_epi16(ones_mask,15);
-			
+		// Levantar strings -------------------------------------------------------------------
+		// String vertical --------------------------------------------------------------------
+		str_col_xmm = leer_secuencia_columna(i, vector_len, seq2_len, seq2, zeroes_xmm, shift_mask_col_xmm, reverse_mask_xmm);
 
-			str_col_xmm = _mm_shuffle_epi8(str_col_xmm,offset_str_col_xmm);
-
-			//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
-			str_col_xmm = _mm_or_si128(str_col_xmm,ones_mask);
-			
-
-		}else{
-			//simd : leer de memoria (movdqu)
-			str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
-			str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
-			
-		}
-
-		// Reverse de la secuencia vertical
-		str_col_xmm = _mm_shuffle_epi8(str_col_xmm,reverse_mask_xmm);
-
-		// String horizontal ------------------------------------------------------------------
 		for( int j = 2; j < width ; j++){
 			int offset_x = j * vector_len;
-			//emulamos simd
-			if(j-vector_len < 0){ //desborde por izquierda
-				//simd : desplazamiento de puntero y levantar datos de memoria
-				int offset_str_row = vector_len - j;
-				//simd : leer de memoria (movdqu)
-				str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len + offset_str_row) );
-				str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-
-				//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-				//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-				//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
-				//simd : shift left
-
-				__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
-				offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-				offset_str_row_xmm = _mm_sub_epi8(shift_mask_row_xmm,offset_str_row_xmm);
-		
-				str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
+			// String horizontal ------------------------------------------------------------------
+			str_row_xmm = leer_secuencia_fila(j, vector_len, width, seq1, zeroes_xmm, shift_mask_row_xmm);
 			
-			}else if(j > width-vector_len){ // desborde por derecha
-				//simd : desplazamiento de puntero y levantar datos de memoria
-				int offset_str_row = j - (width-vector_len);
-				
-				str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len - offset_str_row) );
-				str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-
-				//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-				//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-				//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
-				//simd : shift right
-				__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
-				offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-				offset_str_row_xmm = _mm_add_epi8(shift_mask_row_xmm,offset_str_row_xmm);
-				str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
-				
-			}else{ //caso feliz
-				str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );
-				str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-
-			}
-
-			// Calculo scores --------------------------------------------------------------------
-			//left score
-			left_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
-			left_score_xmm = _mm_add_epi16(left_score_xmm, constant_gap_xmm);
+			// Calculo scores de izquierda, arriba y diagonal --------------------------------------------------------------------
+			calcular_scores(
+				left_score_xmm,
+				up_score_xmm,
+				diag_score_xmm,
+				score_matrix,
+				v_aux,
+				j,
+				offset_y,
+				offset_x,
+				vector_len,
+				constant_gap_xmm,
+				str_col_xmm,
+				str_row_xmm,
+				constant_missmatch_xmm,
+				constant_match_xmm
+			);
 			
-			//up score
-			up_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - vector_len));
-			up_score_xmm = _mm_srli_si128(up_score_xmm, 2);
-			up_score_xmm = _mm_insert_epi16(up_score_xmm,v_aux[j-1],0b111);
-			up_score_xmm = _mm_add_epi16(up_score_xmm, constant_gap_xmm);
-			
-			//diag score
-			diag_score_xmm = _mm_loadu_si128 ((__m128i const*) (score_matrix + offset_y + offset_x - 2*vector_len));
-			diag_score_xmm = _mm_srli_si128(diag_score_xmm, 2);
-			diag_score_xmm = _mm_insert_epi16(diag_score_xmm,v_aux[j-2],0b111);
-			
-			//compare the 2 strings and put the right penalty (match or missmatch) on each position
-			__m128i cmp_match_xmm;
-			cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
-			str_row_xmm = _mm_andnot_si128(cmp_match_xmm,constant_missmatch_xmm);
-			cmp_match_xmm = _mm_and_si128(cmp_match_xmm,constant_match_xmm);
-			
-			//get the max score of diag,up,left
-			diag_score_xmm = _mm_add_epi16(diag_score_xmm, cmp_match_xmm);
-			diag_score_xmm = _mm_add_epi16(diag_score_xmm, str_row_xmm);
-
 			diag_score_xmm = _mm_max_epi16(diag_score_xmm,up_score_xmm);
 			diag_score_xmm = _mm_max_epi16(diag_score_xmm,left_score_xmm);
 
