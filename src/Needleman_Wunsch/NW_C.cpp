@@ -564,6 +564,28 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	unsigned int seq1_len = alignment.sequence_1->length;
 	unsigned int seq2_len = alignment.sequence_2->length;
 	
+	// Equivalentes a registros nombrados:
+	__m128i constant_gap_xmm, constant_missmatch_xmm, constant_match_xmm, zeroes_xmm;
+	__m128i str_row_xmm, str_col_xmm, left_score_xmm, up_score_xmm, diag_score_xmm;
+	__m128i reverse_mask_xmm, shift_mask_col_xmm, shift_mask_row_xmm;
+	
+	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
+	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
+	constant_missmatch_xmm = _mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
+	constant_missmatch_xmm = _mm_broadcastw_epi16(constant_missmatch_xmm);
+	constant_match_xmm = _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
+	constant_match_xmm = _mm_broadcastw_epi16(constant_match_xmm);
+	zeroes_xmm = _mm_setzero_si128();
+
+	//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
+	char shift_mask_col[16] = {0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F};
+	char shift_mask_row[16] = {0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF};
+	//|0001|0000|0003|0002|0005|0004|0007|0006|0009|0008|000B|000A|000D|000C|000F|000E|
+	char reverse_mask[16] = {0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1};
+	
+	reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
+	shift_mask_col_xmm =  _mm_loadu_si128((__m128i*)shift_mask_col);
+	shift_mask_row_xmm =  _mm_loadu_si128((__m128i*)shift_mask_row);
 	
 	//en este caso hardcodeamos el tamaño del vector
 	int vector_len = 8;
@@ -575,31 +597,10 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	short* score_matrix =  (short*)malloc(score_matrix_sz*sizeof(short));
 	
 	short* v_aux = (short*)malloc((width-1)*sizeof(short));
-
+		
 	inicializar_casos_base(width, height, vector_len, v_aux, score_matrix, alignment);
-
+	
 	/******************************************************************************************************/
-	__m128i constant_gap_xmm;
-	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
-	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
-	__m128i constant_missmatch_xmm = _mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
-	constant_missmatch_xmm = _mm_broadcastw_epi16(constant_missmatch_xmm);
-	__m128i constant_match_xmm = _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
-	constant_match_xmm = _mm_broadcastw_epi16(constant_match_xmm);
-	__m128i zeroes_xmm = _mm_setzero_si128();
-
-	//arrays auxiliares para el calculo de los scores
-	__m128i str_row_xmm, str_col_xmm, left_score_xmm, up_score_xmm, diag_score_xmm;
-
-	//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
-	char shift_mask_col[16] = {0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F};
-	char shift_mask_row[16] = {0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF};
-
-	//|0001|0000|0003|0002|0005|0004|0007|0006|0009|0008|000B|000A|000D|000C|000F|000E|
-	char reverse_mask[16] = {0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1};
-	__m128i reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
-	__m128i shift_mask_col_xmm =  _mm_loadu_si128((__m128i*)shift_mask_col);
-	__m128i shift_mask_row_xmm =  _mm_loadu_si128((__m128i*)shift_mask_row);
 
 	for( int i = 0 ; i < height ; i++){
 		int offset_y = i * width * vector_len;
