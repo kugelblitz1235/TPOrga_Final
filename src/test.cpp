@@ -349,10 +349,11 @@ LT_BEGIN_TEST(TestNW, SW_SSE_FINALTEST)
     
     SW_C_SSE(*alignment, true);
 
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-GTT-AC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTTGAC") == 0;
     printf("%s\n",alignment->result->sequence_1->sequence);
     printf("%s\n",alignment->result->sequence_2->sequence);
     
-    LT_CHECK( check_sw );
+    LT_CHECK( res );
 
     free(alignment->matrix->matrix);   
 LT_END_TEST(SW_SSE_FINALTEST)
