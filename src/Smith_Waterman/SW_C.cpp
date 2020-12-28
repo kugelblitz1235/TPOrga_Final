@@ -412,7 +412,7 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 	
 	// Equivalentes a registros nombrados:
 	__m128i constant_gap_xmm, constant_missmatch_xmm, constant_match_xmm, zeroes_xmm;
-	__m128i str_row_xmmm, str_col_xmm, left_score_xmm, up_score_xmm, diag_score_xmm;
+	__m128i str_row_xmm, str_col_xmm, left_score_xmm, up_score_xmm, diag_score_xmm;
 	__m128i reverse_mask_xmm, shift_mask_col_xmm, shift_mask_row_xmm;
 
 	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
