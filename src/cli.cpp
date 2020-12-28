@@ -25,12 +25,12 @@ Alignment* align_sequences (std::string algorithm, std::string implementation, c
 
           if(algorithm.compare("NW") == 0){
             
-            return alignment_by_NW(implementation, sequence_1, sequence_2, gap, missmatch, match);
+            return NW::alignment_by_NW(implementation, sequence_1, sequence_2, gap, missmatch, match);
 
           }
           else if (algorithm.compare("SW") == 0)
           {
-            return alignment_by_SW(implementation, sequence_1, sequence_2, gap, missmatch, match);
+            return SW::alignment_by_SW(implementation, sequence_1, sequence_2, gap, missmatch, match);
           }
           else{
             throw "Los parámetros ingresados son inválidos.";
@@ -115,7 +115,7 @@ int main (int argc, char **argv)
   Alignment* alignment = new_alignment();
 
   FASTA_to_alignment(alignment,"bdnf_hsa.FASTA","bdnf_mmu.FASTA");
-  NW_C_SSE(*alignment, true);
+  NW::NW_C_SSE(*alignment, true);
   
   /*
   alignment->sequence_1 = new_Sequence_from_string((char*) "TTTTTTTTT");

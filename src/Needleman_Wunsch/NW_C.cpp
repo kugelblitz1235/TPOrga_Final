@@ -5,6 +5,7 @@
 
 using namespace std;
 
+namespace NW{
 
 void NW_C_LIN(Alignment& alignment, bool debug){
 	
@@ -662,4 +663,4 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	if(!debug) free(score_matrix);
 }
 
-
+}
