@@ -19,3 +19,4 @@ struct Alignment{
 - [x] Dividir version SSE de SW en subrutinas para facilitar el pasaje a ASM.
 - [ ] Hacer versiones AVX-256.
 - [ ] Pensar en usar instancia de AWS para usar AVX-512.
+- [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.

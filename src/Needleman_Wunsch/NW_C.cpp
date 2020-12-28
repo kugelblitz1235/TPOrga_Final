@@ -397,15 +397,15 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 }
 
 void inicializar_casos_base(int width, int height, int vector_len, short* v_aux, short* score_matrix, Alignment& alignment){
-	//llenamos el vector auxiliar
+	// llenamos el vector auxiliar
 	for(int i = 0;i < width-1;i++){
 		v_aux[i] = SHRT_MIN/2;
 	}
 
-	//inicializar caso base
+	// inicializar casos base en matriz
 	for(int i = 0 ; i < height ; i++){
 		unsigned int offset_y = i * width * vector_len;
-		for( int j = 0; j < 2 ; j++){
+		/*for( int j = 0; j < 2 ; j++){
 			unsigned int offset_x = j * vector_len;
 			//emulamos simd
 			for( int k = 0;k < vector_len;k++){
@@ -414,10 +414,18 @@ void inicializar_casos_base(int width, int height, int vector_len, short* v_aux,
 				else
 					score_matrix[offset_y + offset_x + k] = SHRT_MIN/2;
 			}			
-		}
+
+			
+		}*/
+		__m128i diag;
+		diag = _mm_insert_epi16(diag,SHRT_MIN/2,0);
+		diag = _mm_broadcastw_epi16(diag);
+		_mm_storeu_si128((__m128i*)(score_matrix + offset_y), diag);
+		diag = _mm_insert_epi16(diag,i * vector_len * alignment.parameters->gap, 7);
+		_mm_storeu_si128((__m128i*)(score_matrix + offset_y + vector_len), diag);
 	}
 }
-
+   
 __m128i leer_secuencia_columna(
 	int i,
 	int vector_len,
