@@ -16,6 +16,6 @@ struct Alignment{
 - [ ] Ver si no se puede shiftear bytes y luego desempaquetar para evitar usar las mascaras raras.
 - [ ] Macro para reemplazar for loops en las versiones "withlogic".
 - [x] Dividir version SSE de NW en subrutinas para facilitar el pasaje a ASM.
-- [ ] Dividir version SSE de SW en subrutinas para facilitar el pasaje a ASM.
+- [x] Dividir version SSE de SW en subrutinas para facilitar el pasaje a ASM.
 - [ ] Hacer versiones AVX-256.
 - [ ] Pensar en usar instancia de AWS para usar AVX-512.
