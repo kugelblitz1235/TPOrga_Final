@@ -15,17 +15,17 @@
 #define DBG(x) cerr << #x << " = " << (x) <<"\n"
 using namespace std;
 
+//===========================Needleman wunsch===========================================
 LT_BEGIN_SUITE(TestNW)
 
 void set_up() {
-    printf("Ejecutando tests...\n");
+    printf("Ejecutando tests NW...\n");
 }
 void tear_down() {}
 
 LT_END_SUITE(TestNW)
 
 LT_BEGIN_TEST(TestNW, NW_LIN)
-//===========================Needleman wunsch===========================================
 
     Alignment* alignment = new_alignment();
     alignment->parameters->gap = -1;
@@ -70,7 +70,6 @@ LT_BEGIN_TEST(TestNW, NW_LIN)
     
     LT_CHECK( check_nw );
     free(alignment->matrix->matrix);
-//======================================================================================
 LT_END_TEST(NW_LIN)
 
 LT_BEGIN_TEST(TestNW, NW_withLogicSSE)
@@ -160,8 +159,17 @@ LT_BEGIN_TEST(TestNW, NW_SSE)
     
 LT_END_TEST(NW_SSE)
 
-LT_BEGIN_TEST(TestNW, SW_C_LIN)
 //===================================Smith waterman=====================================
+LT_BEGIN_SUITE(TestSW)
+
+void set_up() {
+    printf("Ejecutando tests SW...\n");
+}
+void tear_down() {}
+
+LT_END_SUITE(TestSW)
+
+LT_BEGIN_TEST(TestSW, SW_C_LIN)
     Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -208,7 +216,7 @@ LT_BEGIN_TEST(TestNW, SW_C_LIN)
     free(alignment->matrix->matrix);   
 LT_END_TEST(SW_C_LIN) 
 
-LT_BEGIN_TEST(TestNW, SW_withLogicSSE)
+LT_BEGIN_TEST(TestSW, SW_withLogicSSE)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -255,7 +263,7 @@ LT_BEGIN_TEST(TestNW, SW_withLogicSSE)
     free(alignment->matrix->matrix);   
 LT_END_TEST(SW_withLogicSSE)
 
-LT_BEGIN_TEST(TestNW, SW_SSE)
+LT_BEGIN_TEST(TestSW, SW_SSE)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -302,7 +310,7 @@ LT_BEGIN_TEST(TestNW, SW_SSE)
     free(alignment->matrix->matrix);   
 LT_END_TEST(SW_SSE)
 
-LT_BEGIN_TEST(TestNW, SW_SSE_EQUAL_STRINGS)
+LT_BEGIN_TEST(TestSW, SW_SSE_EQUAL_STRINGS)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -321,7 +329,7 @@ LT_BEGIN_TEST(TestNW, SW_SSE_EQUAL_STRINGS)
 LT_END_TEST(SW_SSE_EQUAL_STRINGS)
 
 
-LT_BEGIN_TEST(TestNW, SW_SSE_TEST1)
+LT_BEGIN_TEST(TestSW, SW_SSE_TEST1)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -339,7 +347,7 @@ LT_BEGIN_TEST(TestNW, SW_SSE_TEST1)
     free(alignment->matrix->matrix);   
 LT_END_TEST(SW_SSE_TEST1)
 
-LT_BEGIN_TEST(TestNW, SW_SSE_FINALTEST)
+LT_BEGIN_TEST(TestSW, SW_SSE_FINALTEST)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;

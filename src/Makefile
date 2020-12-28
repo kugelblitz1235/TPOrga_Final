@@ -52,11 +52,20 @@ clean:
 	rm -f $(BUILD_DIR)/*
 	rm -f ../cli
 	rm -f ../test
+	rm -f ../random_test
 
 test: $(BUILD_DIR)/test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
 	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
 	../test
 
 $(BUILD_DIR)/test.o: test.cpp
+	mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+random_test: $(BUILD_DIR)/random_test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
+	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/random_test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
+	../random_test
+
+$(BUILD_DIR)/random_test.o: random_test.cpp
 	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
