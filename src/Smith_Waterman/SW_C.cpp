@@ -8,7 +8,7 @@ using namespace std;
 
 namespace SW {
 
-void SW(
+void SW_C_LIN(
 	Alignment& alignment,
 	bool debug
 ){
@@ -89,36 +89,6 @@ void SW(
 		free(scores);
 	}
 }
-
-Alignment* alignment_by_SW(std::string implementation, char * sequence_1, char* sequence_2, short gap, short missmatch, short match){
-	//creo la estructura vacia
-	Alignment* alignment = new_alignment();
-	
-	//relleno la estructura con los valores correspondientes
-	alignment->sequence_1=new_Sequence_from_string(sequence_1);
-	alignment->sequence_2=new_Sequence_from_string(sequence_2);
-	(alignment->parameters)->match=match;
-	(alignment->parameters)->missmatch=missmatch;
-	(alignment->parameters)->gap=gap;
-
-	if(implementation.compare("C") == 0){
-		//ejecuto la implementación en c con debug
-		SW(*alignment, false);
-	
-	}else if(implementation.compare("LIN") == 0){
-		
-		//ejecuto el algoritmo en asm lineal
-		SWLIN(alignment);
-	}
-	else{
-		throw "No existe la implementación ingresada.";
-	}
-
-
-	//devuelvo la estructura modificada
-	return alignment;
-}
-
 
 void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;	
@@ -612,7 +582,7 @@ void actualizar_posicion_maxima(
 	}
 }
 
-void SW_C_SSE (Alignment& alignment, bool debug){
+void SW_C_SSE(Alignment& alignment, bool debug){
 	char* seq1 = alignment.sequence_1->sequence;	
 	char* seq2 = alignment.sequence_2->sequence;
 	unsigned int seq1_len = alignment.sequence_1->length;
@@ -727,4 +697,32 @@ void SW_C_SSE (Alignment& alignment, bool debug){
 	if(!debug) free(score_matrix);
 }
 
+Alignment* alignment_by_SW(std::string implementation, char * sequence_1, char* sequence_2, short gap, short missmatch, short match){
+	//creo la estructura vacia
+	Alignment* alignment = new_alignment();
+	
+	//relleno la estructura con los valores correspondientes
+	alignment->sequence_1=new_Sequence_from_string(sequence_1);
+	alignment->sequence_2=new_Sequence_from_string(sequence_2);
+	(alignment->parameters)->match=match;
+	(alignment->parameters)->missmatch=missmatch;
+	(alignment->parameters)->gap=gap;
+
+	if(implementation.compare("C") == 0){
+		//ejecuto la implementación en c sin debug
+		SW_C_LIN(*alignment, false);
+	
+	}else if(implementation.compare("LIN") == 0){
+		
+		//ejecuto el algoritmo en asm lineal
+		SW_ASM_LIN(alignment);
+	}
+	else{
+		throw "No existe la implementación ingresada.";
+	}
+
+
+	//devuelvo la estructura modificada
+	return alignment;
+}
 }

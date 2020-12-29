@@ -1,3 +1,13 @@
+global SW_ASM_LIN
+
+extern printf
+extern malloc 
+extern free 
+extern new_Sequence_from_string
+extern new_result
+extern destroy_result
+extern new_alignment
+extern destroy_alignment
 
 section .rodata:
 debuggingW: DB '%p',10,0
@@ -9,7 +19,6 @@ section .text:
 ;2_Inicializar la matriz de scores
 ;3_Darle puntaje a cada elemento recorriendo de izq-> der, top-> bottom
 ;4_Traceback para obtener el mejor alineamiento local
-global SWLIN
 
 ;podriamos colocar aca unos defines 
 %define seq1 RBX
@@ -71,16 +80,8 @@ global SWLIN
 ;  Parameters* parameters;
 ;  Result* result;
 ;};
-extern printf
-extern malloc 
-extern free 
-extern new_Sequence_from_string
-extern new_result
-extern destroy_result
-extern new_alignment
-extern destroy_alignment
 
-SWLIN:
+SW_ASM_LIN:
 ;parametros 
 ;void* alignment RDI
     push rbp 

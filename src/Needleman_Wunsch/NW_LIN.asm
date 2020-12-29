@@ -1,10 +1,19 @@
+global NW_ASM_LIN
+
+extern printf
+extern malloc 
+extern free 
+extern new_Sequence_from_string
+extern new_result
+extern destroy_result
+extern new_alignment
+extern destroy_alignment
 
 section .rodata:
 debuggingW: DB '%c',10,0
 indexView: DB '%hi ,%hi',10,0
 
 section .text:
-global NWLIN
 ;podriamos colocar aca unos defines 
 %define seq1 RBX
 %define seq2 R12
@@ -65,16 +74,8 @@ global NWLIN
 ;  Parameters* parameters;
 ;  Result* result;
 ;};
-extern printf
-extern malloc 
-extern free 
-extern new_Sequence_from_string
-extern new_result
-extern destroy_result
-extern new_alignment
-extern destroy_alignment
 
-NWLIN:
+NW_ASM_LIN:
 ;parametros 
 ;void* alignment RDI
     push rbp 

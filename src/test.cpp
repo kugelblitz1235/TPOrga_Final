@@ -19,13 +19,13 @@ using namespace std;
 LT_BEGIN_SUITE(TestNW)
 
 void set_up() {
-    printf("Ejecutando tests NW...\n");
+    printf("Ejecutando test para NW...\n");
 }
 void tear_down() {}
 
 LT_END_SUITE(TestNW)
 
-LT_BEGIN_TEST(TestNW, NW_LIN)
+LT_BEGIN_TEST(TestNW, NW_C_LIN)
 
     Alignment* alignment = new_alignment();
     alignment->parameters->gap = -1;
@@ -70,9 +70,9 @@ LT_BEGIN_TEST(TestNW, NW_LIN)
     
     LT_CHECK( check_nw );
     free(alignment->matrix->matrix);
-LT_END_TEST(NW_LIN)
+LT_END_TEST(NW_C_LIN)
 
-LT_BEGIN_TEST(TestNW, NW_withLogicSSE)
+LT_BEGIN_TEST(TestNW, NW_C_withLogicSSE)
     Alignment* alignment = new_alignment();
     alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
     alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
@@ -113,9 +113,9 @@ LT_BEGIN_TEST(TestNW, NW_withLogicSSE)
     
     LT_CHECK( equals );
     
-LT_END_TEST(NW_withLogicSSE)
+LT_END_TEST(NW_C_withLogicSSE)
 
-LT_BEGIN_TEST(TestNW, NW_SSE)
+LT_BEGIN_TEST(TestNW, NW_C_SSE)
     Alignment* alignment = new_alignment();
     alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
     alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
@@ -157,13 +157,13 @@ LT_BEGIN_TEST(TestNW, NW_SSE)
     
     LT_CHECK( equals );
     
-LT_END_TEST(NW_SSE)
+LT_END_TEST(NW_C_SSE)
 
 //===================================Smith waterman=====================================
 LT_BEGIN_SUITE(TestSW)
 
 void set_up() {
-    printf("Ejecutando tests SW...\n");
+    printf("Ejecutando test para SW...\n");
 }
 void tear_down() {}
 
@@ -177,7 +177,7 @@ LT_BEGIN_TEST(TestSW, SW_C_LIN)
     alignment->sequence_1 = new_Sequence_from_string((char*) "TGTTACGG");
     alignment->sequence_2 = new_Sequence_from_string((char*) "GGTTGACTA");
     
-    SW::SW(*alignment, true);
+    SW::SW_C_LIN(*alignment, true);
 
     bool res = strcmp(alignment->result->sequence_1->sequence, "-GTT-AC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTTGAC") == 0;
     
@@ -204,8 +204,6 @@ LT_BEGIN_TEST(TestSW, SW_C_LIN)
                 DBG(get_score_LIN(alignment->matrix->matrix,9,i,j));
                 break;       
             }
-        
-
         }
         if (!check_sw)
             break; 
@@ -216,7 +214,7 @@ LT_BEGIN_TEST(TestSW, SW_C_LIN)
     free(alignment->matrix->matrix);   
 LT_END_TEST(SW_C_LIN) 
 
-LT_BEGIN_TEST(TestSW, SW_withLogicSSE)
+LT_BEGIN_TEST(TestSW, SW_C_withLogicSSE)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -251,8 +249,6 @@ LT_BEGIN_TEST(TestSW, SW_withLogicSSE)
                 DBG(get_score_SSE(alignment->matrix->matrix,9,i,j));
                 break;       
             }
-        
-
         }
         if (!check_sw)
             break; 
@@ -261,9 +257,9 @@ LT_BEGIN_TEST(TestSW, SW_withLogicSSE)
     LT_CHECK( check_sw );
 
     free(alignment->matrix->matrix);   
-LT_END_TEST(SW_withLogicSSE)
+LT_END_TEST(SW_C_withLogicSSE)
 
-LT_BEGIN_TEST(TestSW, SW_SSE)
+LT_BEGIN_TEST(TestSW, SW_C_SSE)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -308,9 +304,9 @@ LT_BEGIN_TEST(TestSW, SW_SSE)
     LT_CHECK( check_sw );
 
     free(alignment->matrix->matrix);   
-LT_END_TEST(SW_SSE)
+LT_END_TEST(SW_C_SSE)
 
-LT_BEGIN_TEST(TestSW, SW_SSE_EQUAL_STRINGS)
+LT_BEGIN_TEST(TestSW, SW_C_SSE_EQUAL_STRINGS)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -326,10 +322,10 @@ LT_BEGIN_TEST(TestSW, SW_SSE_EQUAL_STRINGS)
     LT_CHECK(res);
 
     free(alignment->matrix->matrix);   
-LT_END_TEST(SW_SSE_EQUAL_STRINGS)
+LT_END_TEST(SW_C_SSE_EQUAL_STRINGS)
 
 
-LT_BEGIN_TEST(TestSW, SW_SSE_TEST1)
+LT_BEGIN_TEST(TestSW, SW_C_SSE_TEST1)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -345,9 +341,9 @@ LT_BEGIN_TEST(TestSW, SW_SSE_TEST1)
     LT_CHECK(res);
 
     free(alignment->matrix->matrix);   
-LT_END_TEST(SW_SSE_TEST1)
+LT_END_TEST(SW_C_SSE_TEST1)
 
-LT_BEGIN_TEST(TestSW, SW_SSE_FINALTEST)
+LT_BEGIN_TEST(TestSW, SW_C_SSE_FINALTEST)
      Alignment* alignment = new_alignment();
     alignment->parameters->gap = -2;
     alignment->parameters->match = 3;
@@ -364,7 +360,7 @@ LT_BEGIN_TEST(TestSW, SW_SSE_FINALTEST)
     LT_CHECK( res );
 
     free(alignment->matrix->matrix);   
-LT_END_TEST(SW_SSE_FINALTEST)
+LT_END_TEST(SW_C_SSE_FINALTEST)
 
 
 // Ejecutar tests

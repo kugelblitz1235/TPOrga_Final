@@ -2,11 +2,11 @@
 #define ALIGNALGO_HPP
 
 extern "C" {
-    void* SWLIN(
+    void* SW_ASM_LIN(
         Alignment* alignment);
 }
 extern "C" {
-    void* NWLIN(
+    void* NW_ASM_LIN(
         Alignment* alignment);
 }
 #endif  

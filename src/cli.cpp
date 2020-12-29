@@ -18,7 +18,6 @@ Alignment* align_sequences (std::string algorithm, std::string implementation, c
 	
     try
     {
-      
           //los cambio a mayusculas para una mejor comparacion
           for (auto & c: algorithm) c = toupper(c);
           for (auto & c: implementation) c = toupper(c);
