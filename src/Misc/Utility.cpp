@@ -93,8 +93,8 @@ void backtracking_C(
 	// cerr << "Best sequences" << endl;
 	best_sequence_1[length]=0;
 	best_sequence_2[length]=0;
-	DBG(best_sequence_1);
-	DBG(best_sequence_2);
+	// DBG(best_sequence_1);
+	// DBG(best_sequence_2);
 	alignment.result->sequence_1 = new_Sequence_from_string(best_sequence_1);
 	alignment.result->sequence_2 = new_Sequence_from_string(best_sequence_2);
 	

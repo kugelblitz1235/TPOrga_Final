@@ -44,6 +44,9 @@ LT_BEGIN_TEST(TestNW, NW_C_SSE)
     char *s1 = random_seq(s_len);
     char *s2 = random_seq(s_len);
 
+    printf("Input sequence 1: %s\n", s1);
+    printf("Input sequence 2: %s\n", s2);
+
     Alignment* alignment_lin = new_alignment();
     alignment_lin->sequence_1 = new_Sequence_from_string(s1);
     alignment_lin->sequence_2 = new_Sequence_from_string(s2);
@@ -56,18 +59,36 @@ LT_BEGIN_TEST(TestNW, NW_C_SSE)
     
     NW::NW_C_SSE(*alignment, true);
 
-    bool seqs = strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
-                strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0;
-    
     bool score = alignment->result->score == alignment_lin->result->score;
 
-    LT_CHECK(seqs && score);
+    LT_CHECK(score);
+
+    if (!score){
+        printf("Score LIN: %d\n", alignment_lin->result->score);
+        printf("Score SSE: %d\n", alignment->result->score);
+    }
+
+    bool seqs = strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
+                strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0;
+
+    LT_CHECK(seqs);
+
+    if (!seqs) {
+        printf("Alignment LIN:\n");
+        printf("%s\n", alignment_lin->result->sequence_1->sequence);
+        printf("%s\n", alignment_lin->result->sequence_2->sequence);
+
+        printf("Alignment SSE:\n");
+        printf("%s\n", alignment->result->sequence_1->sequence);
+        printf("%s\n", alignment->result->sequence_2->sequence);
+    }
 
     bool matrix_ok = true;
     for(int i = 0 ; i < 8 ; i++){
         for(int j = 0 ; j < 8 ; j++){
             matrix_ok &= get_score_SSE(alignment->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8);
             if (!matrix_ok){
+                printf("Score matrices differ at: \n");
                 DBG(i);
                 DBG(j);
                 DBG(get_score_SSE(alignment->matrix->matrix,s_len,i,j,8));
@@ -100,6 +121,9 @@ LT_BEGIN_TEST(TestSW, SW_C_SSE)
     char *s1 = random_seq(s_len);
     char *s2 = random_seq(s_len);
 
+    printf("Input sequence 1: %s\n", s1);
+    printf("Input sequence 2: %s\n", s2);
+
     Alignment* alignment_lin = new_alignment();
     alignment_lin->sequence_1 = new_Sequence_from_string(s1);
     alignment_lin->sequence_2 = new_Sequence_from_string(s2);
@@ -112,18 +136,36 @@ LT_BEGIN_TEST(TestSW, SW_C_SSE)
     
     SW::SW_C_SSE(*alignment, true);
 
+    bool score = alignment->result->score == alignment_lin->result->score;
+
+    LT_CHECK(score);
+
+    if (!score){
+        printf("Score LIN: %d\n", alignment_lin->result->score);
+        printf("Score SSE: %d\n", alignment->result->score);
+    }
+
     bool seqs = strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
                 strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0;
     
-    bool score = alignment->result->score == alignment_lin->result->score;
+    LT_CHECK(seqs);
 
-    LT_CHECK(seqs && score);
+    if (!seqs) {
+        printf("Alignment LIN:\n");
+        printf("%s\n", alignment_lin->result->sequence_1->sequence);
+        printf("%s\n", alignment_lin->result->sequence_2->sequence);
+
+        printf("Alignment SSE:\n");
+        printf("%s\n", alignment->result->sequence_1->sequence);
+        printf("%s\n", alignment->result->sequence_2->sequence);
+    }
 
     bool matrix_ok = true;
     for(int i = 0 ; i < 8 ; i++){
         for(int j = 0 ; j < 8 ; j++){
             matrix_ok &= get_score_SSE(alignment->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8);
             if (!matrix_ok){
+                printf("Score matrices differ at: \n");
                 DBG(i);
                 DBG(j);
                 DBG(get_score_SSE(alignment->matrix->matrix,s_len,i,j,8));

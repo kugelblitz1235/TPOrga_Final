@@ -681,8 +681,8 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 		alignment.matrix->matrix = score_matrix;
 	}
 
-	printf("%s\n",seq1);
-	printf("%s\n",seq2);
+	// printf("%s\n",seq1);
+	// printf("%s\n",seq2);
 	
 	backtracking_C(
 		score_matrix,
