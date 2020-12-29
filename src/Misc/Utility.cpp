@@ -1,7 +1,8 @@
-#include <iostream>
-#include <string>
-#include <string.h>
-#include <vector>
+// #include <iostream>
+// #include <fstream>
+// #include <string>
+// #include <string.h>
+// #include <vector>
 
 #include "Utility.hpp"
 
@@ -27,8 +28,8 @@ void backtracking_C(
 	int seq1_len = alignment.sequence_1->length;
 	int seq2_len = alignment.sequence_2->length;
 	
-	Sequence* best_seq_1 = alignment.result->sequence_1;
-	Sequence* best_seq_2 = alignment.result->sequence_2;
+	// Sequence* best_seq_1 = alignment.result->sequence_1;
+	// Sequence* best_seq_2 = alignment.result->sequence_2;
 
 	char* best_sequence_1 = (char*)malloc(seq1_len+1+seq2_len+1);
 	char* best_sequence_2 = (char*)malloc(seq1_len+1+seq2_len+1);
@@ -38,13 +39,16 @@ void backtracking_C(
 	unsigned int x = best_x;
 	unsigned int y = best_y;
 	
+	printf("Comienza backtracking: x = %d, y = %d\n", x, y);
 	while(y != 0 || x != 0){
 		// cerr<<"step"<<endl;
 		// DBG(x);
 		// DBG(y);
 		if(y > 0 && x > 0){
-			if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0)
+			if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0) {
+				// printf("Termina por score = 0\n");
 				break;
+			}
 
 			short score_diag = score_fun(score_matrix, seq1_len,y-1,x-1,vector_len) + 
 						  alignment.parameters->missmatch*(seq2[y] != seq1[x]) + 
@@ -55,24 +59,29 @@ void backtracking_C(
 			short score_up = score_fun(score_matrix, seq1_len,y-1,x,vector_len) + alignment.parameters->gap;
 			
 			if(score_diag ==  score_fun(score_matrix, seq1_len,y,x,vector_len)){
+				// printf("Diagonal\n");
 				best_sequence_1[length] = seq1[x];
 				best_sequence_2[length] = seq2[y];
 				x--;
 				y--;
 			}else if(score_up == score_fun(score_matrix, seq1_len,y,x,vector_len)){
+				// printf("Arriba\n");
 				best_sequence_1[length] = '-';
 				best_sequence_2[length] = seq2[y];
 				y--;
 			}else{
+				// printf("Izquierda\n");
 				best_sequence_1[length] = seq1[x];
 				best_sequence_2[length] = '-';
 				x--;
 			}
 		}else if(x > 0){
+			// printf("Tope superior\nIzquierda\n");
 			best_sequence_1[length] = seq1[x];
 			best_sequence_2[length] = '-';
 			x--;
 		}else if(y > 0){
+			// printf("Tope Izquierda\nArriba\n");
 			best_sequence_1[length] = '-';
 			best_sequence_2[length] = seq2[y];
 			y--;
@@ -179,11 +188,11 @@ void paintSquare(vector<vector<char>>& canvasMatrix, int squareHeight, int squar
 	canvasMatrix[y+squareHeight-1][x+squareWidth-1] = '+'; 	
 }
 
-void printScoreMatrix2(short* matrix,Alignment* alignment,int vec){
+void printScoreMatrix(short* matrix, Alignment* alignment, int vector_len, ofstream &ofs){
 	unsigned int seq1_len = alignment->sequence_1->length;
 	unsigned int seq2_len = alignment->sequence_2->length;
 	//en este caso hardcodeamos el tamaño del vector
-	int vector_len = vec;
+	// int vector_len = vec;
 	
 	int height = ((seq2_len + vector_len - 1)/ vector_len); //cantidad de "franjas" de diagonales
 	int width = (1 + seq1_len + vector_len - 1); //cantidad de diagonales por franja
@@ -274,8 +283,9 @@ void printScoreMatrix2(short* matrix,Alignment* alignment,int vec){
 
 	for(auto& row : canvasMatrix){
 		for(char c : row){
-			cout<<c;
-		}cout<<endl;
+			ofs << c;
+		}
+		ofs << endl;
 	}
 }
 

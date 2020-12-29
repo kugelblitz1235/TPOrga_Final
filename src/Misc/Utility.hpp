@@ -2,7 +2,9 @@
 #define UTILITY_H
 
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <vector>
 #include <string.h>
 #include <emmintrin.h>
 #include <immintrin.h>
@@ -15,8 +17,7 @@ typedef short (*score_fun_t)(short* score_matrix, int seq_row_len, int y,int x, 
 void printStartLine(int row,int vec);
 void printEndLine(int row,int vec);
 
-void printScoreMatrix(short* matrix,Alignment* alignment,int vec);
-void printScoreMatrix2(short* matrix,Alignment* alignment,int vec);
+void printScoreMatrix(short* matrix, Alignment* alignment, int vector_len, ofstream &ofs);
 
 void backtracking_C(
 	short *score_matrix,
