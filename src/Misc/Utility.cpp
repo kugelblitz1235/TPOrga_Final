@@ -44,11 +44,11 @@ void backtracking_C(
 		// cerr<<"step"<<endl;
 		// DBG(x);
 		// DBG(y);
+		if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0) {
+			printf("Termina por score = 0\n");
+			break;
+		}
 		if(y > 0 && x > 0){
-			if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0) {
-				// printf("Termina por score = 0\n");
-				break;
-			}
 
 			short score_diag = score_fun(score_matrix, seq1_len,y-1,x-1,vector_len) + 
 						  alignment.parameters->missmatch*(seq2[y] != seq1[x]) + 
@@ -59,29 +59,29 @@ void backtracking_C(
 			short score_up = score_fun(score_matrix, seq1_len,y-1,x,vector_len) + alignment.parameters->gap;
 			
 			if(score_diag ==  score_fun(score_matrix, seq1_len,y,x,vector_len)){
-				// printf("Diagonal\n");
+				printf("Diagonal\n");
 				best_sequence_1[length] = seq1[x];
 				best_sequence_2[length] = seq2[y];
 				x--;
 				y--;
 			}else if(score_up == score_fun(score_matrix, seq1_len,y,x,vector_len)){
-				// printf("Arriba\n");
+				printf("Arriba\n");
 				best_sequence_1[length] = '-';
 				best_sequence_2[length] = seq2[y];
 				y--;
 			}else{
-				// printf("Izquierda\n");
+				printf("Izquierda\n");
 				best_sequence_1[length] = seq1[x];
 				best_sequence_2[length] = '-';
 				x--;
 			}
 		}else if(x > 0){
-			// printf("Tope superior\nIzquierda\n");
+			printf("Tope superior\nIzquierda\n");
 			best_sequence_1[length] = seq1[x];
 			best_sequence_2[length] = '-';
 			x--;
 		}else if(y > 0){
-			// printf("Tope Izquierda\nArriba\n");
+			printf("Tope Izquierda\nArriba\n");
 			best_sequence_1[length] = '-';
 			best_sequence_2[length] = seq2[y];
 			y--;

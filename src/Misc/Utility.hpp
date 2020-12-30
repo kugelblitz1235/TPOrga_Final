@@ -29,8 +29,8 @@ void backtracking_C(
 	bool debug
 );
 
-short get_score_SSE(short* score_matrix, int seq_row_len, int y,int x, int vector_len=4);
-short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vector_len=4);
+short get_score_SSE(short* score_matrix, int seq_row_len, int y,int x, int vector_len=8);
+short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vector_len=8);
 
 void print_arr(short* p, int len);
 

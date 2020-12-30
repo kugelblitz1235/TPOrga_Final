@@ -98,7 +98,7 @@ void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 	
 	
 	//en este caso hardcodeamos el tamaño del vector
-	int vector_len = 4;
+	int vector_len = 8;
 	
 	int height = ((seq2_len + vector_len - 1)/ vector_len); //cantidad de "franjas" de diagonales
 	int width = (1 + seq1_len + vector_len - 1); //cantidad de diagonales por franja
@@ -129,8 +129,8 @@ void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 	}
 	/******************************************************************************************************/
 	short best_global = 0;
-	unsigned int best_x;
-	unsigned int best_y;
+	unsigned int best_x = 0;
+	unsigned int best_y = 0;
 
 	//arrays auxiliares para el calculo de los scores
 	char* str_row = (char*)malloc(vector_len * sizeof(char)); 
@@ -162,6 +162,10 @@ void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 				for(int k = vector_len-2;k >= 0;k--){
 					str_col[k+1] = str_col[k];
 				}
+			}
+			//simd : or para evitar basura
+			for(int s = 0; s < offset_col; s++){
+				str_col[s] = 1;
 			}
 
 		}else{
@@ -200,7 +204,12 @@ void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 					for(int k = 1;k < vector_len ;k++){
 						str_row[k-1] = str_row[k];
 					}
-			}
+				}
+				
+				//simd: agrega 0 para evitar basura
+				for(int s = 0; s < offset_str_row; s++){
+					str_row[vector_len-1-s] = 0;
+				}
 			}else if(j > width-vector_len){ // desborde por derecha
 				//simd : desplazamiento de puntero y levantar datos de memoria
 				//levantamos el string con el puntero offseteado para no acceder afuera
@@ -214,10 +223,15 @@ void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 				//simd : shift
 				//shifteamos los chars para que quede bien (el sentido es contrario a cuando lo hagamos en simd)
 				for(int s = 0;s < offset_str_row; s++){
-				for(int k = vector_len-2;k >= 0;k--){
-					str_row[k+1] = str_row[k];
+					for(int k = vector_len-2;k >= 0;k--){
+						str_row[k+1] = str_row[k];
+					}
+				}	
+
+				//simd: agrega 0 para evitar basura
+				for(int s = 0; s < offset_str_row; s++){
+					str_row[s] = 0;
 				}
-			}	
 
 			}else{ //caso feliz
 			//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
@@ -421,23 +435,21 @@ __m128i leer_secuencia_columna(
 		int offset_col = (i+1)*vector_len - seq2_len;
 		//simd : leer de memoria (movdqu)
 		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len - offset_col) );
-		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
-		//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-		//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-		//para realizar un shift a derecha se realiza la suma del offset y la mascara y luego con eso realizamos el shuffle b
-		//simd : shift right
-		__m128i offset_str_col_xmm = _mm_insert_epi8(offset_str_col_xmm,2*offset_col,0);
-		offset_str_col_xmm = _mm_broadcastb_epi8(offset_str_col_xmm);
-		offset_str_col_xmm = _mm_add_epi8(shift_mask_col_xmm,offset_str_col_xmm);
-		//las posiciones que se correspondan con caracteres basura (que no existen) van a tener un 1 en la posicion mas significativa
-		__m128i ones_mask = _mm_srai_epi16 (offset_str_col_xmm, 15);
-		ones_mask = _mm_slli_epi16(ones_mask,15);
-		
-		str_col_xmm = _mm_shuffle_epi8(str_col_xmm,offset_str_col_xmm);
-		//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
-		str_col_xmm = _mm_or_si128(str_col_xmm,ones_mask);
-		
 
+		__m128i shift_count = zeroes_xmm;
+		__m128i shift_mask;
+		shift_count = _mm_insert_epi8(shift_count, offset_col*8, 0);
+		str_col_xmm = _mm_srl_epi64(str_col_xmm, shift_count);
+
+		shift_mask =  _mm_insert_epi8(shift_mask, 0xFF, 0);
+		shift_mask = _mm_broadcastb_epi8(shift_mask);
+		shift_count = _mm_insert_epi8(shift_count, (8-offset_col)*8, 0);
+		shift_mask = _mm_sll_epi64(shift_mask, shift_count);
+
+		str_col_xmm = _mm_or_si128(str_col_xmm, shift_mask);
+
+		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
+		
 	}else{
 		//simd : leer de memoria (movdqu)
 		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
@@ -467,30 +479,21 @@ __m128i leer_secuencia_fila(
 			int offset_str_row = vector_len - j;
 			//simd : leer de memoria (movdqu)
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len + offset_str_row) );
+			
+			__m128i shift_count = zeroes_xmm;
+			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
+			str_row_xmm = _mm_sll_epi64(str_row_xmm, shift_count);
 			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-			//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-			//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-			//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
-			//simd : shift left
-			__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
-			offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-			offset_str_row_xmm = _mm_sub_epi8(shift_mask_row_xmm,offset_str_row_xmm);
-			str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
-
-	}else if(j > width-vector_len){ // desborde por derecha
+			
+	} else if(j > width-vector_len){ // desborde por derecha
 			//simd : desplazamiento de puntero y levantar datos de memoria
 			int offset_str_row = j - (width-vector_len);
 			
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len - offset_str_row) );
+			__m128i shift_count = zeroes_xmm;
+			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
+			str_row_xmm = _mm_srl_epi64(str_row_xmm, shift_count);
 			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-			//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-			//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-			//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
-			//simd : shift right
-			__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
-			offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-			offset_str_row_xmm = _mm_add_epi8(shift_mask_row_xmm,offset_str_row_xmm);
-			str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
 			
 	}else{ //caso feliz
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );
@@ -626,9 +629,9 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 
 /******************************************************************************************************/
 
-	int best_global=0;
-	int best_y;
-	int best_x;
+	int best_global = 0;
+	int best_y = 0;
+	int best_x = 0;
 
 	for( int i = 0 ; i < height ; i++){
 		int offset_y = i * width * vector_len;

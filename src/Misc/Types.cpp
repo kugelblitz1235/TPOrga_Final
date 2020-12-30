@@ -15,9 +15,9 @@ extern "C" Sequence* new_Sequence_from_string(char *s) {
     //retrocedo el puntero para que el Sequence completo tenga el guion
     new_s--;
     str->sequence = new_s;
-    str->length = strlen(s);
-    //por el guion dado que no lo cuenta el strlen
-    str->length++;
+    str->length = strlen(new_s);
+    // //por el guion dado que no lo cuenta el strlen
+    // str->length++;
 
     return str;
 }

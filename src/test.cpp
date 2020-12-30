@@ -241,12 +241,12 @@ LT_BEGIN_TEST(TestSW, SW_C_withLogicSSE)
     bool check_sw = true;
     for(int i = 0 ; i < 10 ; i++){
         for(int j = 0 ; j < 9 ; j++){
-            check_sw &= matrix_sw[i][j] == get_score_SSE(alignment->matrix->matrix,9,i,j);
+            check_sw &= matrix_sw[i][j] == get_score_SSE(alignment->matrix->matrix,9,i,j,8);
             if (!check_sw){
                 DBG(i);
                 DBG(j);
                 DBG(matrix_sw[i][j]);
-                DBG(get_score_SSE(alignment->matrix->matrix,9,i,j));
+                DBG(get_score_SSE(alignment->matrix->matrix,9,i,j,8));
                 break;       
             }
         }
@@ -335,7 +335,7 @@ LT_BEGIN_TEST(TestSW, SW_C_SSE_TEST1)
     
     SW::SW_C_SSE(*alignment, true);
 
-    bool res = strcmp(alignment->result->sequence_1->sequence, "---TTTTTATT") == 0 && strcmp(alignment->result->sequence_2->sequence, "-TTTTTTTATT") == 0;
+    bool res = strcmp(alignment->result->sequence_1->sequence, "-TTTTTATT") == 0 && strcmp(alignment->result->sequence_2->sequence, "-TTTTTATT") == 0;
     printf("%s\n",alignment->result->sequence_1->sequence);
     printf("%s\n",alignment->result->sequence_2->sequence);
     LT_CHECK(res);

@@ -415,23 +415,21 @@ __m128i leer_secuencia_columna(
 		int offset_col = (i+1)*vector_len - seq2_len;
 		//simd : leer de memoria (movdqu)
 		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len - offset_col) );
-		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
-		//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-		//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-		//para realizar un shift a derecha se realiza la suma del offset y la mascara y luego con eso realizamos el shuffle b
-		//simd : shift right
-		__m128i offset_str_col_xmm = _mm_insert_epi8(offset_str_col_xmm,2*offset_col,0);
-		offset_str_col_xmm = _mm_broadcastb_epi8(offset_str_col_xmm);
-		offset_str_col_xmm = _mm_add_epi8(shift_mask_col_xmm,offset_str_col_xmm);
-		//las posiciones que se correspondan con caracteres basura (que no existen) van a tener un 1 en la posicion mas significativa
-		__m128i ones_mask = _mm_srai_epi16 (offset_str_col_xmm, 15);
-		ones_mask = _mm_slli_epi16(ones_mask,15);
-		
-		str_col_xmm = _mm_shuffle_epi8(str_col_xmm,offset_str_col_xmm);
-		//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
-		str_col_xmm = _mm_or_si128(str_col_xmm,ones_mask);
-		
 
+		__m128i shift_count = zeroes_xmm;
+		__m128i shift_mask;
+		shift_count = _mm_insert_epi8(shift_count, offset_col*8, 0);
+		str_col_xmm = _mm_srl_epi64(str_col_xmm, shift_count);
+
+		shift_mask =  _mm_insert_epi8(shift_mask, 0xFF, 0);
+		shift_mask = _mm_broadcastb_epi8(shift_mask);
+		shift_count = _mm_insert_epi8(shift_count, (8-offset_col)*8, 0);
+		shift_mask = _mm_sll_epi64(shift_mask, shift_count);
+
+		str_col_xmm = _mm_or_si128(str_col_xmm, shift_mask);
+
+		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
+		
 	}else{
 		//simd : leer de memoria (movdqu)
 		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
@@ -444,6 +442,7 @@ __m128i leer_secuencia_columna(
 	
 	return str_col_xmm;
 }
+
 
 __m128i leer_secuencia_fila(
 	int j,
@@ -460,30 +459,21 @@ __m128i leer_secuencia_fila(
 			int offset_str_row = vector_len - j;
 			//simd : leer de memoria (movdqu)
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len + offset_str_row) );
+			
+			__m128i shift_count = zeroes_xmm;
+			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
+			str_row_xmm = _mm_sll_epi64(str_row_xmm, shift_count);
 			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-			//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-			//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-			//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
-			//simd : shift left
-			__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
-			offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-			offset_str_row_xmm = _mm_sub_epi8(shift_mask_row_xmm,offset_str_row_xmm);
-			str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
-
-	}else if(j > width-vector_len){ // desborde por derecha
+			
+	} else if(j > width-vector_len){ // desborde por derecha
 			//simd : desplazamiento de puntero y levantar datos de memoria
 			int offset_str_row = j - (width-vector_len);
 			
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len - offset_str_row) );
+			__m128i shift_count = zeroes_xmm;
+			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
+			str_row_xmm = _mm_srl_epi64(str_row_xmm, shift_count);
 			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-			//realizamos el shift con shuffle de a bytes, una mascara con que preserva la identidad del registro de byte
-			//agarramos el offset, lo broadcasteamos en un registro de 128 enpaquetado de bytes
-			//para realizar un shift a izquierda se realiza la resta del offset y la mascara y luego con eso realizamos el shuffle b
-			//simd : shift right
-			__m128i offset_str_row_xmm = _mm_insert_epi8(offset_str_row_xmm,2*offset_str_row,0);
-			offset_str_row_xmm = _mm_broadcastb_epi8(offset_str_row_xmm);
-			offset_str_row_xmm = _mm_add_epi8(shift_mask_row_xmm,offset_str_row_xmm);
-			str_row_xmm = _mm_shuffle_epi8(str_row_xmm,offset_str_row_xmm);
 			
 	}else{ //caso feliz
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );

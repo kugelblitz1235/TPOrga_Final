@@ -55,6 +55,8 @@ LT_END_SUITE(TestNW)
 //     alignment->sequence_1 = new_Sequence_from_string(s1);
 //     alignment->sequence_2 = new_Sequence_from_string(s2);
 
+//     // Actualizo valor de s_len para considerar el -
+//     s_len = alignment->sequence_1->length;
 //     NW::NW_C_LIN(*alignment_lin, true);
     
 //     NW::NW_C_SSE(*alignment, true);
@@ -126,6 +128,9 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
     alignment->sequence_1 = new_Sequence_from_string(s1);
     alignment->sequence_2 = new_Sequence_from_string(s2);
 
+    // Actualizo valor de s_len para considerar el -
+    s_len = alignment->sequence_1->length;
+
     NW::NW_C_LIN(*alignment_lin, true);
     
     NW::NW_C_withLogicSSE(*alignment_logic, true);
@@ -138,12 +143,6 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
 
     LT_CHECK(score);
 
-    if (!score){
-        printf("Score LIN: %d\n", alignment_lin->result->score);
-        printf("Score Logic: %d\n", alignment_logic->result->score);
-        printf("Score SSE: %d\n", alignment->result->score);
-    }
-
     bool seqs = (strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
                  strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0) &&
                 (strcmp(alignment_logic->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
@@ -152,20 +151,6 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
                  strcmp(alignment->result->sequence_2->sequence, alignment_logic->result->sequence_2->sequence) == 0);
     
     LT_CHECK(seqs);
-
-    if (!seqs) {
-        printf("Alignment LIN:\n");
-        printf("%s\n", alignment_lin->result->sequence_1->sequence);
-        printf("%s\n", alignment_lin->result->sequence_2->sequence);
-
-        printf("Alignment Logic:\n");
-        printf("%s\n", alignment_logic->result->sequence_1->sequence);
-        printf("%s\n", alignment_logic->result->sequence_2->sequence);
-
-        printf("Alignment SSE:\n");
-        printf("%s\n", alignment->result->sequence_1->sequence);
-        printf("%s\n", alignment->result->sequence_2->sequence);
-    }
 
     bool matrix_ok = true;
     bool position_ok;
@@ -187,8 +172,24 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
     }
     
     LT_CHECK( matrix_ok );
-    
-    if (!matrix_ok) {
+
+    if (!matrix_ok || !seqs || !score) {
+        printf("Score LIN: %d\n", alignment_lin->result->score);
+        printf("Score Logic: %d\n", alignment_logic->result->score);
+        printf("Score SSE: %d\n", alignment->result->score);
+
+        printf("Alignment LIN:\n");
+        printf("%s\n", alignment_lin->result->sequence_1->sequence);
+        printf("%s\n", alignment_lin->result->sequence_2->sequence);
+
+        printf("Alignment Logic:\n");
+        printf("%s\n", alignment_logic->result->sequence_1->sequence);
+        printf("%s\n", alignment_logic->result->sequence_2->sequence);
+
+        printf("Alignment SSE:\n");
+        printf("%s\n", alignment->result->sequence_1->sequence);
+        printf("%s\n", alignment->result->sequence_2->sequence);
+
         ofstream ofs_logic("NW_score_matrix_logic.txt", std::ofstream::trunc);
         printScoreMatrix(alignment_logic->matrix->matrix, alignment_lin, 8, ofs_logic);
         ofs_logic.close();
@@ -227,6 +228,9 @@ LT_END_SUITE(TestSW)
 //     Alignment* alignment = new_alignment();
 //     alignment->sequence_1 = new_Sequence_from_string(s1);
 //     alignment->sequence_2 = new_Sequence_from_string(s2);
+
+//      // Actualizo valor de s_len para considerar el -
+//      s_len = alignment->sequence_1->length;
 
 //     SW::SW_C_LIN(*alignment_lin, true);
     
@@ -299,6 +303,9 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
     alignment->sequence_1 = new_Sequence_from_string(s1);
     alignment->sequence_2 = new_Sequence_from_string(s2);
 
+    // Actualizo valor de s_len para considerar el -
+    s_len = alignment->sequence_1->length;
+
     SW::SW_C_LIN(*alignment_lin, true);
     
     SW::SW_C_withLogicSSE(*alignment_logic, true);
@@ -311,12 +318,6 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
 
     LT_CHECK(score);
 
-    if (!score){
-        printf("Score LIN: %d\n", alignment_lin->result->score);
-        printf("Score Logic: %d\n", alignment_logic->result->score);
-        printf("Score SSE: %d\n", alignment->result->score);
-    }
-
     bool seqs = (strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
                  strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0) &&
                 (strcmp(alignment_logic->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
@@ -325,20 +326,6 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
                  strcmp(alignment->result->sequence_2->sequence, alignment_logic->result->sequence_2->sequence) == 0);
     
     LT_CHECK(seqs);
-
-    if (!seqs) {
-        printf("Alignment LIN:\n");
-        printf("%s\n", alignment_lin->result->sequence_1->sequence);
-        printf("%s\n", alignment_lin->result->sequence_2->sequence);
-
-        printf("Alignment Logic:\n");
-        printf("%s\n", alignment_logic->result->sequence_1->sequence);
-        printf("%s\n", alignment_logic->result->sequence_2->sequence);
-
-        printf("Alignment SSE:\n");
-        printf("%s\n", alignment->result->sequence_1->sequence);
-        printf("%s\n", alignment->result->sequence_2->sequence);
-    }
 
     bool matrix_ok = true;
     bool position_ok;
@@ -361,7 +348,23 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
     
     LT_CHECK( matrix_ok );
     
-    if (!matrix_ok) {
+    if (!matrix_ok || !seqs || !score) {
+        printf("Score LIN: %d\n", alignment_lin->result->score);
+        printf("Score Logic: %d\n", alignment_logic->result->score);
+        printf("Score SSE: %d\n", alignment->result->score);
+
+        printf("Alignment LIN:\n");
+        printf("%s\n", alignment_lin->result->sequence_1->sequence);
+        printf("%s\n", alignment_lin->result->sequence_2->sequence);
+
+        printf("Alignment Logic:\n");
+        printf("%s\n", alignment_logic->result->sequence_1->sequence);
+        printf("%s\n", alignment_logic->result->sequence_2->sequence);
+
+        printf("Alignment SSE:\n");
+        printf("%s\n", alignment->result->sequence_1->sequence);
+        printf("%s\n", alignment->result->sequence_2->sequence);
+
         ofstream ofs_logic("SW_score_matrix_logic.txt", std::ofstream::trunc);
         printScoreMatrix(alignment_logic->matrix->matrix, alignment_lin, 8, ofs_logic);
         ofs_logic.close();
