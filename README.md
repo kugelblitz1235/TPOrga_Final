@@ -21,3 +21,4 @@ struct Alignment{
 - [ ] Pensar en usar instancia de AWS para usar AVX-512.
 - [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
 - [ ] Ver bug de score 0 en SW (Ver si quedo arreglado inicializando posicion maxima en 0).
+- [ ] Emprolijar mascaras que no se usan y demas basura que quedo.
