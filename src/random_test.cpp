@@ -109,7 +109,7 @@ LT_END_SUITE(TestNW)
 // LT_END_TEST(NW_C_SSE)
 
 LT_BEGIN_TEST(TestNW, NW_C_x3)
-    int s_len = 10;
+    int s_len = 8 + rand() % 93;
     char *s1 = random_seq(s_len);
     char *s2 = random_seq(s_len);
 
@@ -143,14 +143,11 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
 
     LT_CHECK(score);
 
-    bool seqs = (strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
-                 strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0) &&
-                (strcmp(alignment_logic->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
-                 strcmp(alignment_logic->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0) &&
-                (strcmp(alignment->result->sequence_1->sequence, alignment_logic->result->sequence_1->sequence) == 0 &&
-                 strcmp(alignment->result->sequence_2->sequence, alignment_logic->result->sequence_2->sequence) == 0);
-    
-    LT_CHECK(seqs);
+    bool valid_seqs = valid_alignment(*alignment_lin) &&
+                      valid_alignment(*alignment_logic) &&
+                      valid_alignment(*alignment);
+
+    LT_CHECK(valid_seqs);
 
     bool matrix_ok = true;
     bool position_ok;
@@ -173,7 +170,7 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
     
     LT_CHECK( matrix_ok );
 
-    if (!matrix_ok || !seqs || !score) {
+    if (!matrix_ok || !valid_seqs || !score) {
         printf("Score LIN: %d\n", alignment_lin->result->score);
         printf("Score Logic: %d\n", alignment_logic->result->score);
         printf("Score SSE: %d\n", alignment->result->score);
@@ -284,7 +281,7 @@ LT_END_SUITE(TestSW)
 // LT_END_TEST(SW_C_SSE)
 
 LT_BEGIN_TEST(TestSW, SW_C_x3)
-    int s_len = 10;
+    int s_len = 8 + rand() % 93;
     char *s1 = random_seq(s_len);
     char *s2 = random_seq(s_len);
 
@@ -318,14 +315,11 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
 
     LT_CHECK(score);
 
-    bool seqs = (strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
-                 strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0) &&
-                (strcmp(alignment_logic->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
-                 strcmp(alignment_logic->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0) &&
-                (strcmp(alignment->result->sequence_1->sequence, alignment_logic->result->sequence_1->sequence) == 0 &&
-                 strcmp(alignment->result->sequence_2->sequence, alignment_logic->result->sequence_2->sequence) == 0);
-    
-    LT_CHECK(seqs);
+    bool valid_seqs = valid_alignment(*alignment_lin) &&
+                      valid_alignment(*alignment_logic) &&
+                      valid_alignment(*alignment);
+
+    LT_CHECK(valid_seqs);
 
     bool matrix_ok = true;
     bool position_ok;
@@ -348,7 +342,8 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
     
     LT_CHECK( matrix_ok );
     
-    if (!matrix_ok || !seqs || !score) {
+
+    if (!matrix_ok || !valid_seqs || !score) {
         printf("Score LIN: %d\n", alignment_lin->result->score);
         printf("Score Logic: %d\n", alignment_logic->result->score);
         printf("Score SSE: %d\n", alignment->result->score);

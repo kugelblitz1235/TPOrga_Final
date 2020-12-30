@@ -45,7 +45,7 @@ void backtracking_C(
 		// DBG(x);
 		// DBG(y);
 		if(SW && score_fun(score_matrix, seq1_len,y,x,vector_len) == 0) {
-			printf("Termina por score = 0\n");
+			// printf("Termina por score = 0\n");
 			break;
 		}
 		if(y > 0 && x > 0){
@@ -59,29 +59,29 @@ void backtracking_C(
 			short score_up = score_fun(score_matrix, seq1_len,y-1,x,vector_len) + alignment.parameters->gap;
 			
 			if(score_diag ==  score_fun(score_matrix, seq1_len,y,x,vector_len)){
-				printf("Diagonal\n");
+				// printf("Diagonal\n");
 				best_sequence_1[length] = seq1[x];
 				best_sequence_2[length] = seq2[y];
 				x--;
 				y--;
 			}else if(score_up == score_fun(score_matrix, seq1_len,y,x,vector_len)){
-				printf("Arriba\n");
+				// printf("Arriba\n");
 				best_sequence_1[length] = '-';
 				best_sequence_2[length] = seq2[y];
 				y--;
 			}else{
-				printf("Izquierda\n");
+				// printf("Izquierda\n");
 				best_sequence_1[length] = seq1[x];
 				best_sequence_2[length] = '-';
 				x--;
 			}
 		}else if(x > 0){
-			printf("Tope superior\nIzquierda\n");
+			// printf("Tope superior\nIzquierda\n");
 			best_sequence_1[length] = seq1[x];
 			best_sequence_2[length] = '-';
 			x--;
 		}else if(y > 0){
-			printf("Tope Izquierda\nArriba\n");
+			// printf("Tope Izquierda\nArriba\n");
 			best_sequence_1[length] = '-';
 			best_sequence_2[length] = seq2[y];
 			y--;
@@ -343,4 +343,48 @@ __m128i char_to_word8(char* p){
   return _mm_unpacklo_epi8(a,b);
 }
 
-  
+bool valid_subsequence(Sequence* res_seq,Sequence* original_seq) {
+
+	char* res_seq_clean = (char*) malloc(res_seq->length + 1);
+	int res_seq_clean_len = 0;
+	for(int i = 0; i < res_seq->length; i++){
+		if (res_seq->sequence[i] != '-') {
+			res_seq_clean[res_seq_clean_len] = res_seq->sequence[i];
+			res_seq_clean_len++;
+		}
+	}
+	res_seq_clean[res_seq_clean_len] = 0;
+
+	return strstr(original_seq->sequence, res_seq_clean) != NULL;
+}
+
+bool valid_score(Alignment& alignment) {
+	Parameters* params = alignment.parameters;
+	int len = min(alignment.result->sequence_1->length, alignment.result->sequence_2->length);
+	int score = 0;
+	for (int i = 1; i < len; i++) {
+		char seq1_char = alignment.result->sequence_1->sequence[i];
+		char seq2_char = alignment.result->sequence_2->sequence[i];
+		if(seq1_char == '-' || seq2_char == '-')
+			score += params->gap;
+		else{
+			if(seq1_char == seq2_char)
+				score += params->match;
+			else
+				score += params->missmatch;
+		}
+	}
+	return score == alignment.result->score;
+}
+
+bool valid_alignment(Alignment& alignment){
+	Result* result = alignment.result;
+	short score = result->score;
+	
+	bool valid_seq1 = valid_subsequence(result->sequence_1,alignment.sequence_1);
+	bool valid_seq2 = valid_subsequence(result->sequence_2,alignment.sequence_2);
+	bool valid_length = (result->sequence_1->length == result->sequence_2->length);
+	bool valid_scr = valid_score(alignment);
+
+	return valid_seq1 && valid_seq1 && valid_length && valid_scr;
+}

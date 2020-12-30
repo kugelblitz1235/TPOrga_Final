@@ -43,4 +43,6 @@ void word_to_arr8(short* p,__m128i reg);
 void word_to_char8(char* p,__m128i reg);
 __m128i char_to_word8(char* p);
 
+bool valid_alignment(Alignment& alignment);
+
 #endif
