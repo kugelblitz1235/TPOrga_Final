@@ -162,6 +162,10 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 				}
 			}
 
+			//simd : or para evitar basura
+			for(int s = 0; s < offset_col; s++){
+				str_col[s] = 1;
+			}
 
 		}else{
 			//simd : leer de memoria (movdqu)
@@ -206,6 +210,12 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 						str_row[k-1] = str_row[k];
 					}
 				}
+				
+				//simd: agrega 0 para evitar basura
+				for(int s = 0; s < offset_str_row; s++){
+					str_row[vector_len-1-s] = 0;
+				}
+
 			} else if(j > width-vector_len){ 
 				// desborde por derecha
 				// levantamos el string con el puntero offseteado para no acceder afuera
@@ -225,6 +235,12 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 					str_row[k+1] = str_row[k];
 					}
 				}
+
+				//simd: agrega 0 para evitar basura
+				for(int s = 0; s < offset_str_row; s++){
+					str_row[s] = 0;
+				}
+
 			}else{ //caso feliz
 			//aclaracion hay que levantar la cantidad de caracteres que nos indica vector_len, no más
 				for(int k = 0;k < vector_len;k++){

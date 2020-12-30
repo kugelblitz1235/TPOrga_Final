@@ -14,9 +14,11 @@ struct Alignment{
 ## TODO:
 
 - [x] Ver si no se puede shiftear bytes y luego desempaquetar para evitar usar las mascaras raras.
-- [ ] Adaptar NW withLogicSSE para incluir las nuevas mascaras.
+- [x] Adaptar NW withLogicSSE para incluir las nuevas mascaras.
 - [x] Dividir version SSE de NW en subrutinas para facilitar el pasaje a ASM.
 - [x] Dividir version SSE de SW en subrutinas para facilitar el pasaje a ASM.
+- [ ] NW_ASM_SSE
+- [ ] SW_ASM_SSE
 - [ ] Hacer versiones AVX-256.
 - [ ] Pensar en usar instancia de AWS para usar AVX-512.
 - [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
