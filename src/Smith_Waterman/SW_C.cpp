@@ -423,7 +423,6 @@ __m128i leer_secuencia_columna(
 	int seq2_len,
 	char* seq2,
 	__m128i zeroes_xmm,
-	__m128i shift_mask_col_xmm,
 	__m128i reverse_mask_xmm){
 
 	__m128i str_col_xmm;
@@ -448,15 +447,15 @@ __m128i leer_secuencia_columna(
 
 		str_col_xmm = _mm_or_si128(str_col_xmm, shift_mask);
 
-		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
+		// str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
 		
 	}else{
 		//simd : leer de memoria (movdqu)
 		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
-		str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
+		// str_col_xmm = _mm_unpacklo_epi8(str_col_xmm,zeroes_xmm);
 		
 	}
-
+	str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
 	// Reverse de la secuencia vertical
 	str_col_xmm = _mm_shuffle_epi8(str_col_xmm,reverse_mask_xmm);
 	
@@ -469,8 +468,7 @@ __m128i leer_secuencia_fila(
 	int vector_len,
 	int width,
 	char* seq1,
-	__m128i zeroes_xmm,
-	__m128i shift_mask_row_xmm
+	__m128i zeroes_xmm
 ) {
 	__m128i str_row_xmm;
 	
@@ -483,7 +481,7 @@ __m128i leer_secuencia_fila(
 			__m128i shift_count = zeroes_xmm;
 			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
 			str_row_xmm = _mm_sll_epi64(str_row_xmm, shift_count);
-			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
+			// str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 			
 	} else if(j > width-vector_len){ // desborde por derecha
 			//simd : desplazamiento de puntero y levantar datos de memoria
@@ -493,13 +491,14 @@ __m128i leer_secuencia_fila(
 			__m128i shift_count = zeroes_xmm;
 			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
 			str_row_xmm = _mm_srl_epi64(str_row_xmm, shift_count);
-			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
+			// str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 			
 	}else{ //caso feliz
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );
-			str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
+			// str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 	}
 	
+	str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 	return str_row_xmm;
 }
 
@@ -611,8 +610,6 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 	//|0001|0000|0003|0002|0005|0004|0007|0006|0009|0008|000B|000A|000D|000C|000F|000E|
 	char reverse_mask[16] = {0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1};
 	reverse_mask_xmm = _mm_loadu_si128((__m128i*)reverse_mask);
-	shift_mask_col_xmm =  _mm_loadu_si128((__m128i*)shift_mask_col);
-	shift_mask_row_xmm =  _mm_loadu_si128((__m128i*)shift_mask_row);
 	
 	//en este caso hardcodeamos el tamaño del vector
 	int vector_len = 8;
@@ -638,12 +635,12 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 
 		// Levantar strings -------------------------------------------------------------------
 		// String vertical --------------------------------------------------------------------
-		str_col_xmm = leer_secuencia_columna(i, vector_len, seq2_len, seq2, zeroes_xmm, shift_mask_col_xmm, reverse_mask_xmm);
+		str_col_xmm = leer_secuencia_columna(i, vector_len, seq2_len, seq2, zeroes_xmm, reverse_mask_xmm);
 
 		for( int j = 2; j < width ; j++){
 			int offset_x = j * vector_len;
 			//emulamos simd
-			str_row_xmm = leer_secuencia_fila(j, vector_len, width, seq1, zeroes_xmm, shift_mask_row_xmm);
+			str_row_xmm = leer_secuencia_fila(j, vector_len, width, seq1, zeroes_xmm);
 			
 			// Calculo scores de izquierda, arriba y diagonal --------------------------------------------------------------------
 			calcular_scores(

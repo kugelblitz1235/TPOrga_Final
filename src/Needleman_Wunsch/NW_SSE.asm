@@ -1,10 +1,9 @@
 global NW_ASM_SSE
 extern malloc
 extern printf
+extern backtracking_c
 
 section .rodata
-shift_mask_col : DB 0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F
-shift_mask_row : DB 0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF
 reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1
 malloc_error_str : db `No se pudo reservar memoria suficiente.\n`,0
 
@@ -19,9 +18,6 @@ malloc_error_str : db `No se pudo reservar memoria suficiente.\n`,0
 %define up_score_xmm xmm7
 %define diag_score_xmm xmm8
 %define reverse_mask_xmm xmm9
-%define shift_mask_col_xmm xmm10
-%define shift_mask_row_xmm xmm11
-
 
 %define height r8 
 %define width r9
@@ -29,8 +25,8 @@ malloc_error_str : db `No se pudo reservar memoria suficiente.\n`,0
 %define v_aux r11
 %define seq1 r12
 %define seq2 r13
-%define seq1_len r14d
-%define seq2_len r15d
+%define seq1_len r14
+%define seq2_len r15
 
 ; Alignment offsets
 ; struct Alignment{
@@ -91,8 +87,8 @@ malloc_error_str : db `No se pudo reservar memoria suficiente.\n`,0
 section .text
 
 ; Funciones auxiliares
-%define offset_y rbx
 inicializar_casos_base:
+%define offset_y rbx
 mov rdi, [rdi + alignment_offset_parameters]
 mov di, [rdi + parameters_offset_gap]
 
@@ -116,11 +112,11 @@ mov rsi, 0
     mov offset_y, rax
    
     mov ax, -16384 ; SHRT_MIN/2
-    pinsrw xmm12, eax, 0
-    vpbroadcastw xmm12, xmm12
-    movdqu [score_matrix + offset_y], xmm12
-    pinsrw xmm12, edi, vector_len-1
-    movdqu [score_matrix + offset_y + vector_len], xmm12
+    pinsrw xmm10, eax, 0
+    vpbroadcastw xmm10, xmm10
+    movdqu [score_matrix + offset_y], xmm10
+    pinsrw xmm10, edi, vector_len-1
+    movdqu [score_matrix + offset_y + vector_len], xmm10
     
     inc rsi
     mov rax, height
@@ -128,11 +124,104 @@ mov rsi, 0
     jne .loop1
 ret
 
+
 leer_secuencia_columna:
+; rdi = i
+%define shift_count xmm10
+%define shift_mask xmm11
+mov rdx, rdi
+inc rdx
+shl rdx, vector_len_log ; rdx = (i+1) * vector_len
+cmp rdx, seq2_len
+jl .else 
+sub rdx, seq2_len ; rdx = offset_col
+mov rcx, rdi
+shl rcx, vector_len_log
+sub rcx, rdx
+movq str_col_xmm, [seq2 + rcx]
+
+pxor shift_count, shift_count
+mov rcx, rdx
+shl rcx, 3
+pinsrb shift_count, ecx, 0
+psrlq str_col_xmm, shift_count
+
+mov ecx, 0xFF
+pinsrb shift_mask, ecx, 0
+vpbroadcastb shift_mask, shift_mask
+mov rcx, 8
+sub rcx, rdx
+shl rcx, 3
+pinsrb shift_count, ecx, 0
+psllq shift_mask, shift_count
+
+por str_col_xmm, shift_mask
+jmp .end
+
+.else:
+movq str_col_xmm, [seq2 + rdi * vector_len]
+jmp .end
+
+.end:
+punpcklbw str_col_xmm, zeroes_xmm
+pshufb str_col_xmm, reverse_mask_xmm
+ret
+
 
 leer_secuencia_fila:
+; rdi = j
+%define shift_count xmm10
+%define shift_mask xmm11
+
+mov rdx, rdi 
+sub rdx, vector_len ; rdx = j - vector_len
+cmp rdx, 0
+jge .elseif ; j-vector_len < 0
+
+mov rcx, vector_len 
+sub rcx, rdi ; rcx = offset_str_row
+add rdx, rcx
+movq str_row_xmm, [seq1 + rcx]
+
+pxor shift_count, shift_count
+shl rcx, 3
+pinsrb shift_count, ecx, 0
+psllq str_row_xmm, shift_count
+
+jmp .end
+
+.elseif:
+mov rdx, width
+sub rdx, vector_len
+cmp rdi, rdx ; j > width-vector_len
+jle .else
+
+mov rcx, rdi
+sub rcx, rdx ; rcx = offset_str_row
+
+mov rdx, rdi
+sub rdx, rcx
+movq str_row_xmm, [seq1 + rdx - vector_len]
+pxor shift_count, shift_count
+shl rcx, 3
+pinsrb shift_count, ecx, 0
+psrlq str_row_xmm, shift_count
+
+jmp .end
+
+.else:
+movq str_row_xmm, [seq1 + rdi - vector_len]
+
+jmp .end
+
+.end:
+punpcklbw str_row_xmm, zeroes_xmm
+ret
 
 calcular_scores:
+; rdi = j
+; rsi = offset_y
+; rdx = offset_x
 
 
 ; Funcion principal (global)
@@ -162,10 +251,12 @@ push r15      ;save current r15
 ; acceso a las subestructuras de alignment ------------------------
 mov rax, [rdi + alignment_offset_sequence_1]
 mov seq1, [rax + sequence_offset_sequence]
-mov seq1_len, [rax + sequence_offset_length]
+xor seq1_len, seq1_len
+mov r14, [rax + sequence_offset_length]
 mov rax, [rdi + alignment_offset_sequence_2]
 mov seq2, [rax + sequence_offset_sequence]
-mov seq2_len, [rax + sequence_offset_length]
+xor seq2_len, seq2_len
+mov r15, [rax + sequence_offset_length]
 ;------------------------------------------------------------------
 
 ; asignacion de datos en los registros xmm nombrados --------------
@@ -196,20 +287,16 @@ pxor zeroes_xmm,zeroes_xmm
 
 ; Carga de las mascaras -------------------------------------------
 movdqu reverse_mask_xmm, [reverse_mask]
-movdqu shift_mask_col_xmm, [shift_mask_col]
-movdqu shift_mask_row_xmm, [shift_mask_row]
 ;------------------------------------------------------------------
 
 ; Calculo height, width y score_matrix. Malloc matrix y v_aux -----
-xor rax, rax
-mov eax, seq2_len
+mov rax, seq2_len
 add rax, vector_len
 dec rax
 shr rax, vector_len_log
 mov height,rax
 
-xor rax, rax
-mov eax, seq1_len
+mov rax, seq1_len
 add rax, vector_len
 mov width, rax
 
@@ -237,9 +324,64 @@ cmp rax, 0
 je .malloc_error
 mov v_aux, rax
 ;------------------------------------------------------------------
+
+; Casos base ------------------------------------------------------
 push rdi
 call inicializar_casos_base
 pop rdi
+
+; Loop principal --------------------------------------------------
+mov rdx, 0 ; i
+.loop_i:
+    ; Calcular offset_y
+    mov rax, rdx
+    mul width
+    shr rax, vector_len_log
+    mov rsi, rax ; rsi = offset_y
+    
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    mov rdi, rdx ; rdi = i
+    call leer_secuencia_columna
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    
+    mov rcx, 2 ; j
+    .loop_j:
+        push rdi
+        push rsi
+        push rdx
+        push rcx
+        mov rdi, rcx
+        call leer_secuencia_fila
+        pop rcx
+        pop rdx
+        pop rsi
+        pop rdi
+
+        push rdi
+        push rsi
+        push rdx
+        push rcx
+        mov rdi, rcx ; rdi = j
+        mov rdx, rcx 
+        shl rdx, vector_len_log ; rdx = offset_x
+        call calcular_scores
+        pop rcx
+        pop rdx
+        pop rsi
+        pop rdi
+
+        inc rcx
+        cmp rcx, width
+        jne .loop_j
+    inc rdx
+    cmp rdx, height
+    jne .loop_i
 ;------------------------------------------------------------------
 ; epilogo
 .epilogo:
