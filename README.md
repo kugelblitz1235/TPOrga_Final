@@ -18,6 +18,7 @@ struct Alignment{
 - [x] Dividir version SSE de NW en subrutinas para facilitar el pasaje a ASM.
 - [x] Dividir version SSE de SW en subrutinas para facilitar el pasaje a ASM.
 - [ ] NW_ASM_SSE
+  - [ ] Asegurarse de pushear todo lo que se podria romper antes de llamar a malloc u otras funciones de C.
 - [ ] SW_ASM_SSE
 - [ ] Hacer versiones AVX-256.
 - [ ] Pensar en usar instancia de AWS para usar AVX-512.

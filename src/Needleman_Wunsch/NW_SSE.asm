@@ -305,6 +305,10 @@ mul width
 shr rax, vector_len_log
 ; Ignoramos rdx porque no podriamos manejar un nro tan grande
 ; Estaria bueno chequear que no pase
+;---------------------------------------------;
+;   PUSHEAR TODO LO QUE MALLOC PUEDE ROMPER   ;
+;---------------------------------------------;
+
 push rdi ; conserva *matrix y deja alineado antes de llamar
 mov rdi, rax
 shl rdi, 1 ; score_matrix_sz*sizeof(short)
@@ -313,6 +317,11 @@ pop rdi
 cmp rax, 0
 je .malloc_error
 mov score_matrix,rax
+
+
+;---------------------------------------------;
+;   PUSHEAR TODO LO QUE MALLOC PUEDE ROMPER   ;
+;---------------------------------------------;
 
 push rdi ; conserva *matrix y deja alineado antes de llamar
 mov rdi, width
