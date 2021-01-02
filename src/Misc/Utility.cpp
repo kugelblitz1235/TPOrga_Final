@@ -289,7 +289,7 @@ void printScoreMatrix(short* matrix, Alignment* alignment, int vector_len, ofstr
 	}
 }
 
-short get_score_SSE(short* score_matrix, int seq_row_len, int y,int x, int vector_len){
+short get_score_SSE(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len){
 	int width = (1 + seq_row_len + vector_len - 1); //cantidad de diagonales por franja
 
 	int franja = y / vector_len;	
@@ -302,7 +302,7 @@ short get_score_SSE(short* score_matrix, int seq_row_len, int y,int x, int vecto
 	return score_matrix[offset_y + offset_x];
 }
 
-short get_score_LIN(short* score_matrix, int seq_row_len, int y,int x, int vector_len){
+short get_score_LIN(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len){
 	short** matrix_ptr = (short**) score_matrix;
 	return matrix_ptr[y][x];
 }
@@ -387,4 +387,32 @@ bool valid_alignment(Alignment& alignment){
 	bool valid_scr = valid_score(alignment);
 
 	return valid_seq1 && valid_seq1 && valid_length && valid_scr;
+}
+
+bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_fun_t score_fun, int vector_len, bool verbose) {
+    unsigned int seq1_len = alignment->sequence_1->length;
+    unsigned int seq2_len = alignment->sequence_2->length;
+
+	short (*matrix)[seq1_len] = (short (*)[seq1_len]) valid_matrix;
+
+    bool matrix_ok = true;
+    bool position_ok;
+    for(int i = 0 ; i < seq2_len ; i++){
+        for(int j = 0 ; j < seq1_len ; j++){
+			// DBG(i);
+			// DBG(j);
+            position_ok = matrix[i][j] == score_fun(alignment->matrix->matrix,seq1_len,i,j,vector_len);
+            // cout << "llegue" << endl;
+			matrix_ok &= position_ok;
+            if (!position_ok && verbose){
+                printf("Score matrices differ at: \n");
+                DBG(i);
+                DBG(j);
+                DBG(matrix[i][j]);
+                DBG(score_fun(alignment->matrix->matrix,seq1_len,i,j,vector_len));
+            }
+        }
+    }
+
+    return matrix_ok;
 }

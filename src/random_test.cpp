@@ -138,8 +138,7 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
     NW::NW_C_SSE(*alignment, true);
 
     bool score = (alignment->result->score == alignment_lin->result->score) &&
-                 (alignment_logic->result->score == alignment_lin->result->score) &&
-                 (alignment->result->score == alignment_logic->result->score);
+                 (alignment_logic->result->score == alignment_lin->result->score);
 
     LT_CHECK(score);
 
@@ -154,8 +153,7 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
     for(int i = 0 ; i < s_len ; i++){
         for(int j = 0 ; j < s_len ; j++){
             position_ok = get_score_SSE(alignment->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8) &&
-                          get_score_SSE(alignment_logic->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8) &&
-                          get_score_SSE(alignment->matrix->matrix,s_len,i,j,8) == get_score_SSE(alignment_logic->matrix->matrix,s_len,i,j,8);
+                          get_score_SSE(alignment_logic->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8);
             matrix_ok &= position_ok;
             if (!position_ok){
                 printf("Score matrices differ at: \n");
@@ -310,8 +308,7 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
     SW::SW_C_SSE(*alignment, true);
 
     bool score = (alignment->result->score == alignment_lin->result->score) &&
-                 (alignment_logic->result->score == alignment_lin->result->score) &&
-                 (alignment->result->score == alignment_logic->result->score);
+                 (alignment_logic->result->score == alignment_lin->result->score);
 
     LT_CHECK(score);
 
@@ -326,8 +323,7 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
     for(int i = 0 ; i < s_len ; i++){
         for(int j = 0 ; j < s_len ; j++){
             position_ok = get_score_SSE(alignment->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8) &&
-                          get_score_SSE(alignment_logic->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8) &&
-                          get_score_SSE(alignment->matrix->matrix,s_len,i,j,8) == get_score_SSE(alignment_logic->matrix->matrix,s_len,i,j,8);
+                          get_score_SSE(alignment_logic->matrix->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix->matrix,s_len,i,j,8);
             matrix_ok &= position_ok;
             if (!position_ok){
                 printf("Score matrices differ at: \n");
