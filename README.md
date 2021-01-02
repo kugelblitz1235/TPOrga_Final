@@ -24,3 +24,4 @@ struct Alignment{
 - [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
 - [ ] Ver bug de score 0 en SW (Ver si quedo arreglado inicializando posicion maxima en 0).
 - [ ] Emprolijar mascaras que no se usan y demas basura que quedo.
+- [ ] Cli o las funciones que manejan la selección de algoritmos deben chequear que se cumplan las precondiciones (i.e. secuencias de al menos 8 letras para los SSE).
