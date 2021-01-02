@@ -31,18 +31,12 @@ struct Metrics{
 // long long cycles;
 };
 
-struct AlignmentMatrix{
-  short* matrix;
-};
-
-AlignmentMatrix* new_alignment_matrix(int vector_length,int seq_length_1,int seq_length_2);
-
 struct Alignment{
   Sequence* sequence_1;
   Sequence* sequence_2;
   Parameters* parameters;
   Result* result;
-  AlignmentMatrix* matrix;
+  short* matrix;
 };
 
 Alignment* new_alignment();

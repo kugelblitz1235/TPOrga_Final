@@ -12,7 +12,7 @@
 using namespace std;
 
 
-void backtracking_C(
+extern "C" void backtracking_C(
 	short *score_matrix,
 	Alignment& alignment,
 	int vector_len,
@@ -289,7 +289,7 @@ void printScoreMatrix(short* matrix, Alignment* alignment, int vector_len, ofstr
 	}
 }
 
-short get_score_SSE(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len){
+extern "C" short get_score_SSE(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len){
 	int width = (1 + seq_row_len + vector_len - 1); //cantidad de diagonales por franja
 
 	int franja = y / vector_len;	
@@ -347,7 +347,7 @@ bool valid_subsequence(Sequence* res_seq,Sequence* original_seq) {
 
 	char* res_seq_clean = (char*) malloc(res_seq->length + 1);
 	int res_seq_clean_len = 0;
-	for(int i = 0; i < res_seq->length; i++){
+	for(unsigned int i = 0; i < res_seq->length; i++){
 		if (res_seq->sequence[i] != '-') {
 			res_seq_clean[res_seq_clean_len] = res_seq->sequence[i];
 			res_seq_clean_len++;
@@ -379,14 +379,13 @@ bool valid_score(Alignment& alignment) {
 
 bool valid_alignment(Alignment& alignment){
 	Result* result = alignment.result;
-	short score = result->score;
 	
 	bool valid_seq1 = valid_subsequence(result->sequence_1,alignment.sequence_1);
 	bool valid_seq2 = valid_subsequence(result->sequence_2,alignment.sequence_2);
 	bool valid_length = (result->sequence_1->length == result->sequence_2->length);
 	bool valid_scr = valid_score(alignment);
 
-	return valid_seq1 && valid_seq1 && valid_length && valid_scr;
+	return valid_seq1 && valid_seq2 && valid_length && valid_scr;
 }
 
 bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_fun_t score_fun, int vector_len, bool verbose) {
@@ -397,11 +396,11 @@ bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_
 
     bool matrix_ok = true;
     bool position_ok;
-    for(int i = 0 ; i < seq2_len ; i++){
-        for(int j = 0 ; j < seq1_len ; j++){
+    for(unsigned int i = 0 ; i < seq2_len ; i++){
+        for(unsigned int j = 0 ; j < seq1_len ; j++){
 			// DBG(i);
 			// DBG(j);
-            position_ok = matrix[i][j] == score_fun(alignment->matrix->matrix,seq1_len,i,j,vector_len);
+            position_ok = matrix[i][j] == score_fun(alignment->matrix,seq1_len,i,j,vector_len);
             // cout << "llegue" << endl;
 			matrix_ok &= position_ok;
             if (!position_ok && verbose){
@@ -409,7 +408,7 @@ bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_
                 DBG(i);
                 DBG(j);
                 DBG(matrix[i][j]);
-                DBG(score_fun(alignment->matrix->matrix,seq1_len,i,j,vector_len));
+                DBG(score_fun(alignment->matrix,seq1_len,i,j,vector_len));
             }
         }
     }

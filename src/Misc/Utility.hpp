@@ -19,7 +19,7 @@ void printEndLine(int row,int vec);
 
 void printScoreMatrix(short* matrix, Alignment* alignment, int vector_len, ofstream &ofs);
 
-void backtracking_C(
+extern "C" void backtracking_C(
 	short *score_matrix,
 	Alignment& alignment,
 	int vector_len,
@@ -29,7 +29,7 @@ void backtracking_C(
 	bool debug
 );
 
-short get_score_SSE(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len=8);
+extern "C" short get_score_SSE(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len=8);
 short get_score_LIN(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len=8);
 
 void print_arr(short* p, int len);

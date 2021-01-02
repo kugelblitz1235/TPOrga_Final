@@ -51,8 +51,7 @@ void NW_C_LIN(Alignment& alignment, bool debug){
 	 }
 	
 	if(debug){
-		alignment.matrix = new_alignment_matrix(1, seq1_len, seq2_len);
-		alignment.matrix->matrix = (short *) scores;
+		alignment.matrix = (short *) scores;
 		// cerr << "Score Matrix" << endl;
 		// for(unsigned int y = 0;y < seq2_len;y++){
 		// 	for(unsigned int x = 0;x < seq1_len;x++){
@@ -359,15 +358,7 @@ void NW_C_withLogicSSE (Alignment& alignment, bool debug){
 	free(cmp_match);
 	
 	if(debug){
-		// for(int i=0;i<seq2_len;i++){
-		// 	for(int j=0;j<seq1_len;j++){
-		// 		cerr<<get_score_SSE(score_matrix,seq1_len,i,j,vector_len)<<" ";
-		// 	}cerr<<endl;
-		// }
-
-		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
-		alignment.matrix->matrix = score_matrix;
-
+		alignment.matrix = score_matrix;
 	}
 
 	backtracking_C(
@@ -424,9 +415,9 @@ __m128i leer_secuencia_columna(
 		shift_count = _mm_insert_epi8(shift_count, offset_col*8, 0);
 		str_col_xmm = _mm_srl_epi64(str_col_xmm, shift_count);
 
-		shift_mask =  _mm_insert_epi8(shift_mask, 0xFF, 0);
+		shift_mask =  _mm_insert_epi8(shift_mask, (char)0xFF, 0);
 		shift_mask = _mm_broadcastb_epi8(shift_mask);
-		shift_count = _mm_insert_epi8(shift_count, (8-offset_col)*8, 0);
+		shift_count = _mm_insert_epi8(shift_count, (char)(8-offset_col)*8, 0);
 		shift_mask = _mm_sll_epi64(shift_mask, shift_count);
 
 		str_col_xmm = _mm_or_si128(str_col_xmm, shift_mask);
@@ -606,7 +597,7 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 
 			//save the max score in the right position of score matrix
 			_mm_storeu_si128((__m128i*)(score_matrix + offset_y + offset_x), diag_score_xmm);
-			
+
 			if(j>=vector_len){
 				v_aux[j - vector_len] =  _mm_extract_epi16 (diag_score_xmm, 0b0000);
 			}
@@ -614,8 +605,7 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 		}	
 	}
 	if(debug){
-		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
-		alignment.matrix->matrix = score_matrix;
+		alignment.matrix = score_matrix;
 	}
 
 	backtracking_C(
@@ -642,19 +632,12 @@ Alignment* alignment_by_NW(std::string implementation, char* sequence_1, char* s
 	(alignment->parameters)->missmatch = missmatch;
 	(alignment->parameters)->gap = gap;
 
-	if(implementation.compare("C") == 0){
-		//ejecuto la implementación en c
-		NW_C_LIN(*alignment, true);
+	if(implementation.compare("C_LIN") == 0)NW_C_LIN(*alignment, true);
+	else if(implementation.compare("C_SSE") == 0)NW_C_SSE(*alignment, true);
+	else if(implementation.compare("ASM_LIN") == 0)NW_ASM_LIN(alignment);
+	else if(implementation.compare("ASM_SSE") == 0)NW_ASM_SSE(alignment, true);
+	else throw "No existe la implementación ingresada.";
 	
-	}else if(implementation.compare("LIN") == 0){
-		
-		//ejecuto el algoritmo en asm lineal
-		NW_ASM_LIN(alignment);
-
-	}
-	else{
-		throw "No existe la implementación ingresada.";
-	}
 
 	//devuelvo la estructura modificada
 	return alignment;

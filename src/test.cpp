@@ -55,7 +55,7 @@ LT_BEGIN_TEST(TestNW, NW_C_LIN)
     bool check_nw = check_scr_matrix_manual((short **)matrix_nw, alignment, get_score_LIN);
     
     LT_CHECK( check_nw );
-    free(alignment->matrix->matrix);
+    free(alignment->matrix);
 LT_END_TEST(NW_C_LIN)
 
 LT_BEGIN_TEST(TestNW, NW_C_LIN2)
@@ -83,7 +83,7 @@ LT_BEGIN_TEST(TestNW, NW_C_LIN2)
     bool check_nw = check_scr_matrix_manual((short **)matrix_nw, alignment, get_score_LIN);
     
     LT_CHECK( check_nw );
-    free(alignment->matrix->matrix);
+    free(alignment->matrix);
 LT_END_TEST(NW_C_LIN2)
 
 // LT_BEGIN_TEST(TestNW, NW_C_withLogicSSE)
@@ -182,7 +182,7 @@ LT_BEGIN_TEST(TestSW, SW_C_LIN)
     
     LT_CHECK( check_sw );
 
-    free(alignment->matrix->matrix);   
+    free(alignment->matrix);   
 LT_END_TEST(SW_C_LIN) 
 
 LT_BEGIN_TEST(TestNW, SW_C_LIN2)
@@ -210,7 +210,7 @@ LT_BEGIN_TEST(TestNW, SW_C_LIN2)
     bool check_sw = check_scr_matrix_manual((short **)matrix_sw, alignment, get_score_LIN);
 
     LT_CHECK( check_sw );
-    free(alignment->matrix->matrix);
+    free(alignment->matrix);
 LT_END_TEST(SW_C_LIN2)
 
 // LT_BEGIN_TEST(TestSW, SW_C_withLogicSSE)
@@ -242,7 +242,7 @@ LT_END_TEST(SW_C_LIN2)
     
 //     LT_CHECK( check_sw );
 
-//     free(alignment->matrix->matrix);   
+//     free(alignment->matrix);   
 // LT_END_TEST(SW_C_withLogicSSE)
 
 // LT_BEGIN_TEST(TestSW, SW_C_SSE)
@@ -274,7 +274,7 @@ LT_END_TEST(SW_C_LIN2)
     
 //     LT_CHECK( check_sw );
 
-//     free(alignment->matrix->matrix);   
+//     free(alignment->matrix);   
 // LT_END_TEST(SW_C_SSE)
 
 // LT_BEGIN_TEST(TestSW, SW_C_SSE_EQUAL_STRINGS)
@@ -292,7 +292,7 @@ LT_END_TEST(SW_C_LIN2)
 //     printf("%s\n",alignment->result->sequence_2->sequence);
 //     LT_CHECK(res);
 
-//     free(alignment->matrix->matrix);   
+//     free(alignment->matrix);   
 // LT_END_TEST(SW_C_SSE_EQUAL_STRINGS)
 
 
@@ -311,7 +311,7 @@ LT_END_TEST(SW_C_LIN2)
 //     printf("%s\n",alignment->result->sequence_2->sequence);
 //     LT_CHECK(res);
 
-//     free(alignment->matrix->matrix);   
+//     free(alignment->matrix);   
 // LT_END_TEST(SW_C_SSE_TEST1)
 
 // LT_BEGIN_TEST(TestSW, SW_C_SSE_FINALTEST)
@@ -330,7 +330,7 @@ LT_END_TEST(SW_C_LIN2)
     
 //     LT_CHECK( res );
 
-//     free(alignment->matrix->matrix);   
+//     free(alignment->matrix);   
 // LT_END_TEST(SW_C_SSE_FINALTEST)
 
 

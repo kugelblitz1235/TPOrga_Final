@@ -113,7 +113,7 @@ int main (int argc, char **argv)
 */
   Alignment* alignment = new_alignment();
 
-  FASTA_to_alignment(alignment,"bdnf_hsa.FASTA","bdnf_mmu.FASTA");
+  FASTA_to_alignment(alignment,(char*)"bdnf_hsa.FASTA",(char*)"bdnf_mmu.FASTA");
   NW::NW_C_SSE(*alignment, true);
   
   /*

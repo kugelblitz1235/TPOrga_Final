@@ -70,8 +70,7 @@ void SW_C_LIN(
 	
 
 	if(debug){
-		alignment.matrix = new_alignment_matrix(1, seq1_len, seq2_len);
-		alignment.matrix->matrix = (short *)scores;
+		alignment.matrix = (short *)scores;
 	}
 
 	backtracking_C(
@@ -371,8 +370,7 @@ void SW_C_withLogicSSE (Alignment& alignment, bool debug){
 	// DBG(best_global);
 
 	if(debug){
-		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
-		alignment.matrix->matrix = score_matrix;
+		alignment.matrix = score_matrix;
 
 	}
 
@@ -677,8 +675,7 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 
 	// printScoreMatrix2(score_matrix,&alignment,vector_len);
 	if(debug){
-		alignment.matrix = new_alignment_matrix(vector_len, seq1_len, seq2_len);
-		alignment.matrix->matrix = score_matrix;
+		alignment.matrix = score_matrix;
 	}
 
 	// printf("%s\n",seq1);

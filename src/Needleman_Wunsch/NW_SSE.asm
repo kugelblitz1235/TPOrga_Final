@@ -1,11 +1,14 @@
 global NW_ASM_SSE
 extern malloc
+extern free
 extern printf
-extern backtracking_c
+extern backtracking_C
+extern new_alignment_matrix
+extern get_score_SSE
 
 section .rodata
 reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1
-malloc_error_str : db `No se pudo reservar memoria suficiente.\n`,0
+malloc_error_str : db `No se pudo reservar memoria suficiente.\nMalloc: %d\nIntente reservar: %d bytes\n`,0
 
 ; Variables globales
 %define constant_gap_xmm xmm0
@@ -34,7 +37,7 @@ malloc_error_str : db `No se pudo reservar memoria suficiente.\n`,0
 ;   Sequence* sequence_2;
 ;   Parameters* parameters;
 ;   Result* result;
-;   AlignmentMatrix* matrix;
+;   short* matrix;
 ; };
 %define alignment_offset_sequence_1 0
 %define alignment_offset_sequence_2 8
@@ -71,13 +74,6 @@ malloc_error_str : db `No se pudo reservar memoria suficiente.\n`,0
 %define result_offset_sequence_1 0
 %define result_offset_sequence_2 8
 %define result_offset_score 16
-
-
-; AlignmentMatrix offsets
-; struct AlignmentMatrix{
-;   short* matrix;
-; };
-%define alignmentmatrix_offset_matrix 0
 
 ; Este valor se usa para calcular el tamanio de la matriz
 ; y poder navegarla. Es necesario actualizarlo si cambia.
@@ -129,6 +125,7 @@ leer_secuencia_columna:
 ; rdi = i
 %define shift_count xmm10
 %define shift_mask xmm11
+
 mov rdx, rdi
 inc rdx
 shl rdx, vector_len_log ; rdx = (i+1) * vector_len
@@ -159,7 +156,9 @@ por str_col_xmm, shift_mask
 jmp .end
 
 .else:
+//está accediendo fuera de memoria acá
 movq str_col_xmm, [seq2 + rdi * vector_len]
+
 jmp .end
 
 .end:
@@ -222,7 +221,35 @@ calcular_scores:
 ; rdi = j
 ; rsi = offset_y
 ; rdx = offset_x
+    %define cmp_match_xmm xmm11
+    mov rcx, rsi
+    add rcx, rdx 
 
+    ; left score
+    movdqu left_score_xmm, [score_matrix + rcx - vector_len] 
+    paddw left_score_xmm, constant_gap_xmm
+    ; up score 
+    movdqu up_score_xmm, [score_matrix + rcx - vector_len]
+    psrldq  up_score_xmm, 2
+    mov ebx, dword [v_aux + rdi - 1]
+    pinsrw up_score_xmm, ebx, 0b111
+    paddw up_score_xmm, constant_gap_xmm
+    ;diag score
+    movdqu diag_score_xmm, [score_matrix + rcx - 2*vector_len]
+    psrldq  diag_score_xmm, 2
+    mov ecx, dword [v_aux + rdi - 2]
+    pinsrw diag_score_xmm, ecx, 0b111
+
+    ;compare the 2 strings and put the right penalty (match or missmatch) on each position
+    movdqu cmp_match_xmm, str_col_xmm
+    pcmpeqw cmp_match_xmm, str_row_xmm
+    movdqu str_row_xmm, cmp_match_xmm
+    pandn str_row_xmm, constant_missmatch_xmm
+    pand cmp_match_xmm, constant_match_xmm
+
+    ;get the max score of diag, up, left
+    paddw diag_score_xmm, cmp_match_xmm
+    paddw diag_score_xmm, str_row_xmm
 
 ; Funcion principal (global)
 NW_ASM_SSE:
@@ -241,22 +268,25 @@ NW_ASM_SSE:
 ; prologo ----------------------------------------------------------
 push rbp
 mov rbp, rsp
+
 push rbx      ;save current rbx
 push r12      ;save current r12
 push r13      ;save current r13
 push r14      ;save current r14
 push r15      ;save current r15
-;------------------------------------------------------------------
+
+; preservo debug --------------------------------------------------
+push rsi
 
 ; acceso a las subestructuras de alignment ------------------------
 mov rax, [rdi + alignment_offset_sequence_1]
 mov seq1, [rax + sequence_offset_sequence]
 xor seq1_len, seq1_len
-mov r14, [rax + sequence_offset_length]
+mov r14d, [rax + sequence_offset_length]
 mov rax, [rdi + alignment_offset_sequence_2]
 mov seq2, [rax + sequence_offset_sequence]
 xor seq2_len, seq2_len
-mov r15, [rax + sequence_offset_length]
+mov r15d, [rax + sequence_offset_length]
 ;------------------------------------------------------------------
 
 ; asignacion de datos en los registros xmm nombrados --------------
@@ -302,35 +332,67 @@ mov width, rax
 
 mov rax, height
 mul width
-shr rax, vector_len_log
+shl rax, vector_len_log
+
+
+; -----------------------------------------------------------------
 ; Ignoramos rdx porque no podriamos manejar un nro tan grande
 ; Estaria bueno chequear que no pase
-;---------------------------------------------;
-;   PUSHEAR TODO LO QUE MALLOC PUEDE ROMPER   ;
-;---------------------------------------------;
+push rdi ; conserva *matrix
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+push r10
+push r11
 
-push rdi ; conserva *matrix y deja alineado antes de llamar
 mov rdi, rax
 shl rdi, 1 ; score_matrix_sz*sizeof(short)
+push rdi
+sub rsp, 8
 call malloc
-pop rdi
+add rsp, 8
+pop rdx
+mov rsi, 0
 cmp rax, 0
 je .malloc_error
+pop r11
+pop r10
+pop r9
+pop r8
+pop rcx
+pop rdx
+pop rsi
+pop rdi
 mov score_matrix,rax
-
-
-;---------------------------------------------;
-;   PUSHEAR TODO LO QUE MALLOC PUEDE ROMPER   ;
-;---------------------------------------------;
-
-push rdi ; conserva *matrix y deja alineado antes de llamar
+push rdi ; conserva *matrix
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+push r10
+push r11
 mov rdi, width
 dec rdi
 shl rdi,1
+push rdi
+sub rsp, 8
 call malloc
-pop rdi
+add rsp, 8
+pop rdx
+mov rsi, 1
 cmp rax, 0
 je .malloc_error
+pop r11
+pop r10
+pop r9
+pop r8
+pop rcx
+pop rdx
+pop rsi
+pop rdi
 mov v_aux, rax
 ;------------------------------------------------------------------
 
@@ -385,12 +447,54 @@ mov rdx, 0 ; i
         pop rsi
         pop rdi
 
+        pmaxsw diag_score_xmm, up_score_xmm
+        pmaxsw diag_score_xmm, left_score_xmm
+
+        ;save the max score in the right position of score matrix
+        mov rax, rsi
+        add rax, rdx
+        movdqu [score_matrix + rax], diag_score_xmm
+        
+
+        cmp rcx, vector_len
+        jl .menor
+        pextrw eax, diag_score_xmm, 0b0000
+        mov [v_aux + rcx - vector_len], ax
+        .menor:
         inc rcx
         cmp rcx, width
         jne .loop_j
     inc rdx
     cmp rdx, height
     jne .loop_i
+
+; Traigo debug
+pop rsi
+cmp rsi, 0
+je .no_debug
+mov [rdi + alignment_offset_matrix], score_matrix
+
+.no_debug:
+push rsi
+push score_matrix
+mov rsi, rdi
+mov rdi, score_matrix
+mov rdx, vector_len
+
+mov rcx, seq1_len
+dec rcx
+mov r8, seq2_len
+dec r8
+mov r9, 0 ; false
+push 0 ; false
+push get_score_SSE
+call backtracking_C
+pop score_matrix
+pop rsi
+cmp rsi, 0
+jne .epilogo
+mov rdi, score_matrix
+call free
 ;------------------------------------------------------------------
 ; epilogo
 .epilogo:
@@ -404,7 +508,6 @@ ret
 
 .malloc_error:
 mov rdi, malloc_error_str
-mov  rax, 0
-sub rsp, 8 ; alineo antes de llamar
+mov rax, 0
 call printf
 jmp .epilogo
