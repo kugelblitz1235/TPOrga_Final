@@ -434,6 +434,7 @@ extern "C" void print_registers(){
 	asm("mov %%r13, %0": "=r" (r13));
 	asm("mov %%r14, %0": "=r" (r14));
 	asm("mov %%r15, %0": "=r" (r15));
+	printf("---------------------------- Register dump ----------------------------\n");
 	printf("rax: 0x%016llx, %lld\t\t\tr8:  0x%016llx, %lld\n",rax,rax,r8,r8);
 	printf("rbx: 0x%016llx, %lld\t\t\tr9:  0x%016llx, %lld\n",rbx,rbx,r9,r9);
 	printf("rcx: 0x%016llx, %lld\t\t\tr10: 0x%016llx, %lld\n",rcx,rcx,r10,r10);
@@ -442,4 +443,5 @@ extern "C" void print_registers(){
 	printf("rsi: 0x%016llx, %lld\t\t\tr13: 0x%016llx, %lld\n",rsi,rsi,r13,r13);
 	printf("rbp: 0x%016llx\t\t\t\tr14: 0x%016llx, %lld\n",rbp,r14,r14);
 	printf("rsp: 0x%016llx\t\t\t\tr15: 0x%016llx, %lld\n",rsp,r15,r15);
+	printf("-----------------------------------------------------------------------\n");
 }

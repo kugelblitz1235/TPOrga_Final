@@ -403,49 +403,49 @@ call inicializar_casos_base
 pop rdi
 
 ; Loop principal --------------------------------------------------
-mov rdx, 0 ; i
+mov rbx, 0 ; i
 .loop_i:
     ; Calcular offset_y
-    mov rax, rdx
+    mov rax, rbx
     mul width
     shr rax, vector_len_log
     mov rsi, rax ; rsi = offset_y
     
     push rdi
     push rsi
-    push rdx
+    push rbx
     push rcx
-    mov rdi, rdx ; rdi = i
+    mov rdi, rbx ; rdi = i
     ; call print_registers
     call leer_secuencia_columna
     pop rcx
-    pop rdx
+    pop rbx
     pop rsi
     pop rdi
-    
+
     mov rcx, 2 ; j
     .loop_j:
         push rdi
         push rsi
-        push rdx
+        push rbx
         push rcx
         mov rdi, rcx
         call leer_secuencia_fila
         pop rcx
-        pop rdx
+        pop rbx
         pop rsi
         pop rdi
 
         push rdi
         push rsi
-        push rdx
+        push rbx
         push rcx
         mov rdi, rcx ; rdi = j
-        mov rdx, rcx 
-        shl rdx, vector_len_log ; rdx = offset_x
+        mov rbx, rcx 
+        shl rbx, vector_len_log ; rbx = offset_x
         call calcular_scores 
         pop rcx
-        pop rdx
+        pop rbx
         pop rsi
         pop rdi
         pmaxsw diag_score_xmm, up_score_xmm
@@ -453,7 +453,7 @@ mov rdx, 0 ; i
 
         ;save the max score in the right position of score matrix
         mov rax, rsi
-        add rax, rdx
+        add rax, rbx
         movdqu [score_matrix + rax], diag_score_xmm
         
 
@@ -464,9 +464,9 @@ mov rdx, 0 ; i
         .menor:
         inc rcx
         cmp rcx, width
-        jne .loop_j
-    inc rdx
-    cmp rdx, height
+        jne .loop_j    
+    inc rbx
+    cmp rbx, height
     jne .loop_i
 
 ; Traigo debug
@@ -495,7 +495,7 @@ pop rsi
 cmp rsi, 0
 jne .epilogo
 mov rdi, score_matrix
-call free
+; call free
 ;------------------------------------------------------------------
 ; epilogo
 .epilogo:
