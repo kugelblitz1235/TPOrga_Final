@@ -10,6 +10,7 @@ extern print_registers
 section .rodata
 reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1
 malloc_error_str : db `No se pudo reservar memoria suficiente.\nMalloc: %d\nIntente reservar: %d bytes\n`,0
+dbg_str : db `%s\n`
 
 ; Variables globales
 %define constant_gap_xmm xmm0
@@ -52,7 +53,7 @@ malloc_error_str : db `No se pudo reservar memoria suficiente.\nMalloc: %d\nInte
 ;   char* sequence; //data
 ; };
 %define sequence_offset_length 0
-%define sequence_offset_sequence 4
+%define sequence_offset_sequence 8
 
 ; Parameters offsets
 ; struct Parameters{
@@ -158,9 +159,7 @@ jmp .end
 
 .else:
 ; está accediendo fuera de memoria acá
-call print_registers
 movq str_col_xmm, [seq2 + rdi * vector_len]
-
 jmp .end
 
 .end:
@@ -226,7 +225,6 @@ calcular_scores:
     %define cmp_match_xmm xmm11
     mov rcx, rsi
     add rcx, rdx 
-
     ; left score
     movdqu left_score_xmm, [score_matrix + rcx - vector_len] 
     paddw left_score_xmm, constant_gap_xmm
@@ -252,6 +250,7 @@ calcular_scores:
     ;get the max score of diag, up, left
     paddw diag_score_xmm, cmp_match_xmm
     paddw diag_score_xmm, str_row_xmm
+    ret
 
 ; Funcion principal (global)
 NW_ASM_SSE:
@@ -417,6 +416,7 @@ mov rdx, 0 ; i
     push rdx
     push rcx
     mov rdi, rdx ; rdi = i
+    ; call print_registers
     call leer_secuencia_columna
     pop rcx
     pop rdx
@@ -443,12 +443,11 @@ mov rdx, 0 ; i
         mov rdi, rcx ; rdi = j
         mov rdx, rcx 
         shl rdx, vector_len_log ; rdx = offset_x
-        call calcular_scores
+        call calcular_scores 
         pop rcx
         pop rdx
         pop rsi
         pop rdi
-
         pmaxsw diag_score_xmm, up_score_xmm
         pmaxsw diag_score_xmm, left_score_xmm
 
