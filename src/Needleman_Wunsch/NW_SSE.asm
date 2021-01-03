@@ -10,7 +10,32 @@ extern print_registers
 section .rodata
 reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1
 malloc_error_str : db `No se pudo reservar memoria suficiente.\nMalloc: %d\nIntente reservar: %d bytes\n`,0
-dbg_str : db `%s\n`
+dbg_str : db `rsp: 0x%llx-> 0x%llx\n`
+%macro dbg_rsp 0
+push rdi ; conserva *matrix
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+push r10
+push r11
+
+mov rdi, dbg_str
+mov rsi, rsp
+mov rdx, [rsp]
+mov rax, 0
+call printf
+
+pop r11
+pop r10
+pop r9
+pop r8
+pop rcx
+pop rdx
+pop rsi
+pop rdi
+%endmacro
 
 ; Variables globales
 %define constant_gap_xmm xmm0
@@ -267,6 +292,7 @@ NW_ASM_SSE:
 ; rdi = *alignment, rsi = debug
 
 ; prologo ----------------------------------------------------------
+dbg_rsp
 push rbp
 mov rbp, rsp
 
@@ -416,7 +442,6 @@ mov rbx, 0 ; i
     push rbx
     push rcx
     mov rdi, rbx ; rdi = i
-    ; call print_registers
     call leer_secuencia_columna
     pop rcx
     pop rbx
@@ -494,17 +519,20 @@ pop score_matrix
 pop rsi
 cmp rsi, 0
 jne .epilogo
-mov rdi, score_matrix
+; mov rdi, score_matrix
 ; call free
 ;------------------------------------------------------------------
 ; epilogo
 .epilogo:
+dbg_rsp
+add rsp, 0x10
 pop r15
 pop r14
 pop r13
 pop r12
 pop rbx
 pop rbp
+dbg_rsp
 ret
 
 .malloc_error:
@@ -512,3 +540,7 @@ mov rdi, malloc_error_str
 mov rax, 0
 call printf
 jmp .epilogo
+
+
+
+; old rbp 0x00007fffffffd8f0 rsp 0x7fffffffd608: 0x004055d8

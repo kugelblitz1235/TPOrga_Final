@@ -199,7 +199,8 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
 LT_END_TEST(NW_C_x3)
 
 LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
-    int s_len = 8 + rand() % 93;
+    // int s_len = 8 + rand() % 93;
+    int s_len = 8;
     char *s1 = random_seq(s_len);
     char *s2 = random_seq(s_len);
 
