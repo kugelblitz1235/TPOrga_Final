@@ -218,7 +218,7 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
     // Actualizo valor de s_len para considerar el -
     s_len = alignment->sequence_1->length;
 
-    NW::NW_C_LIN(*alignment_lin, true);
+    NW::NW_C_SSE(*alignment_lin, true);
     
     NW_ASM_SSE(alignment, true);
 
@@ -233,13 +233,13 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
     bool position_ok;
     for(int i = 0 ; i < s_len ; i++){
         for(int j = 0 ; j < s_len ; j++){
-            position_ok = get_score_SSE(alignment->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix,s_len,i,j,8);
+            position_ok = get_score_SSE(alignment->matrix,s_len,i,j,8) == get_score_SSE(alignment_lin->matrix,s_len,i,j,8);
             matrix_ok &= position_ok;
             if (!position_ok){
                 printf("Score matrices differ at: \n");
                 DBG(i);
                 DBG(j);
-                DBG(get_score_LIN(alignment_lin->matrix,s_len,i,j,8));
+                DBG(get_score_SSE(alignment_lin->matrix,s_len,i,j,8));
                 DBG(get_score_SSE(alignment->matrix,s_len,i,j,8));   
             }
         }
@@ -259,8 +259,11 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
         printf("%s\n", alignment->result->sequence_1->sequence);
         printf("%s\n", alignment->result->sequence_2->sequence);
 
+        ofstream ofs_C_SSE("NW_C_score_matrix_SSE.txt", std::ofstream::trunc);
+        printScoreMatrix(alignment_lin->matrix, alignment_lin, 8, ofs_C_SSE);
+        ofs_C_SSE.close();
         ofstream ofs_SSE("NW_ASM_score_matrix_SSE.txt", std::ofstream::trunc);
-        printScoreMatrix(alignment->matrix, alignment_lin, 8, ofs_SSE);
+        printScoreMatrix(alignment->matrix, alignment, 8, ofs_SSE);
         ofs_SSE.close();
     }
 

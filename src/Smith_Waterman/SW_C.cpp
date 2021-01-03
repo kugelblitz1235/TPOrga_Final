@@ -438,9 +438,9 @@ __m128i leer_secuencia_columna(
 		shift_count = _mm_insert_epi8(shift_count, offset_col*8, 0);
 		str_col_xmm = _mm_srl_epi64(str_col_xmm, shift_count);
 
-		shift_mask =  _mm_insert_epi8(shift_mask, 0xFF, 0);
+		shift_mask =  _mm_insert_epi8(shift_mask, (char)0xFF, 0);
 		shift_mask = _mm_broadcastb_epi8(shift_mask);
-		shift_count = _mm_insert_epi8(shift_count, (8-offset_col)*8, 0);
+		shift_count = _mm_insert_epi8(shift_count, (char)(8-offset_col)*8, 0);
 		shift_mask = _mm_sll_epi64(shift_mask, shift_count);
 
 		str_col_xmm = _mm_or_si128(str_col_xmm, shift_mask);
@@ -591,7 +591,7 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 	// Equivalentes a registros nombrados:
 	__m128i constant_gap_xmm, constant_missmatch_xmm, constant_match_xmm, zeroes_xmm;
 	__m128i str_row_xmm, str_col_xmm, left_score_xmm, up_score_xmm, diag_score_xmm;
-	__m128i reverse_mask_xmm, shift_mask_col_xmm, shift_mask_row_xmm;
+	__m128i reverse_mask_xmm;
 
 	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
 	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
@@ -600,10 +600,6 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 	constant_match_xmm = _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
 	constant_match_xmm = _mm_broadcastw_epi16(constant_match_xmm);
 	zeroes_xmm = _mm_setzero_si128();
-
-	//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
-	char shift_mask_col[16] = {0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F};
-	char shift_mask_row[16] = {0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF};
 
 	//|0001|0000|0003|0002|0005|0004|0007|0006|0009|0008|000B|000A|000D|000C|000F|000E|
 	char reverse_mask[16] = {0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1};

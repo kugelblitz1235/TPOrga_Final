@@ -113,17 +113,35 @@ int main (int argc, char **argv)
 */
   Alignment* alignment = new_alignment();
 
-  FASTA_to_alignment(alignment,(char*)"bdnf_hsa.FASTA",(char*)"bdnf_mmu.FASTA");
-  NW::NW_C_SSE(*alignment, true);
+  // FASTA_to_alignment(alignment,(char*)"bdnf_hsa.FASTA",(char*)"bdnf_mmu.FASTA");
+  // NW::NW_C_SSE(*alignment, true);
   
-  /*
-  alignment->sequence_1 = new_Sequence_from_string((char*) "TTTTTTTTT");
-	alignment->sequence_2 = new_Sequence_from_string((char*) "TTTTTTTTT");
+  
+  alignment->sequence_1 = new_Sequence_from_string((char*) "AGAGGAATAAGTTTAATGCGAGCTACCAAGTATTGCTAAGAGCTCCTGAGGATAGGTAGTGCTTATGTTGCTGTCAGGAAGGACGGACGAGGC");
+	alignment->sequence_2 = new_Sequence_from_string((char*) "TCCAAATACAGACGGCGGATACTGTGGTGTGCGCCGCGGTGTTCTTTCCTACGTCCCAGATGCCATACCAGCTTTAAATCTTGCAAGCATTTC");
   alignment->parameters->gap = -2;
   alignment->parameters->match = 2;
   alignment->parameters->missmatch = -3;
-  SW_C_SSE(*alignment, true);*/
+  NW::NW_C_LIN(*alignment, true);
+
+  char* seq1 = alignment->result->sequence_1->sequence;
+  char* seq2 = alignment->result->sequence_2->sequence;
+  for(int i = 0 ; i < alignment->result->sequence_1->length; i++){
+    cout<<seq1[i];
+  }cout<<endl;
+  for(int i = 0 ; i < alignment->result->sequence_2->length; i++){
+    cout<<seq2[i];
+  }cout<<endl;
 
   return 0;
 }
 
+/*
+NW_ASM_LIN:
+seq1 : --AGAGGAATA-AGTTTAATGCGAGCTACCAAGTATTGCTAAGAGCTCCTGAGGATAGGTAGTGCTTATGTTGCTGT--CAG--G----A--AG-----GA-C--GGACG-A-GGC
+seq2 : -TCCA--AATACAG---ACGGCG-GATA-C---T-GTGGT--GTGCGCC-GCGG-T--GT--T-CTT-TCCTAC-GTCCCAGATGCCATACCAGCTTTAAATCTTGCAAGCATTTC
+
+NW_C_LIN:
+seq1 : --AGAGGAATA-AGTTTAATGCGAGCTACCAAGTATTGCTAAGAGCTCCTGAGGATAGGTAGTGCTTATGTTGCTGT--CAG--G----A--AG-----GA-C--GGACG-A-GGC
+seq2 : -TCCA--AATACAG---ACGGCG-GATA-C---T-GTGGT--GTGCGCC-GCGG-T--GT--T-CTT-TCCTAC-GTCCCAGATGCCATACCAGCTTTAAATCTTGCAAGCATTTC
+*/

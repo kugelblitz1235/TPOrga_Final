@@ -8,7 +8,7 @@
 
 using namespace std;
 
-char* parse_FASTA(char* file, Sequence *sequence){
+void parse_FASTA(char* file, Sequence *sequence){
     FILE * fp;
     char * line = NULL;
     size_t len = 0;

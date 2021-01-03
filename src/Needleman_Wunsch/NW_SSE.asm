@@ -113,15 +113,17 @@ section .text
 inicializar_casos_base:
 %define offset_y rbx
 mov rdi, [rdi + alignment_offset_parameters]
-mov di, [rdi + parameters_offset_gap]
+mov ax, [rdi + parameters_offset_gap]
+xor rdi, rdi
+mov di, ax
 
 ; llenamos el vector auxiliar
 mov rsi, 0
+mov rax, width
+dec rax
 .loop:
     mov word [v_aux + rsi], -16384 ; SHRT_MIN/2
     inc rsi
-    mov rax, width
-    dec rax
     cmp rax, rsi
     jne .loop
 

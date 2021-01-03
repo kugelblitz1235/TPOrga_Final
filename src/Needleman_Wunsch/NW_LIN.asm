@@ -381,7 +381,7 @@ NW_ASM_LIN:
             xor rax, rax
             mov ax, [rbp-24]               ;rax=length
             mov r9, [rbp-8]                 ;r9=best_sequence1*
-            mov byte [r9+rax], '_'          ;best_sequence1[length]='_'
+            mov byte [r9+rax], '-'          ;best_sequence1[length]='_'
             mov r11, [rbp-16]               ;r11=best_sequence2*
             shr rdi, 1
             xor r9, r9
@@ -396,7 +396,7 @@ NW_ASM_LIN:
             xor rax, rax
             mov ax,  [rbp-24]       ;rax=[0000|0000|0000|length]
             mov r9,  [rbp-16]       ;r9=best_sequence2*
-            mov byte [r9+rax], '_'
+            mov byte [r9+rax], '-'
             
             mov rax, rsi
             mov r9, rdx
