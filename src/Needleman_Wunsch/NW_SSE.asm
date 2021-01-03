@@ -5,6 +5,7 @@ extern printf
 extern backtracking_C
 extern new_alignment_matrix
 extern get_score_SSE
+extern print_registers
 
 section .rodata
 reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1
@@ -156,7 +157,8 @@ por str_col_xmm, shift_mask
 jmp .end
 
 .else:
-//está accediendo fuera de memoria acá
+; está accediendo fuera de memoria acá
+call print_registers
 movq str_col_xmm, [seq2 + rdi * vector_len]
 
 jmp .end

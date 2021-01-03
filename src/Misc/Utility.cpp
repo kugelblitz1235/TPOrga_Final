@@ -415,3 +415,31 @@ bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_
 
     return matrix_ok;
 }
+
+extern "C" void print_registers(){
+	long unsigned int rax,rbx,rcx,rdx,rdi,rsi,rbp,rsp,r8,r9,r10,r11,r12,r13,r14,r15;
+	asm("mov %%rax, %0": "=r" (rax));
+	asm("mov %%rbx, %0": "=r" (rbx));
+	asm("mov %%rcx, %0": "=r" (rcx));
+	asm("mov %%rdx, %0": "=r" (rdx));
+	asm("mov %%rdi, %0": "=r" (rdi));
+	asm("mov %%rsi, %0": "=r" (rsi));
+	asm("mov %%rbp, %0": "=r" (rbp));
+	asm("mov %%rsp, %0": "=r" (rsp));
+	asm("mov %%r8, %0": "=r" (r8));
+	asm("mov %%r9, %0": "=r" (r9));
+	asm("mov %%r10, %0": "=r" (r10));
+	asm("mov %%r11, %0": "=r" (r11));
+	asm("mov %%r12, %0": "=r" (r12));
+	asm("mov %%r13, %0": "=r" (r13));
+	asm("mov %%r14, %0": "=r" (r14));
+	asm("mov %%r15, %0": "=r" (r15));
+	printf("rax: 0x%016llx, %d\t\t\tr8:  0x%016llx, %d\n",rax,rax,r8,r8);
+	printf("rbx: 0x%016llx, %d\t\t\tr9:  0x%016llx, %d\n",rbx,rbx,r9,r9);
+	printf("rcx: 0x%016llx, %d\t\t\tr10: 0x%016llx, %d\n",rcx,rcx,r10,r10);
+	printf("rdx: 0x%016llx, %d\t\t\tr11: 0x%016llx, %d\n",rdx,rdx,r11,r11);
+	printf("rdi: 0x%016llx, %d\t\t\tr12: 0x%016llx, %d\n",rdi,rdi,r12,r12);
+	printf("rsi: 0x%016llx, %d\t\t\tr13: 0x%016llx, %d\n",rsi,rsi,r13,r13);
+	printf("rbp: 0x%016llx\t\t\t\tr14: 0x%016llx, %d\n",rbp,rbp,r14,r14);
+	printf("rsp: 0x%016llx\t\t\t\tr15: 0x%016llx, %d\n",rsp,rsp,r15,r15);
+}

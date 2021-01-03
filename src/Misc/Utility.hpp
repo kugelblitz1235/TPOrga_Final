@@ -47,4 +47,6 @@ bool valid_alignment(Alignment& alignment);
 
 bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_fun_t score_fun, int vector_len=8, bool verbose=true);
 
+extern "C" void print_registers();
+
 #endif
