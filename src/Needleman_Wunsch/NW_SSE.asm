@@ -22,10 +22,32 @@ push r10
 push r11
 
 mov rdi, dbg_str
-mov rsi, rsp
-mov rdx, [rsp]
+lea rsi, [rsp+0x40]
+mov rdx, [rsp+0x40]
 mov rax, 0
 call printf
+
+pop r11
+pop r10
+pop r9
+pop r8
+pop rcx
+pop rdx
+pop rsi
+pop rdi
+%endmacro
+
+%macro dbg_print 0
+push rdi ; conserva *matrix
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+push r10
+push r11
+
+call print_registers
 
 pop r11
 pop r10
@@ -501,6 +523,7 @@ pop rsi
 cmp rsi, 0
 je .no_debug
 mov [rdi + alignment_offset_matrix], score_matrix
+dbg_print
 
 .no_debug:
 push rsi
@@ -517,17 +540,18 @@ mov r9, 0 ; false
 push 0 ; false
 push get_score_SSE
 call backtracking_C
+add rsp, 0x10
 pop score_matrix
 pop rsi
+dbg_print
 cmp rsi, 0
 jne .epilogo
-; mov rdi, score_matrix
-; call free
+mov rdi, score_matrix
+call free
 ;------------------------------------------------------------------
 ; epilogo
 .epilogo:
 dbg_rsp
-add rsp, 0x10
 pop r15
 pop r14
 pop r13
