@@ -235,13 +235,13 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
         for(int j = 0 ; j < s_len ; j++){
             position_ok = get_score_SSE(alignment->matrix,s_len,i,j,8) == get_score_SSE(alignment_lin->matrix,s_len,i,j,8);
             matrix_ok &= position_ok;
-            if (!position_ok){
-                printf("Score matrices differ at: \n");
-                DBG(i);
-                DBG(j);
-                DBG(get_score_SSE(alignment_lin->matrix,s_len,i,j,8));
-                DBG(get_score_SSE(alignment->matrix,s_len,i,j,8));   
-            }
+            // if (!position_ok){
+            //     printf("Score matrices differ at: \n");
+            //     DBG(i);
+            //     DBG(j);
+            //     DBG(get_score_SSE(alignment_lin->matrix,s_len,i,j,8));
+            //     DBG(get_score_SSE(alignment->matrix,s_len,i,j,8));   
+            // }
         }
     }
     

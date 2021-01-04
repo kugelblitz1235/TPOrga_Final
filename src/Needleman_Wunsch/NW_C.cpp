@@ -389,6 +389,8 @@ void inicializar_casos_base(int width, int height, int vector_len, short* v_aux,
 		_mm_storeu_si128((__m128i*)(score_matrix + offset_y), diag);
 		diag = _mm_insert_epi16(diag,i * vector_len * alignment.parameters->gap, 7);
 		_mm_storeu_si128((__m128i*)(score_matrix + offset_y + vector_len), diag);
+
+		printf("Width: %d\nHeight: %d\noffset_y: %d\n", width, height, offset_y);
 	}
 }
    

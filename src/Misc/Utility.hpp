@@ -49,4 +49,6 @@ bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_
 
 extern "C" void print_registers();
 
+extern "C" void print_xmm(short *stack, unsigned int n);
+
 #endif

@@ -6,6 +6,7 @@ extern backtracking_C
 extern new_alignment_matrix
 extern get_score_SSE
 extern print_registers
+extern print_xmm
 
 section .rodata
 reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x1
@@ -38,6 +39,8 @@ pop rdi
 %endmacro
 
 %macro dbg_print 0
+push rax
+push rbx
 push rdi ; conserva *matrix
 push rsi
 push rdx
@@ -46,9 +49,17 @@ push r8
 push r9
 push r10
 push r11
+push r12
+push r13
+push r14
+push r15
 
 call print_registers
 
+pop r15
+pop r14
+pop r13
+pop r12
 pop r11
 pop r10
 pop r9
@@ -57,6 +68,77 @@ pop rcx
 pop rdx
 pop rsi
 pop rdi
+pop rbx
+pop rax
+%endmacro
+
+%macro dbg_print_xmm 0
+push rax
+push rbx
+push rdi ; conserva *matrix
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+push r10
+push r11
+push r12
+push r13
+push r14
+push r15
+
+movdqu [rsp-16], xmm15
+sub rsp, 16
+movdqu [rsp-16], xmm14
+sub rsp, 16
+movdqu [rsp-16], xmm13
+sub rsp, 16
+movdqu [rsp-16], xmm12
+sub rsp, 16
+movdqu [rsp-16], xmm11
+sub rsp, 16
+movdqu [rsp-16], xmm10
+sub rsp, 16
+movdqu [rsp-16], xmm9
+sub rsp, 16
+movdqu [rsp-16], xmm8
+sub rsp, 16
+movdqu [rsp-16], xmm7
+sub rsp, 16
+movdqu [rsp-16], xmm6
+sub rsp, 16
+movdqu [rsp-16], xmm5
+sub rsp, 16
+movdqu [rsp-16], xmm4
+sub rsp, 16
+movdqu [rsp-16], xmm3
+sub rsp, 16
+movdqu [rsp-16], xmm2
+sub rsp, 16
+movdqu [rsp-16], xmm1
+sub rsp, 16
+movdqu [rsp-16], xmm0
+sub rsp, 16
+mov rdi, rsp
+mov rsi, 16
+call print_xmm
+add rsp, 16*16
+
+pop r15
+pop r14
+pop r13
+pop r12
+pop r11
+pop r10
+pop r9
+pop r8
+pop rcx
+pop rdx
+pop rsi
+pop rdi
+pop rbx
+pop rax
 %endmacro
 
 ; Variables globales
@@ -135,16 +217,14 @@ section .text
 inicializar_casos_base:
 %define offset_y rbx
 mov rdi, [rdi + alignment_offset_parameters]
-mov ax, [rdi + parameters_offset_gap]
-xor rdi, rdi
-mov di, ax
+mov di, [rdi + parameters_offset_gap]
 
 ; llenamos el vector auxiliar
 mov rsi, 0
 mov rax, width
 dec rax
 .loop:
-    mov word [v_aux + rsi], -16384 ; SHRT_MIN/2
+    mov word [v_aux + rsi*2], -16384 ; SHRT_MIN/2
     inc rsi
     cmp rax, rsi
     jne .loop
@@ -161,10 +241,13 @@ mov rsi, 0
     mov ax, -16384 ; SHRT_MIN/2
     pinsrw xmm10, eax, 0
     vpbroadcastw xmm10, xmm10
-    movdqu [score_matrix + offset_y], xmm10
-    pinsrw xmm10, edi, vector_len-1
-    movdqu [score_matrix + offset_y + vector_len], xmm10
-    
+    movdqu [score_matrix + 2*offset_y], xmm10
+    mov rax, rdi
+    mul rsi
+    shl rax, vector_len_log
+    pinsrw xmm10, eax, vector_len-1
+    movdqu [score_matrix + 2*offset_y + 2*vector_len], xmm10
+        
     inc rsi
     mov rax, height
     cmp rsi, rax
@@ -275,20 +358,33 @@ calcular_scores:
     mov rcx, rsi
     add rcx, rdx 
     ; left score
-    movdqu left_score_xmm, [score_matrix + rcx - vector_len] 
+    movdqu left_score_xmm, [score_matrix + 2*rcx - 2*vector_len] 
     paddw left_score_xmm, constant_gap_xmm
     ; up score 
-    movdqu up_score_xmm, [score_matrix + rcx - vector_len]
+    movdqu up_score_xmm, [score_matrix + 2*rcx - 2*vector_len]
     psrldq  up_score_xmm, 2
-    mov ebx, dword [v_aux + rdi - 1]
+    mov bx, word [v_aux + 2*rdi - 2*1] ; mov ebx, dword [v_aux + 2*rdi - 2*1]
     pinsrw up_score_xmm, ebx, 0b111
     paddw up_score_xmm, constant_gap_xmm
     ;diag score
-    movdqu diag_score_xmm, [score_matrix + rcx - 2*vector_len]
+    movdqu diag_score_xmm, [score_matrix + 2*rcx - 2*vector_len]
     psrldq  diag_score_xmm, 2
-    mov ecx, dword [v_aux + rdi - 2]
+    mov cx, word [v_aux + 2*rdi - 2*2] ; mov ecx, dword [v_aux + 2*rdi - 2*2]
     pinsrw diag_score_xmm, ecx, 0b111
 
+; %define constant_gap_xmm xmm0
+; %define constant_missmatch_xmm xmm1
+; %define constant_match_xmm xmm2
+; %define zeroes_xmm xmm3
+; %define str_row_xmm xmm4
+; %define str_col_xmm xmm5
+; %define left_score_xmm xmm6
+; %define up_score_xmm xmm7
+; %define diag_score_xmm xmm8
+; %define reverse_mask_xmm xmm9
+
+    dbg_print_xmm
+    
     ;compare the 2 strings and put the right penalty (match or missmatch) on each position
     movdqu cmp_match_xmm, str_col_xmm
     pcmpeqw cmp_match_xmm, str_row_xmm
@@ -299,6 +395,8 @@ calcular_scores:
     ;get the max score of diag, up, left
     paddw diag_score_xmm, cmp_match_xmm
     paddw diag_score_xmm, str_row_xmm
+
+
     ret
 
 ; Funcion principal (global)
@@ -316,7 +414,6 @@ NW_ASM_SSE:
 ; rdi = *alignment, rsi = debug
 
 ; prologo ----------------------------------------------------------
-dbg_rsp
 push rbp
 mov rbp, rsp
 
@@ -484,46 +581,52 @@ mov rbx, 0 ; i
         pop rbx
         pop rsi
         pop rdi
-
+        mov rdx, rcx 
+        shl rdx, vector_len_log ; rbx = offset_x
+        push rdx
         push rdi
         push rsi
         push rbx
         push rcx
+        sub rsp, 8
         mov rdi, rcx ; rdi = j
-        mov rbx, rcx 
-        shl rbx, vector_len_log ; rbx = offset_x
         call calcular_scores 
+        add rsp, 8
         pop rcx
         pop rbx
         pop rsi
         pop rdi
+        pop rdx
         pmaxsw diag_score_xmm, up_score_xmm
         pmaxsw diag_score_xmm, left_score_xmm
 
         ;save the max score in the right position of score matrix
         mov rax, rsi
-        add rax, rbx
-        movdqu [score_matrix + rax], diag_score_xmm
+        add rax, rdx
+        movdqu [score_matrix + 2*rax], diag_score_xmm
         
 
         cmp rcx, vector_len
         jl .menor
         pextrw eax, diag_score_xmm, 0b0000
-        mov [v_aux + rcx - vector_len], ax
+        mov [v_aux + 2*rcx - 2*vector_len], ax
         .menor:
         inc rcx
         cmp rcx, width
+
+        jmp .debug
         jne .loop_j    
     inc rbx
     cmp rbx, height
     jne .loop_i
 
 ; Traigo debug
+.debug
 pop rsi
 cmp rsi, 0
 je .no_debug
 mov [rdi + alignment_offset_matrix], score_matrix
-dbg_print
+
 
 .no_debug:
 push rsi
@@ -543,7 +646,6 @@ call backtracking_C
 add rsp, 0x10
 pop score_matrix
 pop rsi
-dbg_print
 cmp rsi, 0
 jne .epilogo
 mov rdi, score_matrix
@@ -551,14 +653,12 @@ call free
 ;------------------------------------------------------------------
 ; epilogo
 .epilogo:
-dbg_rsp
 pop r15
 pop r14
 pop r13
 pop r12
 pop rbx
 pop rbp
-dbg_rsp
 ret
 
 .malloc_error:

@@ -445,3 +445,15 @@ extern "C" void print_registers(){
 	printf("rsp: 0x%016lx\t\t\t\tr15: 0x%016lx, %ld\n",rsp,r15,r15);
 	printf("-----------------------------------------------------------------------\n");
 }
+
+extern "C" void print_xmm(short *stack, unsigned int n){
+	printf("---------------------------- Register dump ----------------------------\n");
+	for (unsigned int i = 0; i < n; i++){
+		printf("xmm%02d: ", i);
+		for (unsigned int j = 0; j < 8; j++) {
+			printf("0x%08x ", stack[i*8+j]);
+		}
+		cout << endl;
+	}
+	printf("-----------------------------------------------------------------------\n");
+}
