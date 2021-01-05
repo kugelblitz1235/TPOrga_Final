@@ -39,7 +39,7 @@ extern "C" void backtracking_C(
 	unsigned int x = best_x;
 	unsigned int y = best_y;
 	
-	printf("Comienza backtracking: x = %d, y = %d\n", x, y);
+	if(debug)printf("Comienza backtracking: x = %d, y = %d\n", x, y);
 	while(y != 0 || x != 0){
 		// cerr<<"step"<<endl;
 		// DBG(x);
@@ -451,7 +451,7 @@ extern "C" void print_xmm(short *stack, unsigned int n){
 	for (unsigned int i = 0; i < n; i++){
 		printf("xmm%02d: ", i);
 		for (unsigned int j = 0; j < 8; j++) {
-			printf("0x%08x ", stack[i*8+j]);
+			printf("0x%04hX ", stack[i*8+j]);
 		}
 		cout << endl;
 	}

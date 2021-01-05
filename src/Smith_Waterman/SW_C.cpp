@@ -571,7 +571,7 @@ void actualizar_posicion_maxima(
 	__m128i index_xmm = _mm_cmpeq_epi16(nums_xmm,nums_copy_xmm);
 	index_xmm = _mm_packs_epi16(index_xmm,index_xmm);
 	int64_t index_mask = _mm_extract_epi64(index_xmm,0);
-	
+
 	int max_index = __builtin_ffsll(index_mask)/8;
 	short max_local_score =  _mm_extract_epi16 (nums_xmm, 0b0000);
 	if(best_global < max_local_score){

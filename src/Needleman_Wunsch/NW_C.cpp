@@ -390,7 +390,7 @@ void inicializar_casos_base(int width, int height, int vector_len, short* v_aux,
 		diag = _mm_insert_epi16(diag,i * vector_len * alignment.parameters->gap, 7);
 		_mm_storeu_si128((__m128i*)(score_matrix + offset_y + vector_len), diag);
 
-		printf("Width: %d\nHeight: %d\noffset_y: %d\n", width, height, offset_y);
+		//printf("Width: %d\nHeight: %d\noffset_y: %d\n", width, height, offset_y);
 	}
 }
    
@@ -409,8 +409,9 @@ __m128i leer_secuencia_columna(
 		// lee el tamanio del vector sin pasarse
 		// y corrije shifteando
 		int offset_col = (i+1)*vector_len - seq2_len;
+	
 		//simd : leer de memoria (movdqu)
-		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len - offset_col) );
+		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + seq2_len - vector_len) );
 
 		__m128i shift_count = zeroes_xmm;
 		__m128i shift_mask;
@@ -424,12 +425,10 @@ __m128i leer_secuencia_columna(
 
 		str_col_xmm = _mm_or_si128(str_col_xmm, shift_mask);
 
-		//str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
 		
 	}else{
 		//simd : leer de memoria (movdqu)
 		str_col_xmm = _mm_loadl_epi64((__m128i*)(seq2 + i * vector_len) );
-		//str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
 		
 	}
 	str_col_xmm = _mm_unpacklo_epi8(str_col_xmm, zeroes_xmm);
@@ -453,12 +452,11 @@ __m128i leer_secuencia_fila(
 			//simd : desplazamiento de puntero y levantar datos de memoria
 			int offset_str_row = vector_len - j;
 			//simd : leer de memoria (movdqu)
-			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len + offset_str_row) );
+			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1));
 			
 			__m128i shift_count = zeroes_xmm;
 			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
 			str_row_xmm = _mm_sll_epi64(str_row_xmm, shift_count);
-			//str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 			
 	} else if(j > width-vector_len){ // desborde por derecha
 			//simd : desplazamiento de puntero y levantar datos de memoria
@@ -468,11 +466,9 @@ __m128i leer_secuencia_fila(
 			__m128i shift_count = zeroes_xmm;
 			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
 			str_row_xmm = _mm_srl_epi64(str_row_xmm, shift_count);
-			//str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 			
 	}else{ //caso feliz
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );
-			//str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 	}
 	
 	str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);

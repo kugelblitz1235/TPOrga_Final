@@ -54,7 +54,73 @@ push r13
 push r14
 push r15
 
+movdqu [rsp-16], xmm15
+sub rsp, 16
+movdqu [rsp-16], xmm14
+sub rsp, 16
+movdqu [rsp-16], xmm13
+sub rsp, 16
+movdqu [rsp-16], xmm12
+sub rsp, 16
+movdqu [rsp-16], xmm11
+sub rsp, 16
+movdqu [rsp-16], xmm10
+sub rsp, 16
+movdqu [rsp-16], xmm9
+sub rsp, 16
+movdqu [rsp-16], xmm8
+sub rsp, 16
+movdqu [rsp-16], xmm7
+sub rsp, 16
+movdqu [rsp-16], xmm6
+sub rsp, 16
+movdqu [rsp-16], xmm5
+sub rsp, 16
+movdqu [rsp-16], xmm4
+sub rsp, 16
+movdqu [rsp-16], xmm3
+sub rsp, 16
+movdqu [rsp-16], xmm2
+sub rsp, 16
+movdqu [rsp-16], xmm1
+sub rsp, 16
+movdqu [rsp-16], xmm0
+sub rsp, 16
 call print_registers
+
+
+movdqu xmm0, [rsp]
+add rsp, 16
+movdqu xmm1, [rsp]
+add rsp, 16
+movdqu xmm2, [rsp]
+add rsp, 16
+movdqu xmm3, [rsp]
+add rsp, 16
+movdqu xmm4, [rsp]
+add rsp, 16
+movdqu xmm5, [rsp]
+add rsp, 16
+movdqu xmm6, [rsp]
+add rsp, 16
+movdqu xmm7, [rsp]
+add rsp, 16
+movdqu xmm8, [rsp]
+add rsp, 16
+movdqu xmm9, [rsp]
+add rsp, 16
+movdqu xmm10, [rsp]
+add rsp, 16
+movdqu xmm11, [rsp]
+add rsp, 16
+movdqu xmm12, [rsp]
+add rsp, 16
+movdqu xmm13, [rsp]
+add rsp, 16
+movdqu xmm14, [rsp]
+add rsp, 16
+movdqu xmm15, [rsp]
+add rsp, 16
 
 pop r15
 pop r14
@@ -123,7 +189,39 @@ sub rsp, 16
 mov rdi, rsp
 mov rsi, 16
 call print_xmm
-add rsp, 16*16
+
+movdqu xmm0, [rsp]
+add rsp, 16
+movdqu xmm1, [rsp]
+add rsp, 16
+movdqu xmm2, [rsp]
+add rsp, 16
+movdqu xmm3, [rsp]
+add rsp, 16
+movdqu xmm4, [rsp]
+add rsp, 16
+movdqu xmm5, [rsp]
+add rsp, 16
+movdqu xmm6, [rsp]
+add rsp, 16
+movdqu xmm7, [rsp]
+add rsp, 16
+movdqu xmm8, [rsp]
+add rsp, 16
+movdqu xmm9, [rsp]
+add rsp, 16
+movdqu xmm10, [rsp]
+add rsp, 16
+movdqu xmm11, [rsp]
+add rsp, 16
+movdqu xmm12, [rsp]
+add rsp, 16
+movdqu xmm13, [rsp]
+add rsp, 16
+movdqu xmm14, [rsp]
+add rsp, 16
+movdqu xmm15, [rsp]
+add rsp, 16
 
 pop r15
 pop r14
@@ -266,10 +364,7 @@ shl rdx, vector_len_log ; rdx = (i+1) * vector_len
 cmp rdx, seq2_len
 jl .else 
 sub rdx, seq2_len ; rdx = offset_col
-mov rcx, rdi
-shl rcx, vector_len_log
-sub rcx, rdx
-movq str_col_xmm, [seq2 + rcx]
+movq str_col_xmm, [seq2 + seq2_len - vector_len]
 
 pxor shift_count, shift_count
 mov rcx, rdx
@@ -312,14 +407,12 @@ jge .elseif ; j-vector_len < 0
 
 mov rcx, vector_len 
 sub rcx, rdi ; rcx = offset_str_row
-add rdx, rcx
-movq str_row_xmm, [seq1 + rcx]
+movq str_row_xmm, [seq1]
 
 pxor shift_count, shift_count
 shl rcx, 3
 pinsrb shift_count, ecx, 0
 psllq str_row_xmm, shift_count
-
 jmp .end
 
 .elseif:
@@ -355,6 +448,7 @@ calcular_scores:
 ; rsi = offset_y
 ; rdx = offset_x
     %define cmp_match_xmm xmm11
+        
     mov rcx, rsi
     add rcx, rdx 
     ; left score
@@ -367,7 +461,7 @@ calcular_scores:
     pinsrw up_score_xmm, ebx, 0b111
     paddw up_score_xmm, constant_gap_xmm
     ;diag score
-    movdqu diag_score_xmm, [score_matrix + 2*rcx - 2*vector_len]
+    movdqu diag_score_xmm, [score_matrix + 2*rcx - 2*2*vector_len]
     psrldq  diag_score_xmm, 2
     mov cx, word [v_aux + 2*rdi - 2*2] ; mov ecx, dword [v_aux + 2*rdi - 2*2]
     pinsrw diag_score_xmm, ecx, 0b111
@@ -382,9 +476,6 @@ calcular_scores:
 ; %define up_score_xmm xmm7
 ; %define diag_score_xmm xmm8
 ; %define reverse_mask_xmm xmm9
-
-    dbg_print_xmm
-    
     ;compare the 2 strings and put the right penalty (match or missmatch) on each position
     movdqu cmp_match_xmm, str_col_xmm
     pcmpeqw cmp_match_xmm, str_row_xmm
@@ -435,36 +526,7 @@ mov rax, [rdi + alignment_offset_sequence_2]
 mov seq2, [rax + sequence_offset_sequence]
 xor seq2_len, seq2_len
 mov r15d, [rax + sequence_offset_length]
-;------------------------------------------------------------------
 
-; asignacion de datos en los registros xmm nombrados --------------
-
-; _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
-; _mm_broadcastw_epi16(constant_gap_xmm);
-mov rax, [rdi + alignment_offset_parameters]
-mov ax, [rax + parameters_offset_gap]
-pinsrw constant_gap_xmm, eax, 0
-vpbroadcastw constant_gap_xmm, constant_gap_xmm
-
-; mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
-; _mm_broadcastw_epi16(constant_missmatch_xmm);
-mov rax, [rdi + alignment_offset_parameters]
-mov ax, [rax + parameters_offset_missmatch]
-pinsrw constant_missmatch_xmm, eax, 0
-vpbroadcastw constant_missmatch_xmm, constant_missmatch_xmm
-
-; _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
-; _mm_broadcastw_epi16(constant_match_xmm);
-mov rax, [rdi + alignment_offset_parameters]
-mov ax, [rax + parameters_offset_match]
-pinsrw constant_match_xmm, eax, 0
-vpbroadcastw constant_match_xmm, constant_match_xmm
-
-pxor zeroes_xmm,zeroes_xmm
-;------------------------------------------------------------------
-
-; Carga de las mascaras -------------------------------------------
-movdqu reverse_mask_xmm, [reverse_mask]
 ;------------------------------------------------------------------
 
 ; Calculo height, width y score_matrix. Malloc matrix y v_aux -----
@@ -543,6 +605,35 @@ pop rsi
 pop rdi
 mov v_aux, rax
 ;------------------------------------------------------------------
+; asignacion de datos en los registros xmm nombrados --------------
+
+; _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
+; _mm_broadcastw_epi16(constant_gap_xmm);
+mov rax, [rdi + alignment_offset_parameters]
+mov ax, [rax + parameters_offset_gap]
+pinsrw constant_gap_xmm, eax, 0
+vpbroadcastw constant_gap_xmm, constant_gap_xmm
+
+; mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
+; _mm_broadcastw_epi16(constant_missmatch_xmm);
+mov rax, [rdi + alignment_offset_parameters]
+mov ax, [rax + parameters_offset_missmatch]
+pinsrw constant_missmatch_xmm, eax, 0
+vpbroadcastw constant_missmatch_xmm, constant_missmatch_xmm
+
+; _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
+; _mm_broadcastw_epi16(constant_match_xmm);
+mov rax, [rdi + alignment_offset_parameters]
+mov ax, [rax + parameters_offset_match]
+pinsrw constant_match_xmm, eax, 0
+vpbroadcastw constant_match_xmm, constant_match_xmm
+
+pxor zeroes_xmm,zeroes_xmm
+;------------------------------------------------------------------
+
+; Carga de las mascaras -------------------------------------------
+movdqu reverse_mask_xmm, [reverse_mask]
+;------------------------------------------------------------------
 
 ; Casos base ------------------------------------------------------
 push rdi
@@ -555,7 +646,7 @@ mov rbx, 0 ; i
     ; Calcular offset_y
     mov rax, rbx
     mul width
-    shr rax, vector_len_log
+    shl rax, vector_len_log
     mov rsi, rax ; rsi = offset_y
     
     push rdi
@@ -568,7 +659,7 @@ mov rbx, 0 ; i
     pop rbx
     pop rsi
     pop rdi
-
+    
     mov rcx, 2 ; j
     .loop_j:
         push rdi
@@ -613,15 +704,15 @@ mov rbx, 0 ; i
         .menor:
         inc rcx
         cmp rcx, width
-
-        jmp .debug
         jne .loop_j    
+
+    ;jmp .debug
     inc rbx
     cmp rbx, height
     jne .loop_i
 
 ; Traigo debug
-.debug
+.debug:
 pop rsi
 cmp rsi, 0
 je .no_debug

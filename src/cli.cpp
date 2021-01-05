@@ -119,17 +119,20 @@ int main (int argc, char **argv)
   
   alignment->sequence_1 = new_Sequence_from_string((char*) "AGAGGAATAAGTTTAATGCGAGCTACCAAGTATTGCTAAGAGCTCCTGAGGATAGGTAGTGCTTATGTTGCTGTCAGGAAGGACGGACGAGGC");
 	alignment->sequence_2 = new_Sequence_from_string((char*) "TCCAAATACAGACGGCGGATACTGTGGTGTGCGCCGCGGTGTTCTTTCCTACGTCCCAGATGCCATACCAGCTTTAAATCTTGCAAGCATTTC");
+  // alignment->sequence_1 = new_Sequence_from_string((char*) "GTTGGTAC");
+	// alignment->sequence_2 = new_Sequence_from_string((char*) "ATTTTTAG");
+  
   alignment->parameters->gap = -2;
   alignment->parameters->match = 2;
   alignment->parameters->missmatch = -3;
-  NW::NW_C_LIN(*alignment, true);
+  NW::NW_C_SSE(*alignment, true);
 
   char* seq1 = alignment->result->sequence_1->sequence;
   char* seq2 = alignment->result->sequence_2->sequence;
-  for(int i = 0 ; i < alignment->result->sequence_1->length; i++){
+  for(unsigned int i = 0 ; i < alignment->result->sequence_1->length; i++){
     cout<<seq1[i];
   }cout<<endl;
-  for(int i = 0 ; i < alignment->result->sequence_2->length; i++){
+  for(unsigned int i = 0 ; i < alignment->result->sequence_2->length; i++){
     cout<<seq2[i];
   }cout<<endl;
 

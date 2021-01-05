@@ -109,7 +109,7 @@ LT_END_SUITE(TestNW)
 // LT_END_TEST(NW_C_SSE)
 
 LT_BEGIN_TEST(TestNW, NW_C_x3)
-    int s_len = 8 + rand() % 93;
+    int s_len = rand() % 93;
     char *s1 = random_seq(s_len);
     char *s2 = random_seq(s_len);
 
@@ -218,7 +218,7 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
     // Actualizo valor de s_len para considerar el -
     s_len = alignment->sequence_1->length;
 
-    NW::NW_C_SSE(*alignment_lin, true);
+    NW::NW_C_LIN(*alignment_lin, true);
     
     NW_ASM_SSE(alignment, true);
 
@@ -233,7 +233,7 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
     bool position_ok;
     for(int i = 0 ; i < s_len ; i++){
         for(int j = 0 ; j < s_len ; j++){
-            position_ok = get_score_SSE(alignment->matrix,s_len,i,j,8) == get_score_SSE(alignment_lin->matrix,s_len,i,j,8);
+            position_ok = get_score_SSE(alignment->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix,s_len,i,j,8);
             matrix_ok &= position_ok;
             // if (!position_ok){
             //     printf("Score matrices differ at: \n");
@@ -259,9 +259,9 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
         printf("%s\n", alignment->result->sequence_1->sequence);
         printf("%s\n", alignment->result->sequence_2->sequence);
 
-        ofstream ofs_C_SSE("NW_C_score_matrix_SSE.txt", std::ofstream::trunc);
-        printScoreMatrix(alignment_lin->matrix, alignment_lin, 8, ofs_C_SSE);
-        ofs_C_SSE.close();
+        // ofstream ofs_C_SSE("NW_C_score_matrix_SSE.txt", std::ofstream::trunc);
+        // printScoreMatrix(alignment_lin->matrix, alignment_lin, 8, ofs_C_SSE);
+        // ofs_C_SSE.close();
         ofstream ofs_SSE("NW_ASM_score_matrix_SSE.txt", std::ofstream::trunc);
         printScoreMatrix(alignment->matrix, alignment, 8, ofs_SSE);
         ofs_SSE.close();
@@ -280,76 +280,6 @@ void set_up() {
 void tear_down() {}
 
 LT_END_SUITE(TestSW)
-
-// LT_BEGIN_TEST(TestSW, SW_C_SSE)
-//     int s_len = 5 + rand() % 96;
-//     char *s1 = random_seq(s_len);
-//     char *s2 = random_seq(s_len);
-
-//     printf("Input sequence 1: %s\n", s1);
-//     printf("Input sequence 2: %s\n", s2);
-
-//     Alignment* alignment_lin = new_alignment();
-//     alignment_lin->sequence_1 = new_Sequence_from_string(s1);
-//     alignment_lin->sequence_2 = new_Sequence_from_string(s2);
-
-//     Alignment* alignment = new_alignment();
-//     alignment->sequence_1 = new_Sequence_from_string(s1);
-//     alignment->sequence_2 = new_Sequence_from_string(s2);
-
-//      // Actualizo valor de s_len para considerar el -
-//      s_len = alignment->sequence_1->length;
-
-//     SW::SW_C_LIN(*alignment_lin, true);
-    
-//     SW::SW_C_SSE(*alignment, true);
-
-//     bool score = alignment->result->score == alignment_lin->result->score;
-
-//     LT_CHECK(score);
-
-//     if (!score){
-//         printf("Score LIN: %d\n", alignment_lin->result->score);
-//         printf("Score SSE: %d\n", alignment->result->score);
-//     }
-
-//     bool seqs = strcmp(alignment->result->sequence_1->sequence, alignment_lin->result->sequence_1->sequence) == 0 &&
-//                 strcmp(alignment->result->sequence_2->sequence, alignment_lin->result->sequence_2->sequence) == 0;
-    
-//     LT_CHECK(seqs);
-
-//     if (!seqs) {
-//         printf("Alignment LIN:\n");
-//         printf("%s\n", alignment_lin->result->sequence_1->sequence);
-//         printf("%s\n", alignment_lin->result->sequence_2->sequence);
-
-//         printf("Alignment SSE:\n");
-//         printf("%s\n", alignment->result->sequence_1->sequence);
-//         printf("%s\n", alignment->result->sequence_2->sequence);
-//     }
-
-//     bool matrix_ok = true;
-//     for(int i = 0 ; i < s_len ; i++){
-//         for(int j = 0 ; j < s_len ; j++){
-//             matrix_ok &= get_score_SSE(alignment->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix,s_len,i,j,8);
-//             if (!matrix_ok){
-//                 printf("Score matrices differ at: \n");
-//                 DBG(i);
-//                 DBG(j);
-//                 DBG(get_score_SSE(alignment->matrix,s_len,i,j,8));
-//                 DBG(get_score_LIN(alignment_lin->matrix,s_len,i,j,8));
-//                 break;       
-//             }
-//         }
-//         if (!matrix_ok)
-//             break; 
-//     }
-    
-//     LT_CHECK( matrix_ok );
-
-//     free(alignment->matrix);
-//     free(alignment_lin->matrix);
-// LT_END_TEST(SW_C_SSE)
 
 LT_BEGIN_TEST(TestSW, SW_C_x3)
     int s_len = 8 + rand() % 93;
@@ -441,6 +371,77 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
     free(alignment_logic->matrix);
     free(alignment_lin->matrix);
 LT_END_TEST(SW_C_x3)
+
+LT_BEGIN_TEST(TestSW, SW_ASM_SSE_test)
+    // int s_len = 8 + rand() % 93;
+    int s_len = 8;
+    char *s1 = random_seq(s_len);
+    char *s2 = random_seq(s_len);
+
+    printf("Input sequence 1: %s\n", s1);
+    printf("Input sequence 2: %s\n", s2);
+
+    Alignment* alignment_lin = new_alignment();
+    alignment_lin->sequence_1 = new_Sequence_from_string(s1);
+    alignment_lin->sequence_2 = new_Sequence_from_string(s2);
+
+    Alignment* alignment = new_alignment();
+    alignment->sequence_1 = new_Sequence_from_string(s1);
+    alignment->sequence_2 = new_Sequence_from_string(s2);
+
+    // Actualizo valor de s_len para considerar el -
+    s_len = alignment->sequence_1->length;
+
+    SW::SW_C_LIN(*alignment_lin, true);
+    
+    SW_ASM_SSE(alignment, true);
+
+    bool score = (alignment->result->score == alignment_lin->result->score);
+    LT_CHECK(score);
+
+    bool valid_seqs = valid_alignment(*alignment_lin) && valid_alignment(*alignment);
+
+    LT_CHECK(valid_seqs);
+
+    bool matrix_ok = true;
+    bool position_ok;
+    for(int i = 0 ; i < s_len ; i++){
+        for(int j = 0 ; j < s_len ; j++){
+            position_ok = get_score_SSE(alignment->matrix,s_len,i,j,8) == get_score_LIN(alignment_lin->matrix,s_len,i,j,8);
+            matrix_ok &= position_ok;
+            // if (!position_ok){
+            //     printf("Score matrices differ at: \n");
+            //     DBG(i);
+            //     DBG(j);
+            //     DBG(get_score_SSE(alignment_lin->matrix,s_len,i,j,8));
+            //     DBG(get_score_SSE(alignment->matrix,s_len,i,j,8));   
+            // }
+        }
+    }
+    
+    LT_CHECK( matrix_ok );
+
+    if (!matrix_ok || !valid_seqs || !score) {
+        printf("Score LIN: %d\n", alignment_lin->result->score);
+        printf("Score SSE: %d\n", alignment->result->score);
+
+        printf("Alignment LIN:\n");
+        printf("%s\n", alignment_lin->result->sequence_1->sequence);
+        printf("%s\n", alignment_lin->result->sequence_2->sequence);
+
+        printf("Alignment SSE:\n");
+        printf("%s\n", alignment->result->sequence_1->sequence);
+        printf("%s\n", alignment->result->sequence_2->sequence);
+
+        ofstream ofs_SSE("SW_ASM_score_matrix_SSE.txt", std::ofstream::trunc);
+        printScoreMatrix(alignment->matrix, alignment, 8, ofs_SSE);
+        ofs_SSE.close();
+    }
+
+    free(alignment->matrix);
+    free(alignment_lin->matrix);
+LT_END_TEST(SW_ASM_SSE_test)
+
 
 // Ejecutar tests
 LT_BEGIN_AUTO_TEST_ENV()
