@@ -27,3 +27,4 @@ struct Alignment{
 - [ ] Emprolijar mascaras que no se usan y demas basura que quedo.
 - [ ] Cli o las funciones que manejan la selección de algoritmos deben chequear que se cumplan las precondiciones (i.e. secuencias de al menos 8 letras para los SSE).
 - [ ] Reducir push y pop alrededor de los malloc en NW_ASM_SSE
+- [ ] Mejorar la complejidad espacial de los algoritmos, posiblemente utilizando D&C: http://www.inf.fu-berlin.de/lehre/WS05/aldabi/downloads/pairAlign_part2.pdf
