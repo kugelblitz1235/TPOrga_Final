@@ -11,14 +11,21 @@
 
 namespace SW {
 
-void SW_C_LIN(Alignment& alignment,bool debug);
+namespace LIN{
+    void SW_C_LIN(Alignment& alignment,bool debug);
+}
 
+namespace SSE{
+    void SW_C_withLogicSSE(Alignment& alignment, bool debug);
+
+    void SW_C_SSE(Alignment& alignment, bool debug);
+}
+
+namespace AVX{
+    void SW_C_AVX(Alignment& alignment, bool debug);
+}
 //se le pasa por parametro la secuencia a alinear y los scores
 Alignment* alignment_by_SW(std::string implementation,char * sequence_1, char* sequence_2, short gap, short missmatch, short match);
-
-void SW_C_withLogicSSE(Alignment& alignment, bool debug);
-
-void SW_C_SSE(Alignment& alignment, bool debug);
 
 }
 

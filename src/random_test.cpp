@@ -131,11 +131,11 @@ LT_BEGIN_TEST(TestNW, NW_C_x3)
     // Actualizo valor de s_len para considerar el -
     s_len = alignment->sequence_1->length;
 
-    NW::NW_C_LIN(*alignment_lin, true);
+    NW::LIN::NW_C_LIN(*alignment_lin, true);
     
-    NW::NW_C_withLogicSSE(*alignment_logic, true);
+    NW::SSE::NW_C_withLogicSSE(*alignment_logic, true);
 
-    NW::NW_C_SSE(*alignment, true);
+    NW::SSE::NW_C_SSE(*alignment, true);
 
     bool score = (alignment->result->score == alignment_lin->result->score) &&
                  (alignment_logic->result->score == alignment_lin->result->score);
@@ -218,7 +218,7 @@ LT_BEGIN_TEST(TestNW, NW_ASM_SSE_test)
     // Actualizo valor de s_len para considerar el -
     s_len = alignment->sequence_1->length;
 
-    NW::NW_C_LIN(*alignment_lin, true);
+    NW::LIN::NW_C_LIN(*alignment_lin, true);
     
     NW_ASM_SSE(alignment, true);
 
@@ -304,11 +304,11 @@ LT_BEGIN_TEST(TestSW, SW_C_x3)
     // Actualizo valor de s_len para considerar el -
     s_len = alignment->sequence_1->length;
 
-    SW::SW_C_LIN(*alignment_lin, true);
+    SW::LIN::SW_C_LIN(*alignment_lin, true);
     
-    SW::SW_C_withLogicSSE(*alignment_logic, true);
+    SW::SSE::SW_C_withLogicSSE(*alignment_logic, true);
 
-    SW::SW_C_SSE(*alignment, true);
+    SW::SSE::SW_C_SSE(*alignment, true);
 
     bool score = (alignment->result->score == alignment_lin->result->score) &&
                  (alignment_logic->result->score == alignment_lin->result->score);
@@ -392,7 +392,7 @@ LT_BEGIN_TEST(TestSW, SW_ASM_SSE_test)
     // Actualizo valor de s_len para considerar el -
     s_len = alignment->sequence_1->length;
 
-    SW::SW_C_LIN(*alignment_lin, true);
+    SW::LIN::SW_C_LIN(*alignment_lin, true);
     
     SW_ASM_SSE(alignment, true);
 

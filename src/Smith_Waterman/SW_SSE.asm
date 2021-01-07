@@ -342,14 +342,8 @@ mov rsi, 0
     shl rax, vector_len_log
     mov offset_y, rax
    
-    mov ax, -16384 ; SHRT_MIN/2
-    pinsrw xmm11, eax, 0
-    pshuflw xmm11, xmm11, 0b0
-    pshufd xmm11, xmm11, 0b0
-    movdqu [score_matrix + 2*offset_y], xmm11
-    xor rax, rax
-    pinsrw xmm11, eax, vector_len-1
-    movdqu [score_matrix + 2*offset_y + 2*vector_len], xmm11
+    movdqu [score_matrix + 2*offset_y], zeroes_xmm
+    movdqu [score_matrix + 2*offset_y + 2*vector_len], zeroes_xmm
         
     inc rsi
     mov rax, height
