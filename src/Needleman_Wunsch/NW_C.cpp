@@ -385,9 +385,10 @@ void inicializar_casos_base(int width, int height, int vector_len, short* v_aux,
 		unsigned int offset_y = i * width * vector_len;
 		__m128i diag;
 		diag = _mm_insert_epi16(diag,SHRT_MIN/2,0);
-		diag = _mm_broadcastw_epi16(diag);
+		diag = _mm_shufflelo_epi16(diag,0b0);
+		diag = _mm_shuffle_epi32 (diag,0b0);
 		_mm_storeu_si128((__m128i*)(score_matrix + offset_y), diag);
-		diag = _mm_insert_epi16(diag,i * vector_len * alignment.parameters->gap, 7);
+		diag = _mm_insert_epi16(diag,i * vector_len * alignment.parameters->gap, 7); //7 = vector_len - 1
 		_mm_storeu_si128((__m128i*)(score_matrix + offset_y + vector_len), diag);
 
 		//printf("Width: %d\nHeight: %d\noffset_y: %d\n", width, height, offset_y);
@@ -418,8 +419,7 @@ __m128i leer_secuencia_columna(
 		shift_count = _mm_insert_epi8(shift_count, offset_col*8, 0);
 		str_col_xmm = _mm_srl_epi64(str_col_xmm, shift_count);
 
-		shift_mask =  _mm_insert_epi8(shift_mask, (char)0xFF, 0);
-		shift_mask = _mm_broadcastb_epi8(shift_mask);
+		shift_mask = _mm_cmpeq_epi8(shift_mask, shift_mask);
 		shift_count = _mm_insert_epi8(shift_count, (char)(8-offset_col)*8, 0);
 		shift_mask = _mm_sll_epi64(shift_mask, shift_count);
 
@@ -511,12 +511,8 @@ void calcular_scores(
 	//compare the 2 strings and put the right penalty (match or missmatch) on each position
 	__m128i cmp_match_xmm;
 	cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
-	str_row_xmm = _mm_andnot_si128(cmp_match_xmm,constant_missmatch_xmm);
-	cmp_match_xmm = _mm_and_si128(cmp_match_xmm,constant_match_xmm);
-
-	//get the max score of diag,up,left
+	cmp_match_xmm = _mm_blendv_epi8(constant_missmatch_xmm,constant_match_xmm,cmp_match_xmm); 
 	diag_score_xmm = _mm_add_epi16(diag_score_xmm, cmp_match_xmm);
-	diag_score_xmm = _mm_add_epi16(diag_score_xmm, str_row_xmm);
 }
 
 
@@ -532,11 +528,14 @@ void NW_C_SSE (Alignment& alignment, bool debug){
 	__m128i reverse_mask_xmm;
 	
 	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
-	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
+	constant_gap_xmm = _mm_shufflelo_epi16(constant_gap_xmm,0b0);
+	constant_gap_xmm = _mm_shuffle_epi32 (constant_gap_xmm,0b0);
 	constant_missmatch_xmm = _mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
-	constant_missmatch_xmm = _mm_broadcastw_epi16(constant_missmatch_xmm);
+	constant_missmatch_xmm = _mm_shufflelo_epi16(constant_missmatch_xmm,0b0);
+	constant_missmatch_xmm = _mm_shuffle_epi32 (constant_missmatch_xmm,0b0);
 	constant_match_xmm = _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
-	constant_match_xmm = _mm_broadcastw_epi16(constant_match_xmm);
+	constant_match_xmm = _mm_shufflelo_epi16(constant_match_xmm,0b0);
+	constant_match_xmm = _mm_shuffle_epi32 (constant_match_xmm,0b0);
 	zeroes_xmm = _mm_setzero_si128();
 
 	//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters

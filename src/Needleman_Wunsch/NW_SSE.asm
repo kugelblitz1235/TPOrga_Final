@@ -338,7 +338,8 @@ mov rsi, 0
    
     mov ax, -16384 ; SHRT_MIN/2
     pinsrw xmm10, eax, 0
-    vpbroadcastw xmm10, xmm10
+    pshuflw xmm10, xmm10, 0b0
+    pshufd xmm10, xmm10, 0b0
     movdqu [score_matrix + 2*offset_y], xmm10
     mov rax, rdi
     mul rsi
@@ -373,8 +374,7 @@ pinsrb shift_count, ecx, 0
 psrlq str_col_xmm, shift_count
 
 mov ecx, 0xFF
-pinsrb shift_mask, ecx, 0
-vpbroadcastb shift_mask, shift_mask
+pcmpeqb shift_mask, shift_mask
 mov rcx, 8
 sub rcx, rdx
 shl rcx, 3
@@ -607,26 +607,23 @@ mov v_aux, rax
 ;------------------------------------------------------------------
 ; asignacion de datos en los registros xmm nombrados --------------
 
-; _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
-; _mm_broadcastw_epi16(constant_gap_xmm);
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_gap]
 pinsrw constant_gap_xmm, eax, 0
-vpbroadcastw constant_gap_xmm, constant_gap_xmm
+pshuflw constant_gap_xmm, constant_gap_xmm, 0b0
+pshufd constant_gap_xmm, constant_gap_xmm, 0b0
 
-; mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
-; _mm_broadcastw_epi16(constant_missmatch_xmm);
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_missmatch]
 pinsrw constant_missmatch_xmm, eax, 0
-vpbroadcastw constant_missmatch_xmm, constant_missmatch_xmm
+pshuflw constant_missmatch_xmm, constant_missmatch_xmm, 0b0
+pshufd constant_missmatch_xmm, constant_missmatch_xmm, 0b0
 
-; _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
-; _mm_broadcastw_epi16(constant_match_xmm);
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_match]
 pinsrw constant_match_xmm, eax, 0
-vpbroadcastw constant_match_xmm, constant_match_xmm
+pshuflw constant_match_xmm, constant_match_xmm, 0b0
+pshufd constant_match_xmm, constant_match_xmm, 0b0
 
 pxor zeroes_xmm,zeroes_xmm
 ;------------------------------------------------------------------

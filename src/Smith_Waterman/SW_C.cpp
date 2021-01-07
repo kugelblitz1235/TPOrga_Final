@@ -408,7 +408,8 @@ void inicializar_casos_base(int width, int height, int vector_len, short* v_aux,
 		// }
 		__m128i diag;
 		diag = _mm_insert_epi16(diag,SHRT_MIN/2,0);
-		diag = _mm_broadcastw_epi16(diag);
+		diag = _mm_shufflelo_epi16(diag,0b0);
+		diag = _mm_shuffle_epi32 (diag,0b0);
 		_mm_storeu_si128((__m128i*)(score_matrix + offset_y), diag);
 		diag = _mm_insert_epi16(diag, 0, 7);
 		_mm_storeu_si128((__m128i*)(score_matrix + offset_y + vector_len), diag);
@@ -438,8 +439,7 @@ __m128i leer_secuencia_columna(
 		shift_count = _mm_insert_epi8(shift_count, offset_col*8, 0);
 		str_col_xmm = _mm_srl_epi64(str_col_xmm, shift_count);
 
-		shift_mask =  _mm_insert_epi8(shift_mask, (char)0xFF, 0);
-		shift_mask = _mm_broadcastb_epi8(shift_mask);
+		shift_mask = _mm_cmpeq_epi8(shift_mask, shift_mask);
 		shift_count = _mm_insert_epi8(shift_count, (char)(8-offset_col)*8, 0);
 		shift_mask = _mm_sll_epi64(shift_mask, shift_count);
 
@@ -488,12 +488,9 @@ __m128i leer_secuencia_fila(
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len - offset_str_row) );
 			__m128i shift_count = zeroes_xmm;
 			shift_count = _mm_insert_epi8(shift_count, offset_str_row*8, 0);
-			str_row_xmm = _mm_srl_epi64(str_row_xmm, shift_count);
-			// str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
-			
+			str_row_xmm = _mm_srl_epi64(str_row_xmm, shift_count);		
 	}else{ //caso feliz
 			str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len) );
-			// str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
 	}
 	
 	str_row_xmm = _mm_unpacklo_epi8(str_row_xmm,zeroes_xmm);
@@ -534,14 +531,10 @@ void calcular_scores(
 	diag_score_xmm = _mm_insert_epi16(diag_score_xmm,v_aux[j-2],0b111);
 	
 	//compare the 2 strings and put the right penalty (match or missmatch) on each position
-	__m128i cmp_match_xmm = str_col_xmm;
+	__m128i cmp_match_xmm;
 	cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm);
-	str_row_xmm = _mm_andnot_si128(cmp_match_xmm,constant_missmatch_xmm);
-	cmp_match_xmm = _mm_and_si128(cmp_match_xmm,constant_match_xmm);
-	
-	//get the max score of diag,up,left
+	cmp_match_xmm = _mm_blendv_epi8(constant_missmatch_xmm,constant_match_xmm,cmp_match_xmm); 
 	diag_score_xmm = _mm_add_epi16(diag_score_xmm, cmp_match_xmm);
-	diag_score_xmm = _mm_add_epi16(diag_score_xmm, str_row_xmm);
 
 }
 
@@ -566,8 +559,9 @@ void actualizar_posicion_maxima(
 	nums_s_xmm = _mm_srli_si128 (nums_xmm,4*2);
 	nums_xmm = _mm_max_epi16(nums_xmm,nums_s_xmm);
 	
-	nums_xmm = _mm_broadcastw_epi16(nums_xmm);
-	
+	nums_xmm = _mm_shufflelo_epi16(nums_xmm,0b0);
+	nums_xmm = _mm_shuffle_epi32 (nums_xmm,0b0);
+
 	__m128i index_xmm = _mm_cmpeq_epi16(nums_xmm,nums_copy_xmm);
 	index_xmm = _mm_packs_epi16(index_xmm,index_xmm);
 	int64_t index_mask = _mm_extract_epi64(index_xmm,0);
@@ -594,11 +588,14 @@ void SW_C_SSE(Alignment& alignment, bool debug){
 	__m128i reverse_mask_xmm;
 
 	constant_gap_xmm = _mm_insert_epi16(constant_gap_xmm,alignment.parameters->gap,0);
-	constant_gap_xmm = _mm_broadcastw_epi16(constant_gap_xmm);
+	constant_gap_xmm = _mm_shufflelo_epi16(constant_gap_xmm,0b0);
+	constant_gap_xmm = _mm_shuffle_epi32 (constant_gap_xmm,0b0);
 	constant_missmatch_xmm = _mm_insert_epi16(constant_missmatch_xmm,alignment.parameters->missmatch,0);
-	constant_missmatch_xmm = _mm_broadcastw_epi16(constant_missmatch_xmm);
+	constant_missmatch_xmm = _mm_shufflelo_epi16(constant_missmatch_xmm,0b0);
+	constant_missmatch_xmm = _mm_shuffle_epi32 (constant_missmatch_xmm,0b0);
 	constant_match_xmm = _mm_insert_epi16(constant_match_xmm,alignment.parameters->match,0);
-	constant_match_xmm = _mm_broadcastw_epi16(constant_match_xmm);
+	constant_match_xmm = _mm_shufflelo_epi16(constant_match_xmm,0b0);
+	constant_match_xmm = _mm_shuffle_epi32 (constant_match_xmm,0b0);
 	zeroes_xmm = _mm_setzero_si128();
 
 	//|0001|0000|0003|0002|0005|0004|0007|0006|0009|0008|000B|000A|000D|000C|000F|000E|
