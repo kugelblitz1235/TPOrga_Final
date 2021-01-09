@@ -855,9 +855,9 @@ void SW_C_LIN(
 			nums_ymm = _mm256_max_epi16 (nums_ymm,nums_s_ymm);
 			nums_s_ymm = _mm256_srli_si256  (nums_ymm,4*2);
 			nums_ymm = _mm256_max_epi16 (nums_ymm,nums_s_ymm);
-			//ESTO NO ANDA, EL SHIFT ES 128 Y 128
-			short max_hi256 = _mm256_extract_epi16(nums_ymm, 0b1000);
-			nums_s_ymm = _mm256_insert_epi16(nums_s_ymm, max_hi256, 0b0);
+
+			__m128i max_hi256 = _mm256_extracti128_si256 (nums_ymm, 0b1);
+			nums_s_ymm = _mm256_broadcastw_epi16(max_hi256);
 			nums_ymm = _mm256_max_epi16 (nums_ymm,nums_s_ymm);
 			
 			nums_ymm = _mm256_shufflelo_epi16(nums_ymm,0b0);

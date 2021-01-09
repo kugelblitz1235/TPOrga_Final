@@ -413,6 +413,7 @@ ret
 
 leer_secuencia_fila:
 ; rdi = j
+%define shift_mask_left_copy_xmm xmm14
 %define offset_str_row_xmm xmm15
 %define str_row_hi_xmm xmm15
 
@@ -424,12 +425,11 @@ jge .elseif ; j-vector_len < 0
     mov rcx, vector_len 
     sub rcx, rdi ; rcx = offset_str_row
     movdqu str_row_xmm, [seq1]
-
     pinsrb offset_str_row_xmm, ecx, 0
     vpbroadcastb offset_str_row_xmm, offset_str_row_xmm
-    psubb offset_str_row_xmm, shift_mask_left_xmm
-    pshufb str_row_xmm, offset_str_row_xmm
-
+    movdqu shift_mask_left_copy_xmm, shift_mask_left_xmm
+    psubb shift_mask_left_copy_xmm, offset_str_row_xmm
+    pshufb str_row_xmm, shift_mask_left_copy_xmm
 jmp .end
 
 .elseif:
@@ -471,18 +471,20 @@ calcular_scores:
 ; rdx = offset_x
     %define cmp_match_ymm ymm14
     %define temp_xmm xmm15
+    
     ; left score
     vmovdqu left_score_ymm, diag2_ymm 
     vpaddw left_score_ymm, left_score_ymm, constant_gap_ymm
+    
     ; up score 
     vmovdqu up_score_ymm, diag2_ymm
     ; insert shift
     vextracti128 temp_xmm, up_score_ymm, 1
-    pextrw esi, temp_xmm, 0b0 ; si = medium_score
+    pextrw esi, temp_xmm, 0b0 
     vpsrldq  up_score_ymm, up_score_ymm, 2
     pinsrw up_score_xmm, esi, 0b0111
     ; insert v_aux
-    mov bx, word [v_aux + 2*rdi - 2*1] ; mov ebx, dword [v_aux + 2*rdi - 2*1]
+    mov bx, word [v_aux + 2*rdi - 2*1] 
     vextracti128 temp_xmm, up_score_ymm, 1
     pinsrw temp_xmm, ebx, 0b111
     vinserti128 up_score_ymm, up_score_ymm, temp_xmm, 1
@@ -496,7 +498,7 @@ calcular_scores:
     vpsrldq  diag_score_ymm, diag_score_ymm, 2
     pinsrw diag_score_xmm, esi, 0b0111
     ; insert v_aux
-    mov cx, word [v_aux + 2*rdi - 2*2] ; mov ecx, dword [v_aux + 2*rdi - 2*2]
+    mov cx, word [v_aux + 2*rdi - 2*2] 
     vextracti128 temp_xmm, diag_score_ymm, 1
     pinsrw temp_xmm, ecx, 0b111
     vinserti128 diag_score_ymm, diag_score_ymm, temp_xmm, 1
@@ -508,6 +510,8 @@ calcular_scores:
 
     ;get the max score of diag, up, left
     vpaddw diag_score_ymm, diag_score_ymm, cmp_match_ymm
+    
+    
     ret
 
 ; Funcion principal (global)
@@ -673,9 +677,8 @@ mov rbx, 0 ; i
     pop rbx
     pop rsi
     pop rdi
-    
-    vmovdqu diag1_ymm, [score_matrix + rsi]
-    vmovdqu diag2_ymm, [score_matrix + rsi + vector_len] 
+    vmovdqu diag1_ymm, [score_matrix + 2*rsi]
+    vmovdqu diag2_ymm, [score_matrix + 2*rsi + 2*vector_len] 
     
     mov rcx, 2 ; j
     .loop_j:
@@ -684,7 +687,7 @@ mov rbx, 0 ; i
         push rbx
         push rcx
         mov rdi, rcx
-        call leer_secuencia_fila
+        call leer_secuencia_fila 
         pop rcx
         pop rbx
         pop rsi
@@ -705,8 +708,8 @@ mov rbx, 0 ; i
         pop rsi
         pop rdi
         pop rdx
-        vpmaxsw diag_score_ymm, diag_score_ymm, up_score_ymm
-        vpmaxsw diag_score_ymm, diag_score_ymm, left_score_ymm
+        vpmaxsw diag_score_ymm, diag_score_ymm, up_score_ymm ; debugging
+        vpmaxsw diag_score_ymm, diag_score_ymm, left_score_ymm ; debugging
 
         ;save the max score in the right position of score matrix
         mov rax, rsi
@@ -719,16 +722,16 @@ mov rbx, 0 ; i
         pextrw eax, diag_score_xmm, 0b0000
         mov [v_aux + 2*rcx - 2*vector_len], ax
         .menor:
+        vmovdqu diag1_ymm, diag2_ymm
+        vmovdqu diag2_ymm, diag_score_ymm
         inc rcx
         cmp rcx, width
         jne .loop_j    
 
-    ;jmp .debug
     inc rbx
     cmp rbx, height
     jne .loop_i
 
-; Traigo debug
 .debug:
 pop rsi
 cmp rsi, 0
@@ -777,4 +780,3 @@ jmp .epilogo
 
 
 
-; old rbp 0x00007fffffffd8f0 rsp 0x7fffffffd608: 0x004055d8
