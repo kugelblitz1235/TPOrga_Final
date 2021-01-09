@@ -9,7 +9,7 @@ extern "C" {
     void* NW_ASM_SSE(Alignment* alignment, bool debug);
     void* SW_ASM_SSE(Alignment* alignment, bool debug);
     //version paralelizada AVX
-    //void* NW_ASM_AVX(Alignment* alignment, bool debug);
+    void* NW_ASM_AVX(Alignment* alignment, bool debug);
     //void* SW_ASM_AVX(Alignment* alignment, bool debug);
 }
 #endif  

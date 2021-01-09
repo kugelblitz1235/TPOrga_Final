@@ -855,6 +855,10 @@ void SW_C_LIN(
 			nums_ymm = _mm256_max_epi16 (nums_ymm,nums_s_ymm);
 			nums_s_ymm = _mm256_srli_si256  (nums_ymm,4*2);
 			nums_ymm = _mm256_max_epi16 (nums_ymm,nums_s_ymm);
+			//ESTO NO ANDA, EL SHIFT ES 128 Y 128
+			short max_hi256 = _mm256_extract_epi16(nums_ymm, 0b1000);
+			nums_s_ymm = _mm256_insert_epi16(nums_s_ymm, max_hi256, 0b0);
+			nums_ymm = _mm256_max_epi16 (nums_ymm,nums_s_ymm);
 			
 			nums_ymm = _mm256_shufflelo_epi16(nums_ymm,0b0);
 			nums_ymm = _mm256_shuffle_epi32 (nums_ymm,0b0);
@@ -966,19 +970,19 @@ void SW_C_LIN(
 				diag1_ymm = diag2_ymm;
 				diag2_ymm = diag_score_ymm;
 					
-				//AVX::actualizar_posicion_maxima(best_global,best_x,best_y,vector_len,i,j,diag_score_ymm);
+				AVX::actualizar_posicion_maxima(best_global,best_x,best_y,vector_len,i,j,diag_score_ymm);
 			}	
 		}
 		if(debug){
 			alignment.matrix = score_matrix;
 		}
-		
+
 		backtracking_C(
 			score_matrix,
 			alignment,
 			vector_len,
-			alignment.sequence_1->length-1,alignment.sequence_2->length-1,
-			false,
+			best_x,best_y,
+			true,
 			(score_fun_t)get_score_SSE,
 			false
 		);
