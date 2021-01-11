@@ -911,7 +911,8 @@ namespace NW{
 		
 		//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
 		short str_shift_right_mask[32] = {
-			0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6A,0x6B,0x6C,0x6D,0x6E,0x6F,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F
+			0x7FE0,0x7FE1,0x7FE2,0x7FE3,0x7FE4,0x7FE5,0x7FE6,0x7FE7,0x7FE8,0x7FE9,0x7FEA,0x7FEB,0x7FEC,0x7FED,0x7FEE,0x7FEF,
+			0x7FF0,0x7FF1,0x7FF2,0x7FF3,0x7FF4,0x7FF5,0x7FF6,0x7FF7,0x7FF8,0x7FF9,0x7FFA,0x7FFB,0x7FFC,0x7FFD,0x7FFE,0x7FFF
 		};
 		short str_shift_left_mask[32] = {
 			0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F
@@ -935,7 +936,16 @@ namespace NW{
 
 		short* score_matrix;
 		short* v_aux;
-
+		/*
+		char str_row[32]; 
+		char str_col[32];
+		short left_score[32];
+		short up_score[32];
+		short diag_score[32];
+		short constant_gap[32];
+		short cmp_missmatch[32];
+		short cmp_match[32];
+		*/
 		void inicializar_casos_base(Alignment& alignment){
 			// llenamos el vector auxiliar
 			for(int i = 0;i < width-1;i++){
@@ -970,10 +980,11 @@ namespace NW{
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + seq2_len - vector_len));
 
 				SIMDreg offset_str_col_mm;
-				offset_str_col_mm.x = _mm_insert_epi8(offset_str_col_mm.x,offset_str_col,0);
-				offset_str_col_mm.y = _mm256_broadcastb_epi8 (offset_str_col_mm.x);
-				offset_str_col_mm.y = _mm256_add_epi8(str_shift_right_mask_mm.y,offset_str_col_mm.y);
-				
+				offset_str_col_mm.x = _mm_insert_epi16(offset_str_col_mm.x, offset_str_col,0);
+				offset_str_col_mm.z = _mm512_broadcastw_epi16(offset_str_col_mm.x);
+				offset_str_col_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_col_mm.z);
+
+				str_col_mm.y = _mm256_permute4x64_epi64 (str_col_mm.y, 0b11011000); // 3|1|2|0	
 				SIMDreg str_col_lo_mm;
 				str_col_lo_mm.y = _mm256_unpacklo_epi8 (str_col_mm.y, zeroes_mm.y); // z|1|z|0
 				SIMDreg str_col_hi_mm;
@@ -984,25 +995,19 @@ namespace NW{
 				shift_right_mask = _knot_mask32(shift_right_mask);
 				str_col_mm.z = _mm512_maskz_permutexvar_epi16 (shift_right_mask, offset_str_col_mm.z, str_col_mm.z);
 				//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
-				str_col_mm.z = _mm512_mask_blend_epi16(shift_right_mask, str_col_mm.z,offset_str_col_mm.z);
+				str_col_mm.z = _mm512_mask_blend_epi16(shift_right_mask, offset_str_col_mm.z,str_col_mm.z);
 			}else{
 				//simd : leer de memoria (movdqu)
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
-				
+
+				str_col_mm.y = _mm256_permute4x64_epi64 (str_col_mm.y, 0b11011000); // 3|1|2|0	
 				SIMDreg str_col_lo_mm;
 				str_col_lo_mm.y = _mm256_unpacklo_epi8 (str_col_mm.y, zeroes_mm.y); // z|1|z|0
 				SIMDreg str_col_hi_mm;
 				str_col_hi_mm.y = _mm256_unpackhi_epi8 (str_col_mm.y, zeroes_mm.y); // z|3|z|2
 				str_col_mm.z = _mm512_inserti64x4(str_col_lo_mm.z, str_col_hi_mm.y, 0b1);
-				
 			}
-			cout<<"str_reverse_mask_mm"<<endl;
-			printzmm(str_reverse_mask_mm, true);
-			cout<<"str_col_mm before"<<endl;
-			printzmm(str_col_mm, true);
 			str_col_mm.z = _mm512_permutexvar_epi16 (str_reverse_mask_mm.z, str_col_mm.z);
-			cout<<"str_col_mm after"<<endl;
-			printzmm(str_col_mm, true);
 		
 		}
 
@@ -1036,11 +1041,10 @@ namespace NW{
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len - offset_str_row) );
 				
 				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.x = _mm_insert_epi8(offset_str_row_mm.x,offset_str_row,0);
-				offset_str_row_mm.y = _mm256_broadcastb_epi8(offset_str_row_mm.x);
-				offset_str_row_mm.y = _mm256_add_epi8(str_shift_right_mask_mm.y,offset_str_row_mm.y);
+				offset_str_row_mm.x = _mm_insert_epi16(offset_str_row_mm.x, offset_str_row,0);
+				offset_str_row_mm.z = _mm512_broadcastw_epi16(offset_str_row_mm.x);
+				offset_str_row_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_row_mm.z);
 				
-				 
 				str_row_mm.y = _mm256_permute4x64_epi64 (str_row_mm.y, 0b11011000); // 3|1|2|0	
 				SIMDreg str_row_lo_mm;
 				str_row_lo_mm.y = _mm256_unpacklo_epi8 (str_row_mm.y, zeroes_mm.y); // z|1|z|0
@@ -1051,7 +1055,6 @@ namespace NW{
 				__mmask32 shift_right_mask = _mm512_movepi16_mask(offset_str_row_mm.z);
 				shift_right_mask = _knot_mask32(shift_right_mask);
 				str_row_mm.z = _mm512_maskz_permutexvar_epi16 (shift_right_mask, offset_str_row_mm.z, str_row_mm.z);
-			
 			}else{ //caso feliz
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
 
@@ -1078,7 +1081,6 @@ namespace NW{
 			up_score_mm.z = _mm512_add_epi16(up_score_mm.z, constant_gap_mm.z);
 			
 			//diag score
-
 			diag_score_mm.z = diag1_mm.z;
 			diag_score_mm.x = _mm_insert_epi16(diag_score_mm.x,v_aux[j-2],0b0);
 			diag_score_mm.z = _mm512_permutexvar_epi16 (score_512_rot_right_word_mask_mm.z, diag_score_mm.z);
@@ -1086,17 +1088,6 @@ namespace NW{
 			__mmask32 cmp_mask = _mm512_cmpeq_epi16_mask(str_col_mm.z,str_row_mm.z);
 			cmp_match_mm.z = _mm512_mask_blend_epi16(cmp_mask, constant_missmatch_mm.z,constant_match_mm.z); 
 			diag_score_mm.z = _mm512_add_epi16(diag_score_mm.z, cmp_match_mm.z);
-			
-			cout<<"str_col_mm"<<endl;
-			printzmm(str_col_mm,true);
-			cout<<"str_row_mm"<<endl;
-			printzmm(str_row_mm,true);
-			cout<<"left_score_mm"<<endl;
-			printzmm(left_score_mm,true);
-			cout<<"up_score_mm"<<endl;
-			printzmm(up_score_mm,true);
-			cout<<"diag_score_mm"<<endl;
-			printzmm(diag_score_mm,true);
 		}
 
 
@@ -1127,35 +1118,24 @@ namespace NW{
 			score_matrix =  (short*)malloc(score_matrix_sz*sizeof(short));
 			
 			v_aux = (short*)malloc((width-1)*sizeof(short));
-			cerr<<"inicializar_casos_base ----------------------------------------------------------------------"<<endl;
+
 			inicializar_casos_base(alignment);
-			cerr<<"OK"<<endl;
-			/******************************************************************************************************/
 			
 			for( int i = 0 ; i < height ; i++){
 				int offset_y = i * width * vector_len;
 
-				// Levantar strings -------------------------------------------------------------------
-				// String vertical --------------------------------------------------------------------
-				cerr<<"leer_secuencia_columna ----------------------------------------------------------------------"<<endl;
 				leer_secuencia_columna(i);
-				cerr<<"OK"<<endl;
 
 				diag1_mm.z = _mm512_loadu_si512((__m512i const*) (score_matrix + offset_y));
 				diag2_mm.z = _mm512_loadu_si512((__m512i const*) (score_matrix + offset_y + vector_len));
-				cerr<<"diag2"<<endl;
-				printzmm(diag2_mm, true);
+				
 				for( int j = 2; j < width ; j++){
 					int offset_x = j * vector_len;
 					// String horizontal ------------------------------------------------------------------
-					cerr<<"leer_secuencia_fila ----------------------------------------------------------------------"<<endl;
 					leer_secuencia_fila(j);
-					cerr<<"OK"<<endl;
-
-					// Calculo scores de izquierda, arriba y diagonal --------------------------------------------------------------------
-					cout<<"calcular_scores i: " << i << " j: " << j << "----------------------------------------------------------------------"<<endl;
+					
+					//Calculo scores de izquierda, arriba y diagonal --------------------------------------------------------------------
 					calcular_scores(j);
-					cerr<<"OK"<<endl;
 					
 					diag_score_mm.z = _mm512_max_epi16(diag_score_mm.z,up_score_mm.z);
 					diag_score_mm.z = _mm512_max_epi16(diag_score_mm.z,left_score_mm.z);
@@ -1174,7 +1154,7 @@ namespace NW{
 			if(debug){
 				alignment.matrix = score_matrix;
 			}
-			cerr<<"backtracking_C ----------------------------------------------------------------------"<<endl;
+			
 			backtracking_C(
 				score_matrix,
 				alignment,
@@ -1184,7 +1164,6 @@ namespace NW{
 				(score_fun_t)get_score_SSE,
 				false
 			);
-			cerr<<"OK"<<endl;
 
 			if(!debug) free(score_matrix);
 		}
