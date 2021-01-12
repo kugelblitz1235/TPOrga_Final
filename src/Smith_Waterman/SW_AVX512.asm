@@ -407,17 +407,11 @@ ret
 
 leer_secuencia_columna:
 ; rdi = i
-%define offset_str_col_zmm zmm17
-%define offset_str_col_ymm ymm17
-%define offset_str_col_xmm xmm17
-;es el mismo registro pero lo usamos una vez que dejamos de usar el otro
-%define str_col_hi_zmm zmm18
-%define str_col_hi_ymm ymm18
-%define str_col_hi_xmm xmm18
 
-%define str_col_lo_zmm zmm19
-%define str_col_lo_ymm ymm19
-%define str_col_lo_xmm xmm19
+%define str_col_temp_zmm zmm17
+%define str_col_temp_ymm ymm17
+%define str_col_temp_xmm xmm17
+;es el mismo registro pero lo usamos una vez que dejamos de usar el otro
 
 %define shift_right_mask k1
 
@@ -427,18 +421,17 @@ shl rdx, vector_len_log ; rdx = (i+1) * vector_len
 cmp rdx, seq2_len
 jl .else 
     sub rdx, seq2_len ; rdx = offset_str_col
-    vmovdqu str_col_ymm, [seq2 + seq2_len - vector_len]
-
-    vpbroadcastw offset_str_col_zmm, edx
-    vpaddw offset_str_col_zmm, offset_str_col_zmm, str_shift_right_mask_zmm
+    vmovdqu8 str_col_temp_ymm, [seq2 + seq2_len - vector_len]
 
     ;unpack 256 -> 512
-    vpermq str_col_zmm, str_512_unpacklo_epi8_mask_zmm, str_col_zmm
-    vpunpcklbw str_col_zmm, str_col_zmm, zeroes_zmm
+    vpermq str_col_temp_zmm, str_512_unpacklo_epi8_mask_zmm, str_col_temp_zmm
+    vpunpcklbw str_col_temp_zmm, str_col_temp_zmm, zeroes_zmm
 
-    vpmovw2m shift_right_mask, offset_str_col_zmm
-    vpermw str_col_zmm, offset_str_col_zmm, str_col_zmm
-    vpblendmw str_col_zmm{shift_right_mask}, str_col_zmm, offset_str_col_zmm
+    vpbroadcastw str_col_zmm, edx
+    vpaddw str_col_zmm, str_col_zmm, str_shift_right_mask_zmm
+
+    vpcmpw shift_right_mask, zeroes_zmm, str_col_zmm, 2
+    vpermw str_col_zmm{shift_right_mask}, str_col_zmm, str_col_temp_zmm
     jmp .end
 
 .else:
@@ -480,14 +473,14 @@ jge .elseif ; j-vector_len < 0
     sub rcx, rdi ; rcx = offset_str_row
     vmovdqu str_row_ymm, [seq1]
 
-    vpbroadcastw offset_str_row_zmm, ecx
-    vpsubw offset_str_row_zmm, str_shift_left_mask_zmm, offset_str_row_zmm
     ;unpack 256 -> 512  
     vpermq str_row_zmm, str_512_unpacklo_epi8_mask_zmm, str_row_zmm
     vpunpcklbw str_row_zmm, str_row_zmm, zeroes_zmm
 
-    vpmovw2m shift_left_mask, offset_str_row_zmm
-    knotd shift_left_mask, shift_left_mask
+    vpbroadcastw offset_str_row_zmm, ecx
+    vpsubw offset_str_row_zmm, str_shift_left_mask_zmm, offset_str_row_zmm
+
+    vpcmpw shift_left_mask, zeroes_zmm, offset_str_row_zmm, 2
     vpermw str_row_zmm{shift_left_mask}{z}, offset_str_row_zmm, str_row_zmm
 jmp .end
 
@@ -510,8 +503,7 @@ jle .else
     vpermq str_row_zmm, str_512_unpacklo_epi8_mask_zmm, str_row_zmm
     vpunpcklbw str_row_zmm, str_row_zmm, zeroes_zmm
 
-    vpmovw2m shift_right_mask, offset_str_row_zmm
-    knotd shift_right_mask, shift_right_mask
+    vpcmpw shift_right_mask, zeroes_zmm, offset_str_row_zmm, 2
     vpermw str_row_zmm{shift_right_mask}{z}, offset_str_row_zmm, str_row_zmm
 jmp .end
 

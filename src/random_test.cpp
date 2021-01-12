@@ -43,8 +43,7 @@ LT_BEGIN_TEST(TestNW, NW_C_x5)
     int vector_len = 32;
     int s_len1 = 32 + rand() % 1000;
     int s_len2 = 32 + rand() % 1000;
-    //char *s1 = "ACAGCGCCTCTTTTGAGTCATTCTCCCGCTACG";
-    //char *s2 = "AAAATCTGGACCGCACTCAATTCAAACTAGCCG";
+
     char *s1 = random_seq(s_len1);
     char *s2 = random_seq(s_len2);
 
@@ -404,7 +403,6 @@ LT_BEGIN_TEST(TestSW, SW_C_x5)
     int s_len2 = vector_len + rand() % 100;
     char *s1 = random_seq(s_len1);
     char *s2 = random_seq(s_len2);
-
     printf("Input sequence 1: %s\n", s1);
     printf("Input sequence 2: %s\n", s2);
 
@@ -677,7 +675,7 @@ LT_BEGIN_TEST(TestSW, SW_ASM_AVX_test)
 LT_END_TEST(SW_ASM_AVX_test)
 
 
-LT_BEGIN_TEST(TestNW, SW_ASM_AVX512_test)
+LT_BEGIN_TEST(TestSW, SW_ASM_AVX512_test)
     int vector_len = 32;
     int s_len1 = 32 + rand() % 100;
     int s_len2 = 32 + rand() % 100;

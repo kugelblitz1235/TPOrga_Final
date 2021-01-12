@@ -955,8 +955,7 @@ namespace NW{
 				unsigned int offset_y = i * width * vector_len;
 				SIMDreg temp_mm;
 				SIMDreg diag_mm;
-				diag_mm.x = _mm_insert_epi16(diag_mm.x,SHRT_MIN/2,0);
-				diag_mm.z = _mm512_broadcastw_epi16 (diag_mm.x);
+				diag_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, SHRT_MIN/2);
 				_mm512_storeu_si512((__m512i*)(score_matrix + offset_y), diag_mm.z);
 				temp_mm.x = diag_mm.x;
 				temp_mm.x = _mm_insert_epi16(temp_mm.x, i * vector_len * alignment.parameters->gap, 7);
@@ -976,19 +975,16 @@ namespace NW{
 			
 				//simd : leer de memoria (movdqu)
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + seq2_len - vector_len));
-
-				SIMDreg offset_str_col_mm;
-				offset_str_col_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_col);
-				offset_str_col_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_col_mm.z);
-
+				
 				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
 				str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
 				
-				__mmask32 shift_right_mask = _mm512_movepi16_mask(offset_str_col_mm.z);
-				//shift_right_mask = _knot_mask32(shift_right_mask);
-				str_col_mm.z = _mm512_permutexvar_epi16 (offset_str_col_mm.z, str_col_mm.z);
-				//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
-				str_col_mm.z = _mm512_mask_blend_epi16(shift_right_mask, str_col_mm.z, offset_str_col_mm.z);
+				SIMDreg offset_str_col_mm;
+				offset_str_col_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_col);
+				offset_str_col_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_col_mm.z);
+				
+				__mmask32 shift_right_mask = _mm512_cmpge_epi16_mask(offset_str_col_mm.z, zeroes_mm.z);
+				str_col_mm.z = _mm512_mask_permutexvar_epi16 (offset_str_col_mm.z, shift_right_mask, offset_str_col_mm.z, str_col_mm.z);
 			}else{
 				//simd : leer de memoria (movdqu)
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
@@ -1007,15 +1003,15 @@ namespace NW{
 				//simd : leer de memoria (movdqu)
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1));
 				
-				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
-				offset_str_row_mm.z = _mm512_sub_epi16(str_shift_left_mask_mm.z,offset_str_row_mm.z);
-				
 				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
 				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
+				
+				SIMDreg offset_str_row_mm;
+				offset_str_row_mm.x = _mm_insert_epi16(offset_str_row_mm.x, offset_str_row,0);
+				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
+				offset_str_row_mm.z = _mm512_sub_epi16(str_shift_left_mask_mm.z,offset_str_row_mm.z);
 
-				__mmask32 shift_left_mask = _mm512_movepi16_mask(offset_str_row_mm.z);
-				shift_left_mask = _knot_mask32(shift_left_mask);
+				__mmask32 shift_left_mask = _mm512_cmpge_epi16_mask(offset_str_row_mm.z, zeroes_mm.z);
 				str_row_mm.z = _mm512_maskz_permutexvar_epi16 (shift_left_mask, offset_str_row_mm.z, str_row_mm.z);
 
 			}else if(j > width-vector_len){ // desborde por derecha
@@ -1024,15 +1020,14 @@ namespace NW{
 				
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len - offset_str_row) );
 				
+				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
+				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
+				
 				SIMDreg offset_str_row_mm;
 				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
 				offset_str_row_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_row_mm.z);
-				
-				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
-				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
 
-				__mmask32 shift_right_mask = _mm512_movepi16_mask(offset_str_row_mm.z);
-				shift_right_mask = _knot_mask32(shift_right_mask);
+				__mmask32 shift_right_mask = _mm512_cmpge_epi16_mask(offset_str_row_mm.z, zeroes_mm.z);
 				str_row_mm.z = _mm512_maskz_permutexvar_epi16 (shift_right_mask, offset_str_row_mm.z, str_row_mm.z);
 			}else{ //caso feliz
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
@@ -1043,6 +1038,7 @@ namespace NW{
 			}
 
 		}
+
 
 		void calcular_scores(int j){
 			//left score
