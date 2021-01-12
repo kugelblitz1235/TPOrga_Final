@@ -24,6 +24,7 @@ struct Alignment{
 - [x] Hacer versiones AVX-256.
 - [x] Hacer versiones AVX-512.
 - [ ] Decidir si agregar o no los cambios a NW y SW de C en AVX512 a los respectivos asm.
+- [ ] Pensar en remover casos base y utilizar diag1 y diag2
 - [ ] Documentar los pasos de AVX y AVX512
 - [ ] Reducir push y pop alrededor de los malloc en NW_ASM_SSE
 - [ ] Emprolijar mascaras que no se usan y demas basura que quedo.

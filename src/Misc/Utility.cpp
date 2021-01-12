@@ -332,8 +332,6 @@ void word_to_arr8(short* p,__m128i reg){
 
 
 void word_to_char8(char* p,__m128i reg){
-  __m128i a = _mm_packus_epi16(reg,reg);
-  _mm_storeu_si64((__m128i*)p,a);
 }
 
 __m128i char_to_word8(char* p){

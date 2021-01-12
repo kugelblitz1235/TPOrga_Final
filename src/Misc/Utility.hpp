@@ -11,6 +11,8 @@
 
 #include "Types.hpp"
 
+#define _mm256_set_m128i(v0, v1)  _mm256_insertf128_si256(_mm256_castsi128_si256(v1), (v0), 1)
+
 using namespace std;
 typedef short (*score_fun_t)(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len);
 
