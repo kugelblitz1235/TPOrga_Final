@@ -517,6 +517,10 @@ LT_BEGIN_TEST(TestSW, SW_C_x5)
         ofstream ofs_AVX("SW_C_score_matrix_AVX.txt", std::ofstream::trunc);
         printScoreMatrix(alignment_avx->matrix, alignment_avx, 16, ofs_AVX);
         ofs_AVX.close();
+        
+        ofstream ofs_AVX512("SW_C_score_matrix_AVX512.txt", std::ofstream::trunc);
+        printScoreMatrix(alignment_avx->matrix, alignment_avx, 16, ofs_AVX512);
+        ofs_AVX512.close();
 
     }
 

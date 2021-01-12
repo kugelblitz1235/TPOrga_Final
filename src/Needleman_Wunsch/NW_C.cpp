@@ -899,7 +899,7 @@ namespace NW{
 			}
 		}
 
-		SIMDreg constant_gap_mm, constant_missmatch_mm, constant_match_mm, zeroes_mm;
+		SIMDreg constant_gap_mm, constant_missmatch_mm, constant_match_mm, zeroes_mm, ones_mm;
 		SIMDreg str_row_mm, str_col_mm, left_score_mm, up_score_mm, diag_score_mm;
 		SIMDreg str_reverse_mask_mm, str_shift_right_mask_mm, str_shift_left_mask_mm;
 		SIMDreg str_512_unpacklo_epi8_mask_mm;
@@ -909,14 +909,6 @@ namespace NW{
 		char *seq1, *seq2;
 		unsigned int seq1_len, seq2_len;
 		
-		//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
-		short str_shift_right_mask[32] = {
-			0x7FE0,0x7FE1,0x7FE2,0x7FE3,0x7FE4,0x7FE5,0x7FE6,0x7FE7,0x7FE8,0x7FE9,0x7FEA,0x7FEB,0x7FEC,0x7FED,0x7FEE,0x7FEF,
-			0x7FF0,0x7FF1,0x7FF2,0x7FF3,0x7FF4,0x7FF5,0x7FF6,0x7FF7,0x7FF8,0x7FF9,0x7FFA,0x7FFB,0x7FFC,0x7FFD,0x7FFE,0x7FFF
-		};
-		short str_shift_left_mask[32] = {
-			0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F
-		};
 		short str_reverse_mask[32] = {
 			0x1F,0x1E,0x1D,0x1C,0x1B,0x1A,0x19,0x18,0x17,0x16,0x15,0x14,0x13,0x12,0x11,0x10,0xF,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0
 		};
@@ -972,19 +964,14 @@ namespace NW{
 				// lee el tamanio del vector sin pasarse
 				// y corrije shifteando
 				int offset_str_col = (i+1)*vector_len - seq2_len;
-			
-				//simd : leer de memoria (movdqu)
-				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + seq2_len - vector_len));
+
+				__mmask32 shift_right_mask = 0xFFFFFFFF;
+				shift_right_mask >>= offset_str_col; 
+				str_col_mm.y = _mm256_mask_loadu_epi8(ones_mm.y, shift_right_mask, (__m256i*)(seq2 + seq2_len - vector_len + offset_str_col));
 				
 				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
 				str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
 				
-				SIMDreg offset_str_col_mm;
-				offset_str_col_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_col);
-				offset_str_col_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_col_mm.z);
-				
-				__mmask32 shift_right_mask = _mm512_cmpge_epi16_mask(offset_str_col_mm.z, zeroes_mm.z);
-				str_col_mm.z = _mm512_mask_permutexvar_epi16 (offset_str_col_mm.z, shift_right_mask, offset_str_col_mm.z, str_col_mm.z);
 			}else{
 				//simd : leer de memoria (movdqu)
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
@@ -1001,34 +988,25 @@ namespace NW{
 				//simd : desplazamiento de puntero y levantar datos de memoria
 				int offset_str_row = vector_len - j;
 				//simd : leer de memoria (movdqu)
-				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1));
-				
+				__mmask32 shift_left_mask = 0xFFFFFFFF;
+				shift_left_mask <<= offset_str_row; 
+				str_row_mm.y = _mm256_maskz_loadu_epi8(shift_left_mask, (__m256i*)(seq1 - offset_str_row));
+
 				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
 				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
 				
-				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.x = _mm_insert_epi16(offset_str_row_mm.x, offset_str_row,0);
-				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
-				offset_str_row_mm.z = _mm512_sub_epi16(str_shift_left_mask_mm.z,offset_str_row_mm.z);
-
-				__mmask32 shift_left_mask = _mm512_cmpge_epi16_mask(offset_str_row_mm.z, zeroes_mm.z);
-				str_row_mm.z = _mm512_maskz_permutexvar_epi16 (shift_left_mask, offset_str_row_mm.z, str_row_mm.z);
 
 			}else if(j > width-vector_len){ // desborde por derecha
 				//simd : desplazamiento de puntero y levantar datos de memoria
 				int offset_str_row = j - (width-vector_len);
 				
-				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len - offset_str_row) );
+				__mmask32 shift_right_mask = 0xFFFFFFFF;
+				shift_right_mask >>= offset_str_row; 
+				str_row_mm.y = _mm256_maskz_loadu_epi8(shift_right_mask, (__m256i*)(seq1 + j - vector_len));
 				
 				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
 				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
 				
-				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
-				offset_str_row_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_row_mm.z);
-
-				__mmask32 shift_right_mask = _mm512_cmpge_epi16_mask(offset_str_row_mm.z, zeroes_mm.z);
-				str_row_mm.z = _mm512_maskz_permutexvar_epi16 (shift_right_mask, offset_str_row_mm.z, str_row_mm.z);
 			}else{ //caso feliz
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
 
@@ -1072,10 +1050,9 @@ namespace NW{
 			constant_missmatch_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->missmatch);
 			constant_match_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->match);
 			zeroes_mm.z = _mm512_setzero_si512();
+			ones_mm.z = _mm512_maskz_set1_epi8(0xFFFFFFFFFFFFFFFFULL, 0xFF);
 
 			str_reverse_mask_mm.z = _mm512_loadu_si512 ((__m512i*)str_reverse_mask);
-			str_shift_right_mask_mm.z =  _mm512_loadu_si512((__m512i*)str_shift_right_mask);
-			str_shift_left_mask_mm.z =  _mm512_loadu_si512((__m512i*)str_shift_left_mask);
 			str_512_unpacklo_epi8_mask_mm.z =  _mm512_loadu_si512((__m512i*)str_512_unpacklo_epi8_mask);
 			score_512_rot_right_word_mask_mm.z =  _mm512_loadu_si512((__m512i*)score_512_rot_right_word_mask);
 			
