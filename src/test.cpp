@@ -34,7 +34,7 @@ LT_BEGIN_TEST(TestNW, NW_C_LIN)
     alignment->sequence_1 = new_Sequence_from_string((char*) "GCATGCU");
     alignment->sequence_2 = new_Sequence_from_string((char*) "GATTACA");
     
-    NW::LIN::NW_C_LIN(*alignment, true);
+    NW::NW_C_LIN(*alignment, true);
 
     bool res1 = strcmp(alignment->result->sequence_2->sequence, "-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCAT-GCU") == 0;
     bool res2 = strcmp(alignment->result->sequence_2->sequence,"-G-ATTACA") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GCA-TGCU") == 0;
@@ -67,7 +67,7 @@ LT_BEGIN_TEST(TestNW, NW_C_LIN2)
     alignment->sequence_1 = new_Sequence_from_string((char*) "TGGTG");
     alignment->sequence_2 = new_Sequence_from_string((char*) "ATCGT");
     
-    NW::LIN::NW_C_LIN(*alignment, true);
+    NW::NW_C_LIN(*alignment, true);
 
     bool res = strcmp(alignment->result->sequence_2->sequence, "-ATCGT-") == 0 && strcmp(alignment->result->sequence_1->sequence, "--TGGTG") == 0;
 
@@ -161,7 +161,7 @@ LT_BEGIN_TEST(TestSW, SW_C_LIN)
     alignment->sequence_1 = new_Sequence_from_string((char*) "TGTTACGG");
     alignment->sequence_2 = new_Sequence_from_string((char*) "GGTTGACTA");
     
-    SW::LIN::SW_C_LIN(*alignment, true);
+    SW::SW_C_LIN(*alignment, true);
 
     bool res = strcmp(alignment->result->sequence_1->sequence, "-GTT-AC") == 0 && strcmp(alignment->result->sequence_2->sequence, "-GTTGAC") == 0;
     
@@ -194,7 +194,7 @@ LT_BEGIN_TEST(TestNW, SW_C_LIN2)
     alignment->sequence_1 = new_Sequence_from_string((char*) "TGGTG");
     alignment->sequence_2 = new_Sequence_from_string((char*) "ATCGT");
     
-    SW::LIN::SW_C_LIN(*alignment, true);
+    SW::SW_C_LIN(*alignment, true);
 
     bool res = strcmp(alignment->result->sequence_2->sequence, "-GT") == 0 && strcmp(alignment->result->sequence_1->sequence, "-GT") == 0;
 

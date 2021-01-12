@@ -18,14 +18,15 @@ struct Alignment{
 - [x] Dividir version SSE de NW en subrutinas para facilitar el pasaje a ASM.
 - [x] Dividir version SSE de SW en subrutinas para facilitar el pasaje a ASM.
 - [x] NW_ASM_SSE
-  - [ ] Asegurarse de pushear todo lo que se podria romper antes de llamar a malloc u otras funciones de C.
-- [x] SW_ASM_SSE
-- [ ] Hacer versiones AVX-256.
-- [ ] Pensar en usar instancia de AWS para usar AVX-512.
-- [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
+- [x] Asegurarse de pushear todo lo que se podria romper antes de llamar a malloc u otras funciones de C.
 - [x] Ver bug de score 0 en SW (Ver si quedo arreglado inicializando posicion maxima en 0).
+- [x] SW_ASM_SSE
+- [x] Hacer versiones AVX-256.
+- [x] Hacer versiones AVX-512.
+- [ ] Documentar los pasos de AVX y AVX512
+- [ ] Reducir push y pop alrededor de los malloc en NW_ASM_SSE
 - [ ] Emprolijar mascaras que no se usan y demas basura que quedo.
 - [ ] Cli o las funciones que manejan la selección de algoritmos deben chequear que se cumplan las precondiciones (i.e. secuencias de al menos 8 letras para los SSE).
-- [ ] Reducir push y pop alrededor de los malloc en NW_ASM_SSE
-- [ ] Mejorar la complejidad espacial de los algoritmos, posiblemente utilizando D&C: http://www.inf.fu-berlin.de/lehre/WS05/aldabi/downloads/pairAlign_part2.pdf
-- [ ] dividir el .c  de NW y SW para las distintas versiones porque quedo enorme
+- [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
+- [ ] Dividir el .c  de NW y SW para las distintas versiones porque quedo enorme
+- [ ] Pensar en usar instancia de AWS para usar AVX-512.

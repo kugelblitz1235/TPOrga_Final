@@ -992,10 +992,10 @@ namespace NW{
 				str_col_mm.z = _mm512_inserti64x4(str_col_lo_mm.z, str_col_hi_mm.y, 0b1);
 				
 				__mmask32 shift_right_mask = _mm512_movepi16_mask(offset_str_col_mm.z);
-				shift_right_mask = _knot_mask32(shift_right_mask);
-				str_col_mm.z = _mm512_maskz_permutexvar_epi16 (shift_right_mask, offset_str_col_mm.z, str_col_mm.z);
+				//shift_right_mask = _knot_mask32(shift_right_mask);
+				str_col_mm.z = _mm512_permutexvar_epi16 (offset_str_col_mm.z, str_col_mm.z);
 				//todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante ni de casualidad
-				str_col_mm.z = _mm512_mask_blend_epi16(shift_right_mask, offset_str_col_mm.z,str_col_mm.z);
+				str_col_mm.z = _mm512_mask_blend_epi16(shift_right_mask, str_col_mm.z, offset_str_col_mm.z);
 			}else{
 				//simd : leer de memoria (movdqu)
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));

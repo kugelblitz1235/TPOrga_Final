@@ -11,5 +11,8 @@ extern "C" {
     //version paralelizada AVX
     void* NW_ASM_AVX(Alignment* alignment, bool debug);
     void* SW_ASM_AVX(Alignment* alignment, bool debug);
+    //version paralelizada AVX512
+    void* NW_ASM_AVX512(Alignment* alignment, bool debug);
+    void* SW_ASM_AVX512(Alignment* alignment, bool debug);
 }
 #endif  

@@ -380,7 +380,7 @@ void SW_C_LIN(
 			best_x,best_y,
 			true,
 			(score_fun_t)get_score_SSE,
-			false
+			true
 		);
 
 		if(!debug)free(score_matrix);
@@ -550,7 +550,7 @@ void SW_C_LIN(
 			index_xmm = _mm_packs_epi16(index_xmm,index_xmm);
 			int64_t index_mask = _mm_extract_epi64(index_xmm,0);
 
-			int max_index = (__builtin_ffsll(index_mask)-1)/8;
+			int max_index = __builtin_ffsll(index_mask)/8;
 			short max_local_score =  _mm_extract_epi16 (nums_xmm, 0b0000);
 			if(best_global < max_local_score){
 				
@@ -559,7 +559,6 @@ void SW_C_LIN(
 				best_x = j - vector_len + max_index;
 			}
 		}
-
 	}
 
 	void SW_C_SSE(Alignment& alignment, bool debug){
@@ -862,7 +861,7 @@ void SW_C_LIN(
 
 			__m256i index_ymm = _mm256_cmpeq_epi16(nums_ymm,nums_copy_ymm);
 			int mask = _mm256_movemask_epi8(index_ymm);
-			int max_index = (__builtin_ffsll(mask)-1)/2;
+			int max_index = __builtin_ffsll(mask)/2;
 			
 			short max_local_score =  _mm256_extract_epi16 (nums_ymm, 0b0000);
 			if(best_global < max_local_score){
@@ -1193,22 +1192,22 @@ void SW_C_LIN(
 			SIMDreg nums_s_mm;
 			
 			//nums_mm = |WWWWWWWW|WWWWWWWW|WWWWWWWW|WWWWWWWW|
-			nums_s_mm.z = _mm512_bsrli_epi128(nums_mm.z,1*2);	
+			nums_s_mm.z = _mm512_bsrli_epi128(nums_mm.z,1*sizeof(short));	
 			nums_mm.z = _mm512_max_epi16 (nums_mm.z,nums_s_mm.z);	
 			//nums_mm = | W W W W| W W W W| W W W W| W W W W|
-			nums_s_mm.z = _mm512_bsrli_epi128(nums_mm.z,2*2);	
+			nums_s_mm.z = _mm512_bsrli_epi128(nums_mm.z,2*sizeof(short));	
 			nums_mm.z = _mm512_max_epi16 (nums_mm.z,nums_s_mm.z);	
 			//nums_mm = |   W   W|   W   W|   W   W|   W   W|
-			nums_s_mm.z = _mm512_bsrli_epi128(nums_mm.z,4*2);	
+			nums_s_mm.z = _mm512_bsrli_epi128(nums_mm.z,4*sizeof(short));	
 			nums_mm.z = _mm512_max_epi16 (nums_mm.z,nums_s_mm.z);	
 			//nums_mm = |       W|       W|       W|       W|
 			__mmask16 mask = 0x1111;
 			nums_mm.z = _mm512_mask_compress_epi32(nums_mm.z, mask, nums_mm.z);
 			//nums_mm = |        |        |        | W W W W|
-			nums_s_mm.x = _mm_bsrli_si128(nums_mm.x,2*2);
+			nums_s_mm.x = _mm_bsrli_si128(nums_mm.x,2*sizeof(short));
 			nums_mm.x = _mm_max_epi16 (nums_mm.x,nums_s_mm.x);
 			//nums_mm = |        |        |        |   W   W|
-			nums_s_mm.x = _mm_bsrli_si128(nums_mm.x,4*2);
+			nums_s_mm.x = _mm_bsrli_si128(nums_mm.x,4*sizeof(short));
 			nums_mm.x = _mm_max_epi16 (nums_mm.x,nums_s_mm.x);
 			//nums_mm = |        |        |        |       W|
 
@@ -1255,9 +1254,8 @@ void SW_C_LIN(
 			score_matrix =  (short*)malloc(score_matrix_sz*sizeof(short));
 			
 			v_aux = (short*)malloc((width-1)*sizeof(short));
-			//cerr<<"inicializar_casos_base ----------------------------------------------------------------------"<<endl;
+			
 			inicializar_casos_base(alignment);
-			/******************************************************************************************************/
 			
 			best_global = 0;
 			best_y = 0;
@@ -1301,7 +1299,7 @@ void SW_C_LIN(
 			if(debug){
 				alignment.matrix = score_matrix;
 			}
-			//cerr<<best_global<<" "<<best_x<<" "<<best_y<<endl;
+			
 			backtracking_C(
 				score_matrix,
 				alignment,

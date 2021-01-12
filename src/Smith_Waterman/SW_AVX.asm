@@ -768,8 +768,8 @@ mov rbx, 0 ; i
         pop rsi
         pop rdi
         pop rdx
-        vpmaxsw diag_score_ymm, diag_score_ymm, up_score_ymm ; debugging
-        vpmaxsw diag_score_ymm, diag_score_ymm, left_score_ymm ; debugging
+        vpmaxsw diag_score_ymm, diag_score_ymm, up_score_ymm 
+        vpmaxsw diag_score_ymm, diag_score_ymm, left_score_ymm 
         vpmaxsw diag_score_ymm, diag_score_ymm, zeroes_ymm
 
         ;save the max score in the right position of score matrix
