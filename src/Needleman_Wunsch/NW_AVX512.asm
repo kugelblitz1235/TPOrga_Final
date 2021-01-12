@@ -460,8 +460,7 @@ jl .else
     sub rdx, seq2_len ; rdx = offset_str_col
     vmovdqu str_col_ymm, [seq2 + seq2_len - vector_len]
 
-    vpinsrw offset_str_col_xmm, edx, 0
-    vpbroadcastw offset_str_col_zmm, offset_str_col_xmm
+    vpbroadcastw offset_str_col_zmm, edx
     vpaddw offset_str_col_zmm, offset_str_col_zmm, str_shift_right_mask_zmm
 
     ;unpack 256 -> 512
@@ -512,8 +511,7 @@ jge .elseif ; j-vector_len < 0
     sub rcx, rdi ; rcx = offset_str_row
     vmovdqu str_row_ymm, [seq1]
 
-    vpinsrw offset_str_row_xmm, ecx, 0
-    vpbroadcastw offset_str_row_zmm, offset_str_row_xmm
+    vpbroadcastw offset_str_row_zmm, ecx
     vpsubw offset_str_row_zmm, str_shift_left_mask_zmm, offset_str_row_zmm
     ;unpack 256 -> 512  
     vpermq str_row_zmm, str_512_unpacklo_epi8_mask_zmm, str_row_zmm
@@ -537,8 +535,7 @@ jle .else
     sub rdx, rcx
     vmovdqu str_row_ymm, [seq1 + rdx - vector_len]
     
-    vpinsrw offset_str_row_xmm, ecx, 0
-    vpbroadcastw offset_str_row_zmm, offset_str_row_xmm
+    vpbroadcastw offset_str_row_zmm, ecx
     vpaddw offset_str_row_zmm, str_shift_right_mask_zmm, offset_str_row_zmm
     ;unpack 256 -> 512
     vpermq str_row_zmm, str_512_unpacklo_epi8_mask_zmm, str_row_zmm
@@ -709,18 +706,15 @@ mov v_aux, rax
 
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_gap]
-pinsrw constant_gap_xmm, eax, 0
-vpbroadcastw constant_gap_zmm, constant_gap_xmm
+vpbroadcastw constant_gap_zmm, eax
 
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_missmatch]
-pinsrw constant_missmatch_xmm, eax, 0
-vpbroadcastw constant_missmatch_zmm, constant_missmatch_xmm
+vpbroadcastw constant_missmatch_zmm, eax
 
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_match]
-pinsrw constant_match_xmm, eax, 0
-vpbroadcastw constant_match_zmm, constant_match_xmm
+vpbroadcastw constant_match_zmm, eax
 
 vpxorq zeroes_zmm, zeroes_zmm, zeroes_zmm
 ;------------------------------------------------------------------

@@ -1018,7 +1018,6 @@ void SW_C_LIN(
 		char *seq1, *seq2;
 		unsigned int seq1_len, seq2_len;
 		
-		//each element has a 0x70 added, so after addition the most significative bit is activated for the trash characters
 		short str_shift_right_mask[32] = {
 			0x7FE0,0x7FE1,0x7FE2,0x7FE3,0x7FE4,0x7FE5,0x7FE6,0x7FE7,0x7FE8,0x7FE9,0x7FEA,0x7FEB,0x7FEC,0x7FED,0x7FEE,0x7FEF,
 			0x7FF0,0x7FF1,0x7FF2,0x7FF3,0x7FF4,0x7FF5,0x7FF6,0x7FF7,0x7FF8,0x7FF9,0x7FFA,0x7FFB,0x7FFC,0x7FFD,0x7FFE,0x7FFF
@@ -1062,7 +1061,7 @@ void SW_C_LIN(
 			}
 		}
 
-				void leer_secuencia_columna(int i){
+		void leer_secuencia_columna(int i){
 
 			if((i+1)*vector_len >= (int)seq2_len){
 				// Desborde por abajo
@@ -1075,8 +1074,7 @@ void SW_C_LIN(
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + seq2_len - vector_len));
 
 				SIMDreg offset_str_col_mm;
-				offset_str_col_mm.x = _mm_insert_epi16(offset_str_col_mm.x, offset_str_col,0);
-				offset_str_col_mm.z = _mm512_broadcastw_epi16(offset_str_col_mm.x);
+				offset_str_col_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_col);
 				offset_str_col_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_col_mm.z);
 
 				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
@@ -1106,8 +1104,7 @@ void SW_C_LIN(
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1));
 				
 				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.x = _mm_insert_epi16(offset_str_row_mm.x, offset_str_row,0);
-				offset_str_row_mm.z = _mm512_broadcastw_epi16(offset_str_row_mm.x);
+				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
 				offset_str_row_mm.z = _mm512_sub_epi16(str_shift_left_mask_mm.z,offset_str_row_mm.z);
 				
 				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
@@ -1124,8 +1121,7 @@ void SW_C_LIN(
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len - offset_str_row) );
 				
 				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.x = _mm_insert_epi16(offset_str_row_mm.x, offset_str_row,0);
-				offset_str_row_mm.z = _mm512_broadcastw_epi16(offset_str_row_mm.x);
+				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
 				offset_str_row_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_row_mm.z);
 				
 				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
@@ -1213,12 +1209,9 @@ void SW_C_LIN(
 			seq1_len = alignment.sequence_1->length;
 			seq2_len = alignment.sequence_2->length;
 
-			constant_gap_mm.x = _mm_insert_epi16(constant_gap_mm.x,alignment.parameters->gap,0);
-			constant_gap_mm.z = _mm512_broadcastw_epi16(constant_gap_mm.x);
-			constant_missmatch_mm.x = _mm_insert_epi16(constant_missmatch_mm.x,alignment.parameters->missmatch,0);
-			constant_missmatch_mm.z = _mm512_broadcastw_epi16(constant_missmatch_mm.x);
-			constant_match_mm.x = _mm_insert_epi16(constant_match_mm.x,alignment.parameters->match,0);
-			constant_match_mm.z = _mm512_broadcastw_epi16(constant_match_mm.x);
+			constant_gap_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->gap);
+			constant_missmatch_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->missmatch);
+			constant_match_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->match);
 			zeroes_mm.z = _mm512_setzero_si512();
 
 			str_reverse_mask_mm.z = _mm512_loadu_si512 ((__m512i*)str_reverse_mask);

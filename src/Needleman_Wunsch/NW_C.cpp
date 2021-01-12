@@ -978,8 +978,7 @@ namespace NW{
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + seq2_len - vector_len));
 
 				SIMDreg offset_str_col_mm;
-				offset_str_col_mm.x = _mm_insert_epi16(offset_str_col_mm.x, offset_str_col,0);
-				offset_str_col_mm.z = _mm512_broadcastw_epi16(offset_str_col_mm.x);
+				offset_str_col_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_col);
 				offset_str_col_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_col_mm.z);
 
 				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
@@ -1009,8 +1008,7 @@ namespace NW{
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1));
 				
 				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.x = _mm_insert_epi16(offset_str_row_mm.x, offset_str_row,0);
-				offset_str_row_mm.z = _mm512_broadcastw_epi16(offset_str_row_mm.x);
+				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
 				offset_str_row_mm.z = _mm512_sub_epi16(str_shift_left_mask_mm.z,offset_str_row_mm.z);
 				
 				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
@@ -1027,8 +1025,7 @@ namespace NW{
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len - offset_str_row) );
 				
 				SIMDreg offset_str_row_mm;
-				offset_str_row_mm.x = _mm_insert_epi16(offset_str_row_mm.x, offset_str_row,0);
-				offset_str_row_mm.z = _mm512_broadcastw_epi16(offset_str_row_mm.x);
+				offset_str_row_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, offset_str_row);
 				offset_str_row_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_row_mm.z);
 				
 				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
@@ -1075,12 +1072,9 @@ namespace NW{
 			seq1_len = alignment.sequence_1->length;
 			seq2_len = alignment.sequence_2->length;
 
-			constant_gap_mm.x = _mm_insert_epi16(constant_gap_mm.x,alignment.parameters->gap,0);
-			constant_gap_mm.z = _mm512_broadcastw_epi16(constant_gap_mm.x);
-			constant_missmatch_mm.x = _mm_insert_epi16(constant_missmatch_mm.x,alignment.parameters->missmatch,0);
-			constant_missmatch_mm.z = _mm512_broadcastw_epi16(constant_missmatch_mm.x);
-			constant_match_mm.x = _mm_insert_epi16(constant_match_mm.x,alignment.parameters->match,0);
-			constant_match_mm.z = _mm512_broadcastw_epi16(constant_match_mm.x);
+			constant_gap_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->gap);
+			constant_missmatch_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->missmatch);
+			constant_match_mm.z = _mm512_maskz_set1_epi16(0xFFFFFFFF, alignment.parameters->match);
 			zeroes_mm.z = _mm512_setzero_si512();
 
 			str_reverse_mask_mm.z = _mm512_loadu_si512 ((__m512i*)str_reverse_mask);
