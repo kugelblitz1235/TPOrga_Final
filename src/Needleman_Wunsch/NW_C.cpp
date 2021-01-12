@@ -968,19 +968,16 @@ namespace NW{
 				__mmask32 shift_right_mask = 0xFFFFFFFF;
 				shift_right_mask >>= offset_str_col; 
 				str_col_mm.y = _mm256_mask_loadu_epi8(ones_mm.y, shift_right_mask, (__m256i*)(seq2 + seq2_len - vector_len + offset_str_col));
-				
-				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
-				str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
-				
+			
 			}else{
 				//simd : leer de memoria (movdqu)
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
-
-				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
-				str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
 			}
+				
+			str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
+			str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
+
 			str_col_mm.z = _mm512_permutexvar_epi16 (str_reverse_mask_mm.z, str_col_mm.z);
-		
 		}
 
 		void leer_secuencia_fila(int j) {
@@ -992,10 +989,6 @@ namespace NW{
 				shift_left_mask <<= offset_str_row; 
 				str_row_mm.y = _mm256_maskz_loadu_epi8(shift_left_mask, (__m256i*)(seq1 - offset_str_row));
 
-				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
-				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
-				
-
 			}else if(j > width-vector_len){ // desborde por derecha
 				//simd : desplazamiento de puntero y levantar datos de memoria
 				int offset_str_row = j - (width-vector_len);
@@ -1003,18 +996,13 @@ namespace NW{
 				__mmask32 shift_right_mask = 0xFFFFFFFF;
 				shift_right_mask >>= offset_str_row; 
 				str_row_mm.y = _mm256_maskz_loadu_epi8(shift_right_mask, (__m256i*)(seq1 + j - vector_len));
-				
-				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
-				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
-				
+
 			}else{ //caso feliz
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
-
-				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
-				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
-				
 			}
-
+			
+			str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
+			str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
 		}
 
 
