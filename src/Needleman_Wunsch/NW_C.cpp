@@ -920,11 +920,9 @@ namespace NW{
 		short str_reverse_mask[32] = {
 			0x1F,0x1E,0x1D,0x1C,0x1B,0x1A,0x19,0x18,0x17,0x16,0x15,0x14,0x13,0x12,0x11,0x10,0xF,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0
 		};
-		uint8_t str_512_unpacklo_epi8_mask[64] = {
-			0x0,0xFF,0x1,0xFF,0x2,0xFF,0x3,0xFF,0x4,0xFF,0x5,0xFF,0x6,0xFF,0x7,0xFF,0x8,0xFF,0x9,0xFF,0xA,0xFF,0xB,0xFF,0xC,0xFF,0xD,0xFF,0xE,0xFF,0xF,0xFF,
-			0x10,0xFF,0x11,0xFF,0x12,0xFF,0x13,0xFF,0x14,0xFF,0x15,0xFF,0x16,0xFF,0x17,0xFF,0x18,0xFF,0x19,0xFF,0x1A,0xFF,0x1B,0xFF,0x1C,0xFF,0x1D,0xFF,0x1E,0xFF,0x1F,0xFF
+		uint64_t str_512_unpacklo_epi8_mask[8] = {
+			0x0,0xFF,0x1,0xFF,0x2,0xFF,0x3,0xFF
 		};
-
 		short score_512_rot_right_word_mask[32] = {
 			0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,0x0
 		};
@@ -984,12 +982,8 @@ namespace NW{
 				offset_str_col_mm.z = _mm512_broadcastw_epi16(offset_str_col_mm.x);
 				offset_str_col_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_col_mm.z);
 
-				str_col_mm.y = _mm256_permute4x64_epi64 (str_col_mm.y, 0b11011000); // 3|1|2|0	
-				SIMDreg str_col_lo_mm;
-				str_col_lo_mm.y = _mm256_unpacklo_epi8 (str_col_mm.y, zeroes_mm.y); // z|1|z|0
-				SIMDreg str_col_hi_mm;
-				str_col_hi_mm.y = _mm256_unpackhi_epi8 (str_col_mm.y, zeroes_mm.y); // z|3|z|2
-				str_col_mm.z = _mm512_inserti64x4(str_col_lo_mm.z, str_col_hi_mm.y, 0b1);
+				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
+				str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
 				
 				__mmask32 shift_right_mask = _mm512_movepi16_mask(offset_str_col_mm.z);
 				//shift_right_mask = _knot_mask32(shift_right_mask);
@@ -1000,12 +994,8 @@ namespace NW{
 				//simd : leer de memoria (movdqu)
 				str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
 
-				str_col_mm.y = _mm256_permute4x64_epi64 (str_col_mm.y, 0b11011000); // 3|1|2|0	
-				SIMDreg str_col_lo_mm;
-				str_col_lo_mm.y = _mm256_unpacklo_epi8 (str_col_mm.y, zeroes_mm.y); // z|1|z|0
-				SIMDreg str_col_hi_mm;
-				str_col_hi_mm.y = _mm256_unpackhi_epi8 (str_col_mm.y, zeroes_mm.y); // z|3|z|2
-				str_col_mm.z = _mm512_inserti64x4(str_col_lo_mm.z, str_col_hi_mm.y, 0b1);
+				str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
+				str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
 			}
 			str_col_mm.z = _mm512_permutexvar_epi16 (str_reverse_mask_mm.z, str_col_mm.z);
 		
@@ -1023,12 +1013,8 @@ namespace NW{
 				offset_str_row_mm.z = _mm512_broadcastw_epi16(offset_str_row_mm.x);
 				offset_str_row_mm.z = _mm512_sub_epi16(str_shift_left_mask_mm.z,offset_str_row_mm.z);
 				
-				str_row_mm.y = _mm256_permute4x64_epi64 (str_row_mm.y, 0b11011000); // 3|1|2|0	
-				SIMDreg str_row_lo_mm;
-				str_row_lo_mm.y = _mm256_unpacklo_epi8 (str_row_mm.y, zeroes_mm.y); // z|1|z|0
-				SIMDreg str_row_hi_mm;
-				str_row_hi_mm.y = _mm256_unpackhi_epi8 (str_row_mm.y, zeroes_mm.y); // z|3|z|2
-				str_row_mm.z = _mm512_inserti64x4(str_row_lo_mm.z, str_row_hi_mm.y, 0b1);
+				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
+				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
 
 				__mmask32 shift_left_mask = _mm512_movepi16_mask(offset_str_row_mm.z);
 				shift_left_mask = _knot_mask32(shift_left_mask);
@@ -1045,12 +1031,8 @@ namespace NW{
 				offset_str_row_mm.z = _mm512_broadcastw_epi16(offset_str_row_mm.x);
 				offset_str_row_mm.z = _mm512_add_epi16(str_shift_right_mask_mm.z,offset_str_row_mm.z);
 				
-				str_row_mm.y = _mm256_permute4x64_epi64 (str_row_mm.y, 0b11011000); // 3|1|2|0	
-				SIMDreg str_row_lo_mm;
-				str_row_lo_mm.y = _mm256_unpacklo_epi8 (str_row_mm.y, zeroes_mm.y); // z|1|z|0
-				SIMDreg str_row_hi_mm;
-				str_row_hi_mm.y = _mm256_unpackhi_epi8 (str_row_mm.y, zeroes_mm.y); // z|3|z|2
-				str_row_mm.z = _mm512_inserti64x4(str_row_lo_mm.z, str_row_hi_mm.y, 0b1);
+				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
+				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
 
 				__mmask32 shift_right_mask = _mm512_movepi16_mask(offset_str_row_mm.z);
 				shift_right_mask = _knot_mask32(shift_right_mask);
@@ -1058,12 +1040,8 @@ namespace NW{
 			}else{ //caso feliz
 				str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
 
-				str_row_mm.y = _mm256_permute4x64_epi64 (str_row_mm.y, 0b11011000); // 3|1|2|0	
-				SIMDreg str_row_lo_mm;
-				str_row_lo_mm.y = _mm256_unpacklo_epi8 (str_row_mm.y, zeroes_mm.y); // z|1|z|0
-				SIMDreg str_row_hi_mm;
-				str_row_hi_mm.y = _mm256_unpackhi_epi8 (str_row_mm.y, zeroes_mm.y); // z|3|z|2
-				str_row_mm.z = _mm512_inserti64x4(str_row_lo_mm.z, str_row_hi_mm.y, 0b1);
+				str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
+				str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
 				
 			}
 

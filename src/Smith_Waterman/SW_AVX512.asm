@@ -12,7 +12,7 @@ section .rodata
 str_shift_right_mask: DW 0x7FE0,0x7FE1,0x7FE2,0x7FE3,0x7FE4,0x7FE5,0x7FE6,0x7FE7,0x7FE8,0x7FE9,0x7FEA,0x7FEB,0x7FEC,0x7FED,0x7FEE,0x7FEF,0x7FF0,0x7FF1,0x7FF2,0x7FF3,0x7FF4,0x7FF5,0x7FF6,0x7FF7,0x7FF8,0x7FF9,0x7FFA,0x7FFB,0x7FFC,0x7FFD,0x7FFE,0x7FFF
 str_shift_left_mask: DW 0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F
 str_reverse_mask: Dw 0x1F,0x1E,0x1D,0x1C,0x1B,0x1A,0x19,0x18,0x17,0x16,0x15,0x14,0x13,0x12,0x11,0x10,0xF,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0
-str_512_unpacklo_epi8_mask: DB 0x0,0xFF,0x1,0xFF,0x2,0xFF,0x3,0xFF,0x4,0xFF,0x5,0xFF,0x6,0xFF,0x7,0xFF,0x8,0xFF,0x9,0xFF,0xA,0xFF,0xB,0xFF,0xC,0xFF,0xD,0xFF,0xE,0xFF,0xF,0xFF,0x10,0xFF,0x11,0xFF,0x12,0xFF,0x13,0xFF,0x14,0xFF,0x15,0xFF,0x16,0xFF,0x17,0xFF,0x18,0xFF,0x19,0xFF,0x1A,0xFF,0x1B,0xFF,0x1C,0xFF,0x1D,0xFF,0x1E,0xFF,0x1F,0xFF
+str_512_unpacklo_epi8_mask: DQ 0x0,0xFF,0x1,0xFF,0x2,0xFF,0x3,0xFF
 score_512_rot_right_word_mask: DW 0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,0x0
 
 malloc_error_str : db `No se pudo reservar memoria suficiente.\nMalloc: %d\nIntente reservar: %d bytes\n`,0
@@ -429,15 +429,13 @@ jl .else
     sub rdx, seq2_len ; rdx = offset_str_col
     vmovdqu str_col_ymm, [seq2 + seq2_len - vector_len]
 
-    vpinsrb offset_str_col_xmm, edx, 0
+    vpinsrw offset_str_col_xmm, edx, 0
     vpbroadcastw offset_str_col_zmm, offset_str_col_xmm
     vpaddw offset_str_col_zmm, offset_str_col_zmm, str_shift_right_mask_zmm
 
     ;unpack 256 -> 512
-    vpermq str_col_ymm, str_col_ymm, 0b11011000
-    vpunpcklbw str_col_lo_ymm, str_col_ymm, zeroes_ymm
-    vpunpckhbw str_col_hi_ymm, str_col_ymm, zeroes_ymm
-    vinserti64x4 str_col_zmm, str_col_lo_zmm, str_col_hi_ymm, 0b1
+    vpermq str_col_zmm, str_512_unpacklo_epi8_mask_zmm, str_col_zmm
+    vpunpcklbw str_col_zmm, str_col_zmm, zeroes_zmm
 
     vpmovw2m shift_right_mask, offset_str_col_zmm
     vpermw str_col_zmm, offset_str_col_zmm, str_col_zmm
@@ -449,10 +447,8 @@ jl .else
     shl rdi, vector_len_log
     vmovdqu str_col_ymm, [seq2 + rdi]
     ;unpack 256 -> 512
-    vpermq str_col_ymm, str_col_ymm, 0b11011000
-    vpunpcklbw str_col_lo_ymm, str_col_ymm, zeroes_ymm
-    vpunpckhbw str_col_hi_ymm, str_col_ymm, zeroes_ymm
-    vinserti64x4 str_col_zmm, str_col_lo_zmm, str_col_hi_ymm, 0b1
+    vpermq str_col_zmm, str_512_unpacklo_epi8_mask_zmm, str_col_zmm
+    vpunpcklbw str_col_zmm, str_col_zmm, zeroes_zmm
 
     jmp .end
 
@@ -489,10 +485,8 @@ jge .elseif ; j-vector_len < 0
     vpbroadcastw offset_str_row_zmm, offset_str_row_xmm
     vpsubw offset_str_row_zmm, str_shift_left_mask_zmm, offset_str_row_zmm
     ;unpack 256 -> 512  
-    vpermq str_row_ymm, str_row_ymm, 0b11011000
-    vpunpcklbw str_row_lo_ymm, str_row_ymm, zeroes_ymm
-    vpunpckhbw str_row_hi_ymm, str_row_ymm, zeroes_ymm
-    vinserti64x4 str_row_zmm, str_row_lo_zmm, str_row_hi_ymm, 0b1
+    vpermq str_row_zmm, str_512_unpacklo_epi8_mask_zmm, str_row_zmm
+    vpunpcklbw str_row_zmm, str_row_zmm, zeroes_zmm
 
     vpmovw2m shift_left_mask, offset_str_row_zmm
     knotd shift_left_mask, shift_left_mask
@@ -516,10 +510,8 @@ jle .else
     vpbroadcastw offset_str_row_zmm, offset_str_row_xmm
     vpaddw offset_str_row_zmm, str_shift_right_mask_zmm, offset_str_row_zmm
     ;unpack 256 -> 512
-    vpermq str_row_ymm, str_row_ymm, 0b11011000
-    vpunpcklbw str_row_lo_ymm, str_row_ymm, zeroes_ymm
-    vpunpckhbw str_row_hi_ymm, str_row_ymm, zeroes_ymm
-    vinserti64x4 str_row_zmm, str_row_lo_zmm, str_row_hi_ymm, 0b1
+    vpermq str_row_zmm, str_512_unpacklo_epi8_mask_zmm, str_row_zmm
+    vpunpcklbw str_row_zmm, str_row_zmm, zeroes_zmm
 
     vpmovw2m shift_right_mask, offset_str_row_zmm
     knotd shift_right_mask, shift_right_mask
@@ -529,10 +521,8 @@ jmp .end
 .else:
     vmovdqu str_row_ymm, [seq1 + rdi - vector_len]
     ;unpack 256 -> 512
-    vpermq str_row_ymm, str_row_ymm, 0b11011000
-    vpunpcklbw str_row_lo_ymm, str_row_ymm, zeroes_ymm
-    vpunpckhbw str_row_hi_ymm, str_row_ymm, zeroes_ymm
-    vinserti64x4 str_row_zmm, str_row_lo_zmm, str_row_hi_ymm, 0b1
+    vpermq str_row_zmm, str_512_unpacklo_epi8_mask_zmm, str_row_zmm
+    vpunpcklbw str_row_zmm, str_row_zmm, zeroes_zmm
 
 jmp .end
 
