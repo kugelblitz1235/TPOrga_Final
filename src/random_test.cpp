@@ -71,7 +71,7 @@ LT_BEGIN_TEST(TestNW, NW_C_x5)
     s_len2 = alignment_sse->sequence_2->length;
 
     NW::C::LIN::NW(*alignment_lin, true);
-    NW::C::with_logic_SSE(*alignment_logic, vector_len, true);
+    NW::C::SIMDlogic::NW(*alignment_logic, vector_len, true);
     NW::C::SSE::NW(*alignment_sse, true);
     NW::C::AVX::NW(*alignment_avx, true);
     NW::C::AVX512::NW(*alignment_avx512, true);
@@ -335,7 +335,7 @@ LT_BEGIN_TEST(TestNW, NW_ASM_AVX512_test)
     s_len1 = alignment->sequence_1->length;
     s_len2 = alignment->sequence_2->length;
 
-    NW::C::with_logic_SSE(*alignment_lin,vector_len, true);
+    NW::C::SIMDlogic::NW(*alignment_lin,vector_len, true);
     
     NW_ASM_AVX512(alignment, true);
 
@@ -432,7 +432,7 @@ LT_BEGIN_TEST(TestSW, SW_C_x5)
     s_len2 = alignment_avx->sequence_2->length;
 
     SW::C::LIN::SW(*alignment_lin, true);
-    SW::C::with_logic_SSE(*alignment_logic, vector_len, true);
+    SW::C::SIMDlogic::SW(*alignment_logic, vector_len, true);
     SW::C::SSE::SW(*alignment_sse, true);
     SW::C::AVX::SW(*alignment_avx, true);
     SW::C::AVX512::SW(*alignment_avx512, true);
@@ -696,7 +696,7 @@ LT_BEGIN_TEST(TestSW, SW_ASM_AVX512_test)
     s_len1 = alignment->sequence_1->length;
     s_len2 = alignment->sequence_2->length;
 
-    SW::C::with_logic_SSE(*alignment_lin,vector_len, true);
+    SW::C::SIMDlogic::SW(*alignment_lin,vector_len, true);
     
     SW_ASM_AVX512(alignment, true);
 
