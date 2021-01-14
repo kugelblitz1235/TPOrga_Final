@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O0 -mavx512f -mavx512vl -mavx512bw  -mavx512cd -mavx512dq
+CXXFLAGS = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O0 -march=skylake-avx512
 
 ASM = nasm
 ASMFLAGS = -felf64 -g -F dwarf
@@ -56,7 +56,7 @@ clean:
 
 test: $(BUILD_DIR)/test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
 	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
-	../sde-kit/sde -icl -- ../test
+	../sde-kit/sde -skx -- ../test
 
 $(BUILD_DIR)/test.o: test.cpp
 	mkdir -p $(BUILD_DIR)
@@ -64,7 +64,7 @@ $(BUILD_DIR)/test.o: test.cpp
 
 random_test: $(BUILD_DIR)/random_test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
 	$(CXX) $(CXXFLAGS) -o ../$@ $(BUILD_DIR)/random_test.o $(MISC_FILES_CON_PATH) $(NEEDLMAN_C_FILES_CON_PATH) $(SMITH_C_FILES_CON_PATH) $(NEEDLMAN_ASM_FILES_CON_PATH) $(SMITH_ASM_FILES_CON_PATH)
-	../sde-kit/sde -icl -- ../random_test
+	../sde-kit/sde -skx -- ../random_test
 
 $(BUILD_DIR)/random_test.o: random_test.cpp
 	mkdir -p $(BUILD_DIR)
