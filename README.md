@@ -33,6 +33,8 @@ struct Alignment{
 - [x] Agregar a SSE diag1 y diag2 para evitar levantar de memoria en cada vuelta del loop principal.
 - [x] Opcional: dejar parametros como variables globales en SSE.
 - [x] Opcional: agregar tipo de datos union para simular registro en memoria en AVX.
-- [ ] Cli o las funciones que manejan la selección de algoritmos deben chequear que se cumplan las precondiciones (i.e. secuencias de al menos 8 letras para los SSE).
+- [x] Cli o las funciones que manejan la selección de algoritmos deben chequear que se cumplan las precondiciones (i.e. secuencias de al menos 8 letras para los SSE).
 - [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
 - [ ] Pensar en usar instancia de AWS para usar AVX-512.
+- [ ] Medir el tiempo en cli.
+- [ ] Pensar si habría que cambiar la representación del score a int.

@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void parse_FASTA(char* file, Sequence *sequence){
+void parse_FASTA(const char* file, Sequence *sequence){
     FILE * fp;
     char * line = NULL;
     size_t len = 0;
@@ -52,7 +52,7 @@ void parse_FASTA(char* file, Sequence *sequence){
     
 }
 
-void FASTA_to_alignment(Alignment* alignment,char* file1,char* file2){
+void FASTA_to_alignment(Alignment* alignment, const char* file1, const char* file2){
     
     alignment->sequence_1 = (Sequence*)malloc(sizeof(Sequence));
     alignment->sequence_2 = (Sequence*)malloc(sizeof(Sequence));

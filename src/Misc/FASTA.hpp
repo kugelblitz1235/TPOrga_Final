@@ -7,6 +7,6 @@
 
 using namespace std;
 
-void FASTA_to_alignment(Alignment* alignment, char* file1, char* file2);
+void FASTA_to_alignment(Alignment* alignment, const char* file1, const char* file2);
 
 #endif

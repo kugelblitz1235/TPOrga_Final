@@ -42,8 +42,24 @@ map<string, string> algorithms = {
 };
 
 //funcion que selecciona el algoritmo, la implementacion y recibe los parametros para ejecutarla
-void align_sequences(Alignment &alignment){
+void align_sequences(Alignment &alignment, string s1, string s2){
+  FASTA_to_alignment(&alignment, s1.c_str(), s2.c_str());
+  int min_length = min(alignment.sequence_1->length, alignment.sequence_2->length);
   string implementation = *(alignment.parameters->algorithm);
+
+  if(implementation.find("SSE") != implementation.end() && min_len < 8){
+    cerr < "Los algoritmos SSE necesitan strings de largo mínimo 8" << endl;
+    exit(1);
+  }
+  else if(implementation.find("AVX512") != implementation.end() && min_len < 32){
+    cerr < "Los algoritmos AVX512 necesitan strings de largo mínimo 32" << endl;
+    exit(1);
+  }
+  else if(implementation.find("AVX") != implementation.end() && min_len < 16){
+    cerr < "Los algoritmos AVX necesitan strings de largo mínimo 16" << endl;
+    exit(1);
+  }
+
 
   if(implementation.compare("SW_C_LIN") == 0)SW::C::LIN::SW(alignment, false);
   else if(implementation.compare("SW_C_SSE") == 0)SW::C::SSE::SW(alignment, false);
@@ -88,6 +104,7 @@ int main (int argc, char **argv)
   opterr = 0;
 
   string algorithm;
+  string s1, s2;
   
   while ((c = getopt(argc, argv, "a:s:t:p:q:r:h")) != -1)
     switch (c)
@@ -97,10 +114,10 @@ int main (int argc, char **argv)
         a.parameters->algorithm = &algorithm;
         break;
       case 's':
-        a.sequence_1 = new_Sequence_from_string(optarg);
+        s1 = string(optarg);
         break;
       case 't':
-        a.sequence_2 = new_Sequence_from_string(optarg);
+        s2 = string(optarg);
         break;
       case 'p':
         a.parameters->match = atoi(optarg);
@@ -145,7 +162,7 @@ int main (int argc, char **argv)
         exit(1);
       }
 
-  if (a.parameters->algorithm == NULL | a.sequence_1 == NULL | a.sequence_1 == NULL) {
+  if (a.parameters->algorithm == NULL | s1 == "" | s2 == "") {
     cerr << "Faltan argumentos obligatorios. Especificar un algoritmo y dos secuencias (-a, -s, -t).\nImprimir ayuda con -h.\n" << endl;
     exit(1);
   }
@@ -157,7 +174,7 @@ int main (int argc, char **argv)
 		exit(1);
   }
 
-  align_sequences(a);
+  align_sequences(a, s1, s2);
 
   printf("Alineamiento terminado:\nAlgoritmo: %s\n", (*a.parameters->algorithm).c_str());
   printf("Parámetros:\n\tmatch: %d\n\tmismatch: %d\n\tgap: %d\n", a.parameters->match, a.parameters->missmatch, a.parameters->gap);
