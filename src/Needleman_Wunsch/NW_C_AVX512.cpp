@@ -16,7 +16,7 @@ namespace AVX512{
     // Registros globales utilizados
     SIMDreg constant_gap_mm, constant_missmatch_mm, constant_match_mm, zeroes_mm, ones_mm;
     SIMDreg str_row_mm, str_col_mm, left_score_mm, up_score_mm, diag_score_mm;
-    SIMDreg str_reverse_mask_mm, str_shift_right_mask_mm, str_shift_left_mask_mm;
+    SIMDreg str_reverse_mask_mm;
     SIMDreg str_512_unpacklo_epi8_mask_mm;
     SIMDreg score_512_rot_right_word_mask_mm;
     SIMDreg diag1_mm, diag2_mm;
@@ -81,14 +81,13 @@ namespace AVX512{
             shift_right_mask = (shift_right_mask >> offset_str_col); 
             // Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
             // A su vez poner en los lugares de posiciones invalidas todos 1s, para evitar que coincida con algun caracter de la secuencia columna
-            str_col_mm.y = _mm256_mask_loadu_epi8(ones_mm.y, shift_right_mask, (__m256i*)(seq2 + seq2_len - vector_len + offset_str_col));  	// str_row_mm = |0...0|str_row|
+            str_col_mm.y = _mm256_mask_loadu_epi8(ones_mm.y, shift_right_mask, (__m256i*)(seq2 + seq2_len - vector_len + offset_str_col));  	// str_row_mm = |1...1|str_col|
         }else{ // Caso sin desborde
             str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
         }
         // Desempaquetar el string en str_col_ymm para trabajar a nivel words
         str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
         str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
-        
         // Invertir el string en str_col_zmm
         str_col_mm.z = _mm512_permutexvar_epi16 (str_reverse_mask_mm.z, str_col_mm.z);
     }
@@ -145,7 +144,7 @@ namespace AVX512{
         // Comparar los dos strings y colocar según corresponda el puntaje correcto (match o missmatch) en cada posición
         SIMDreg cmp_match_mm;
         __mmask32 cmp_mask = _mm512_cmpeq_epi16_mask(str_col_mm.z,str_row_mm.z);
-        cmp_match_mm.z = _mm512_mask_blend_epi16(cmp_mask, constant_missmatch_mm.z,constant_match_mm.z); 
+        cmp_match_mm.z = _mm512_mask_blend_epi16(cmp_mask, constant_missmatch_mm.z, constant_match_mm.z); 
         diag_score_mm.z = _mm512_add_epi16(diag_score_mm.z, cmp_match_mm.z);
     }
 

@@ -24,10 +24,12 @@ reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x
 %define diag_score_xmm xmm8
 %define reverse_mask_xmm xmm9
 %define zeroes_xmm xmm10
+%define diag1_xmm xmm11
+%define diag2_xmm xmm12
 
 ; ------- best position and best global score ----------
 ; | x | y | g | 0 |
-%define best_x_y_global xmm11
+%define best_x_y_global xmm13
 %define best_x_xmm_pos 0b00
 %define best_y_xmm_pos 0b01
 %define best_global_xmm_pos 0b10
@@ -132,8 +134,8 @@ ret
 ; Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia columna a utilizar en la comparación
 leer_secuencia_columna:
 ; rdi = i
-%define shift_count xmm12
-%define shift_mask xmm13
+%define shift_count xmm14
+%define shift_mask xmm15
 
 %define i_index rdi
 
@@ -176,8 +178,8 @@ leer_secuencia_columna:
 ; Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia fila a utilizar en la comparación
 leer_secuencia_fila:
 ; rdi = j
-%define shift_count xmm12
-%define shift_mask xmm13
+%define shift_count xmm14
+%define shift_mask xmm15
 
 %define j_index rdi
 
@@ -241,16 +243,16 @@ calcular_scores:
     mov rcx, rsi
     add rcx, rdx 
     ; Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
-    movdqu left_score_xmm, [score_matrix + 2*rcx - 2*vector_len] 
+    movdqu left_score_xmm, diag2_xmm
     paddw left_score_xmm, constant_gap_xmm                          
     ; Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
-    movdqu up_score_xmm, [score_matrix + 2*rcx - 2*vector_len]
+    movdqu up_score_xmm, diag2_xmm
     psrldq  up_score_xmm, 2                                         ; up_score_xmm = | 0 | up_score |
     mov bx, word [v_aux + 2*rdi - 2*1]
     pinsrw up_score_xmm, ebx, 0b111                                 ; up_score_xmm = | v_aux[j-1] | up_score |
     paddw up_score_xmm, constant_gap_xmm
     ; Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
-    movdqu diag_score_xmm, [score_matrix + 2*rcx - 2*2*vector_len]
+    movdqu diag_score_xmm, diag1_xmm
     psrldq  diag_score_xmm, 2                                       ; up_score_xmm = | 0 | diag_score |
     mov cx, word [v_aux + 2*rdi - 2*2]
     pinsrw diag_score_xmm, ecx, 0b111                               ; diag_score_xmm = | v_aux[j-2] | up_score |
@@ -269,14 +271,14 @@ actualizar_posicion_maxima:
 ; rdi : i
 ; rsi : j
 ; best_x_y_global = | x | y | g | - | 
-%define nums_xmm xmm12
-%define nums_s_xmm xmm13
-%define index_xmm xmm14
+%define nums_xmm xmm14
+%define nums_s_xmm xmm15
+%define index_xmm xmm0
 
 ; Encontrar el índice del máximo word en el registro xmm
 
-movdqu nums_xmm, diag_score_xmm
-movdqu index_xmm, nums_xmm                          ; nums_mm = |WWWWWWWW|	
+movdqu nums_xmm, diag_score_xmm                     ; nums_mm = |WWWWWWWW|	
+movdqu index_xmm, nums_xmm
 
 movdqu nums_s_xmm, nums_xmm
 psrldq nums_s_xmm, 1*2
@@ -464,6 +466,9 @@ mov rbx, 0 ; i
     mov rdi, rbx ; rdi = i
     call leer_secuencia_columna
     
+    vmovdqu diag1_xmm, [score_matrix + 2*rsi]
+    vmovdqu diag2_xmm, [score_matrix + 2*rsi + 2*vector_len] 
+
     mov rcx, 2 ; j
     .loop_j:
         push rbx
@@ -509,6 +514,8 @@ mov rbx, 0 ; i
         pop rsi
         pop rdx
 
+        vmovdqu diag1_xmm, diag2_xmm
+        vmovdqu diag2_xmm, diag_score_xmm
         inc rcx
         cmp rcx, width
         jne .loop_j    

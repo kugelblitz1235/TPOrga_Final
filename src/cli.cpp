@@ -1,11 +1,20 @@
 #include <unistd.h>
 #include <iostream>
 #include <string>
+#include <map>
 #include <emmintrin.h>
 
 #include "Misc/Types.hpp"
-#include "Needleman_Wunsch/NW_C.hpp"
-#include "Smith_Waterman/SW_C.hpp"
+#include "Smith_Waterman/SW_C_LIN.hpp"
+#include "Smith_Waterman/SW_C_SIMDlogic.hpp"
+#include "Smith_Waterman/SW_C_SSE.hpp"
+#include "Smith_Waterman/SW_C_AVX.hpp"
+#include "Smith_Waterman/SW_C_AVX512.hpp"
+#include "Needleman_Wunsch/NW_C_LIN.hpp"
+#include "Needleman_Wunsch/NW_C_SIMDlogic.hpp"
+#include "Needleman_Wunsch/NW_C_SSE.hpp"
+#include "Needleman_Wunsch/NW_C_AVX.hpp"
+#include "Needleman_Wunsch/NW_C_AVX512.hpp"
 #include "Misc/JSON.hpp"
 #include "Misc/AlignAlgo.hpp"
 #include "Misc/Utility.hpp"
@@ -13,97 +22,147 @@
 
 using namespace std;
 
+map<string, string> algorithms = {
+  {"SW_C_LIN", "Smith-Waterman implementado en C de forma lineal."},
+  {"SW_C_SSE", "Smith-Waterman implementado en C usando instrucciones SSE."},
+  {"SW_C_AVX", "Smith-Waterman implementado en C usando instrucciones AVX."},
+  {"SW_C_AVX512", "Smith-Waterman implementado en C usando instrucciones AVX512."},
+  {"SW_ASM_LIN", "Smith-Waterman implementado en ASM de forma lineal."},
+  {"SW_ASM_SSE", "Smith-Waterman implementado en ASM usando instrucciones SSE."},
+  {"SW_ASM_AVX", "Smith-Waterman implementado en ASM usando instrucciones AVX."},
+  {"SW_ASM_AVX512", "Smith-Waterman implementado en ASM usando instrucciones AVX512."},
+  {"NW_C_LIN", "Needlman-Wunsch implementado en C de forma lineal."},
+  {"NW_C_SSE", "Needlman-Wunsch implementado en C usando instrucciones SSE."},
+  {"NW_C_AVX", "Needlman-Wunsch implementado en C usando instrucciones AVX."},
+  {"NW_C_AVX512", "Needlman-Wunsch implementado en C usando instrucciones AVX512."},
+  {"NW_ASM_LIN", "Needlman-Wunsch implementado en ASM de forma lineal."},
+  {"NW_ASM_SSE", "Needlman-Wunsch implementado en ASM usando instrucciones SSE."},
+  {"NW_ASM_AVX", "Needlman-Wunsch implementado en ASM usando instrucciones AVX."},
+  {"NW_ASM_AVX512", "Needlman-Wunsch implementado en ASM usando instrucciones AVX512."},
+};
+
 //funcion que selecciona el algoritmo, la implementacion y recibe los parametros para ejecutarla
-Alignment* align_sequences (std::string algorithm, std::string implementation, char* sequence_1, char* sequence_2, short gap, short missmatch, short match){
-    try
-    {
-          //los cambio a mayusculas para una mejor comparacion
-          for (auto & c: algorithm) c = toupper(c);
-          for (auto & c: implementation) c = toupper(c);
+void align_sequences(Alignment &alignment){
+  string implementation = *(alignment.parameters->algorithm);
 
-          if(algorithm.compare("NW") == 0){
-            return NW::get_alignment(implementation, sequence_1, sequence_2, gap, missmatch, match);
-          }
-          else if (algorithm.compare("SW") == 0)
-          {
-            return SW::get_alignment(implementation, sequence_1, sequence_2, gap, missmatch, match);
-          }
-          else{
-            throw "Los parámetros ingresados son inválidos.";
-          }
+  if(implementation.compare("SW_C_LIN") == 0)SW::C::LIN::SW(alignment, false);
+  else if(implementation.compare("SW_C_SSE") == 0)SW::C::SSE::SW(alignment, false);
+  else if(implementation.compare("SW_C_AVX") == 0)SW::C::AVX::SW(alignment, false);
+  else if(implementation.compare("SW_C_AVX512") == 0)SW::C::AVX512::SW(alignment, false);
+  else if(implementation.compare("SW_ASM_LIN") == 0)SW_ASM_LIN(&alignment);
+  else if(implementation.compare("SW_ASM_SSE") == 0)SW_ASM_SSE(&alignment, false);
+  else if(implementation.compare("SW_ASM_AVX") == 0)SW_ASM_AVX(&alignment, false);
+  else if(implementation.compare("SW_ASM_AVX512") == 0)SW_ASM_AVX512(&alignment, false);
+  else if(implementation.compare("NW_C_LIN") == 0)NW::C::LIN::NW(alignment, false);
+  else if(implementation.compare("NW_C_SSE") == 0)NW::C::SSE::NW(alignment, false);
+  else if(implementation.compare("NW_C_AVX512") == 0)NW::C::AVX512::NW(alignment, false);
+  else if(implementation.compare("NW_C_AVX") == 0)NW::C::AVX::NW(alignment, false);
+  else if(implementation.compare("NW_ASM_LIN") == 0)NW_ASM_LIN(&alignment);
+  else if(implementation.compare("NW_ASM_SSE") == 0)NW_ASM_SSE(&alignment, false);
+  else if(implementation.compare("NW_ASM_AVX") == 0)NW_ASM_AVX(&alignment, false);
+  else if(implementation.compare("NW_ASM_AVX512") == 0)NW_ASM_AVX512(&alignment, false);
+  else {
+    throw "No existe la implementación ingresada.";
+    exit(1);
+  }
+}
 
-    }
-    catch(char * ex){
-      std::cout<<ex;
-    }
-	return NULL;
+void imprimir_ayuda() {
+  cerr << "Especificar algoritmo con -a" << endl;
+  cerr << "Especificar puntaje de match con -p" << endl;
+  cerr << "Especificar puntaje de mismatch con -q" << endl;
+  cerr << "Especificar puntaje de gap con -r" << endl;
+  cerr << "Los algoritmos existentes son: " << endl;
+		for (auto& alg_desc: algorithms) cerr << "- " << alg_desc.first << "\t" << alg_desc.second << endl;
+
+  exit(1);
 }
 
 int main (int argc, char **argv)
 {
-  // Alignment* a = new_alignment();
+  Alignment a = *new_alignment();
 
-  // // Argument handling
-  // int c;
+  // Argument handling
+  int c;
 
-  // opterr = 0;
+  opterr = 0;
 
-  // while ((c = getopt(argc, argv, "a:s:t:p:q:r:")) != -1)
-  //   switch (c)
-  //     {
-  //     case 'a':
-  //       a->parameters->algorithm = new_string(optarg);
-  //       break;
-  //     case 's':
-  //       a->sequence_1 = new_string(optarg);
-  //       break;
-  //     case 't':
-  //       a->sequence_2 = new_string(optarg);
-  //       break;
-  //     case 'p':
-  //       a->parameters->match = atoi(optarg);
-  //       break;
-  //     case 'q':
-  //       a->parameters->missmatch = atoi(optarg);
-  //       break;
-  //     case 'e':
-  //       a->parameters->gap = atoi(optarg);
-  //       break;
-  //     case '?':
-  //       switch(optopt)
-  //       {
-  //       case 'a':
-  //         fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-  //         break;
-  //       case 's':
-  //         fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-  //         break;
-  //       case 't':
-  //         fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-  //         break;
-  //       case 'p':
-  //         fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-  //         break;
-  //       case 'q':
-  //         fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-  //         break;
-  //       case 'r':
-  //         fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-  //         break;
-  //       default:
-  //         fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-  //         break;
-  //       }
-  //       return 1;
-  //     default:
-  //       abort ();
-  //     }
+  string algorithm;
+  
+  while ((c = getopt(argc, argv, "a:s:t:p:q:r:h")) != -1)
+    switch (c)
+      {
+      case 'a':
+        algorithm = string(optarg);
+        a.parameters->algorithm = &algorithm;
+        break;
+      case 's':
+        a.sequence_1 = new_Sequence_from_string(optarg);
+        break;
+      case 't':
+        a.sequence_2 = new_Sequence_from_string(optarg);
+        break;
+      case 'p':
+        a.parameters->match = atoi(optarg);
+        break;
+      case 'q':
+        a.parameters->missmatch = atoi(optarg);
+        break;
+      case 'r':
+        a.parameters->gap = atoi(optarg);
+        break;
+      case 'h':
+        imprimir_ayuda();
+        break;
+      case '?':
+        switch(optopt)
+        {
+        case 'a':
+          fprintf (stderr, "La opción -%c requiere un argumento.\n", optopt);
+          break;
+        case 's':
+          fprintf (stderr, "La opción -%c requiere un argumento.\n", optopt);
+          break;
+        case 't':
+          fprintf (stderr, "La opción -%c requiere un argumento.\n", optopt);
+          break;
+        case 'p':
+          fprintf (stderr, "La opción -%c requiere un argumento.\n", optopt);
+          break;
+        case 'q':
+          fprintf (stderr, "La opción -%c requiere un argumento.\n", optopt);
+          break;
+        case 'r':
+          fprintf (stderr, "La opción -%c requiere un argumento.\n", optopt);
+          break;
+        default:
+          fprintf (stderr, "La opción `-%c' no existe. Imprimir ayuda con -h.\n", optopt);
+          break;
+        }
+        return 1;
+      default:
+        imprimir_ayuda();
+        exit(1);
+      }
 
-  // if (a->parameters->algorithm == NULL | a->sequence_1 == NULL | a->sequence_1 == NULL)
-  // {
-  //     cerr << "Missing arguments. Please specify an algorithm and two sequences (-a, -s, -t)." << endl;
-  //     exit(1);
-  // }
+  if (a.parameters->algorithm == NULL | a.sequence_1 == NULL | a.sequence_1 == NULL) {
+    cerr << "Faltan argumentos obligatorios. Especificar un algoritmo y dos secuencias (-a, -s, -t).\nImprimir ayuda con -h.\n" << endl;
+    exit(1);
+  }
+
+  if(algorithms.find(*(a.parameters->algorithm)) == algorithms.end()) {
+    cout << "Algoritmo no encontrado: " << *(a.parameters->algorithm) << endl;
+		cerr << "Los algoritmos existentes son: " << endl;
+		for (auto& alg_desc: algorithms) cerr << "- " << alg_desc.first << "\t" << alg_desc.second << endl;
+		exit(1);
+  }
+
+  align_sequences(a);
+
+  printf("Alineamiento terminado:\nAlgoritmo: %s\n", (*a.parameters->algorithm).c_str());
+  printf("Parámetros:\n\tmatch: %d\n\tmismatch: %d\n\tgap: %d\n", a.parameters->match, a.parameters->missmatch, a.parameters->gap);
+  printf("Alineamiento:\n%s\n%s\n", a.result->sequence_1->sequence, a.result->sequence_2->sequence);
+  printf("Puntaje:\n%d\n", a.result->score);
 
   return 0;
 }

@@ -24,6 +24,8 @@ reverse_mask : DB 0xE,0xF,0xC,0xD,0xA,0xB,0x8,0x9,0x6,0x7,0x4,0x5,0x2,0x3,0x0,0x
 %define diag_score_xmm xmm8
 %define reverse_mask_xmm xmm9
 %define zeroes_xmm xmm10
+%define diag1_xmm xmm11
+%define diag2_xmm xmm12
 
 %define height r8 
 %define width r9
@@ -90,7 +92,7 @@ section .text
 ; Inicializar los valores del vector auxiliar y la matriz de puntajes
 inicializar_casos_base:
 
-%define diag_xmm xmm11
+%define diag_xmm xmm13
 
 %define offset_y rbx
 %define i_index rsi
@@ -135,8 +137,8 @@ inicializar_casos_base:
 ; Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia columna a utilizar en la comparación
 leer_secuencia_columna:
 ; rdi = i
-%define shift_count xmm11
-%define shift_mask xmm12
+%define shift_count xmm13
+%define shift_mask xmm14
 %define i_index rdi
 
     mov rdx, i_index
@@ -178,8 +180,8 @@ leer_secuencia_columna:
 ; Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia fila a utilizar en la comparación
 leer_secuencia_fila:
 ; rdi = j
-%define shift_count xmm11
-%define shift_mask xmm12
+%define shift_count xmm13
+%define shift_mask xmm14
 
 %define j_index rdi
 
@@ -233,26 +235,26 @@ leer_secuencia_fila:
 
 ; Calcula los puntajes resultantes de las comparaciones entre caracteres
 calcular_scores:
-; rdi = j
-; rsi = offset_y
-; rdx = offset_x
-%define cmp_match_xmm xmm0
-%define offset_y rsi
-%define offset_x rdx
+    ; rdi = j
+    ; rsi = offset_y
+    ; rdx = offset_x
+    %define cmp_match_xmm xmm0
+    %define offset_y rsi
+    %define offset_x rdx
 
     mov rcx, rsi
     add rcx, rdx 
     ; Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
-    movdqu left_score_xmm, [score_matrix + 2*rcx - 2*vector_len] 
+    movdqu left_score_xmm, diag2_xmm
     paddw left_score_xmm, constant_gap_xmm                          
     ; Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
-    movdqu up_score_xmm, [score_matrix + 2*rcx - 2*vector_len]
+    movdqu up_score_xmm, diag2_xmm
     psrldq  up_score_xmm, 2                                         ; up_score_xmm = | 0 | up_score |
     mov bx, word [v_aux + 2*rdi - 2*1]
     pinsrw up_score_xmm, ebx, 0b111                                 ; up_score_xmm = | v_aux[j-1] | up_score |
     paddw up_score_xmm, constant_gap_xmm
     ; Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
-    movdqu diag_score_xmm, [score_matrix + 2*rcx - 2*2*vector_len]
+    movdqu diag_score_xmm, diag1_xmm
     psrldq  diag_score_xmm, 2                                       ; up_score_xmm = | 0 | diag_score |
     mov cx, word [v_aux + 2*rdi - 2*2]
     pinsrw diag_score_xmm, ecx, 0b111                               ; diag_score_xmm = | v_aux[j-2] | up_score |
@@ -263,6 +265,7 @@ calcular_scores:
     movdqu str_row_xmm, constant_missmatch_xmm
     pblendvb  str_row_xmm, constant_match_xmm                       ; Seleccionar para cada posicion el puntaje correcto basado en la mascara previa
 
+    ; Obtener el máximo puntaje entre venir por la diagonal, por izquierda y por arriba
     paddw diag_score_xmm, str_row_xmm
     ret
 
@@ -403,7 +406,10 @@ mov rbx, 0 ; i
     
     mov rdi, rbx ; rdi = i
     call leer_secuencia_columna
-    
+     
+    vmovdqu diag1_xmm, [score_matrix + 2*rsi]
+    vmovdqu diag2_xmm, [score_matrix + 2*rsi + 2*vector_len] 
+
     mov rcx, 2 ; j
     push rbx
     .loop_j:
@@ -435,6 +441,9 @@ mov rbx, 0 ; i
             pextrw eax, diag_score_xmm, 0b0000
             mov [v_aux + 2*rcx - 2*vector_len], ax
         .menor:
+
+        vmovdqu diag1_xmm, diag2_xmm
+        vmovdqu diag2_xmm, diag_score_xmm
         inc rcx
         cmp rcx, width
         jne .loop_j    

@@ -1,5 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
+#include <iostream>
+#include <string.h>
 
 struct Sequence{
   unsigned int length;
@@ -12,7 +14,7 @@ void destroy_Sequence(Sequence* seq);
 void reverse_Sequence(Sequence* seq);
 
 struct Parameters{
-  char* algorithm;
+  std::string* algorithm;
   short match;
   short missmatch;
   short gap;
