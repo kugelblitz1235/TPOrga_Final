@@ -86,7 +86,7 @@ namespace SSE{
             str_row_xmm = _mm_sll_epi64(str_row_xmm, shift_count); 				// str_row_xmm = |str_row|0...0|
                 
         } else if(j > width-vector_len){ // Caso de desborde por derecha
-            //Desplazamiento de puntero a derecha y levantar datos de memoria
+            // Desplazamiento de puntero a derecha y levantar datos de memoria
             int offset_str_row = j - (width-vector_len); // Indica cuanto hay que shiftear a la derecha el string fila luego de levantarlo
             
             str_row_xmm = _mm_loadl_epi64((__m128i*)(seq1 + j - vector_len - offset_str_row) ); 
@@ -102,7 +102,7 @@ namespace SSE{
         return str_row_xmm;
     }
 
-    //Calcula los puntajes resultantes de las comparaciones entre caracteres
+    // Calcula los puntajes resultantes de las comparaciones entre caracteres
     void calcular_scores(
         __m128i& left_score_xmm,
         __m128i& up_score_xmm,

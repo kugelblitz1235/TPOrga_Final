@@ -24,7 +24,7 @@ namespace AVX512{
     //tamaños y punteros a las secuencias
     char *seq1, *seq2;
     unsigned int seq1_len, seq2_len;
-    
+    // Máscara utilizada para invertir el string almacenado en un registro
     short str_reverse_mask[32] = {
         0x1F,0x1E,0x1D,0x1C,0x1B,0x1A,0x19,0x18,0x17,0x16,0x15,0x14,0x13,0x12,0x11,0x10,0xF,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0
     };
@@ -119,7 +119,7 @@ namespace AVX512{
             str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
         }
         
-        // Desempaquetamos los caracteres en str_row_ymm para trabajr a nivel word
+        // Desempaquetamos los caracteres en str_row_ymm para trabajar a nivel word
         str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
         str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
     }

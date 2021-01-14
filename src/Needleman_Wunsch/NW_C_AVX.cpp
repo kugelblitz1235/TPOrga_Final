@@ -157,10 +157,10 @@ namespace AVX{
         
         // Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
         // si coinciden o no los caracteres de la fila y columna correspondientes
-        diag_score_ymm = diag1_ymm;
-        medium_score = _mm256_extract_epi16( diag_score_ymm, 0b1000);
-        diag_score_ymm = _mm256_bsrli_epi128(diag_score_ymm, 2);
-        diag_score_ymm = _mm256_insert_epi16(diag_score_ymm,medium_score,0b0111);
+        diag_score_ymm = diag1_ymm;                                             
+        medium_score = _mm256_extract_epi16( diag_score_ymm, 0b1000);                       // |0xF...0x8|0x7...0x0| -> 0x8
+        diag_score_ymm = _mm256_bsrli_epi128(diag_score_ymm, 2);                            // |0xF...0x8|0x7...0x0| -> |0x0...0x9|0x0...0x1|
+        diag_score_ymm = _mm256_insert_epi16(diag_score_ymm,medium_score,0b0111);           // |0x0...0x9|0x0...0x1| -> |0x0...0x9|0x8...0x1|
         
         diag_score_ymm = _mm256_insert_epi16(diag_score_ymm,v_aux[j-2],15); 				// 15 = vector_len - 1
         

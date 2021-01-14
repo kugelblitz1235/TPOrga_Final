@@ -1,245 +1,21 @@
 global SW_ASM_AVX
+
 extern malloc
 extern free
 extern printf
+
 extern backtracking_C
 extern new_alignment_matrix
 extern get_score_SSE
-extern print_registers
-extern print_xmm
 
 section .rodata
-shift_mask_right : DB 0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F
-shift_mask_left : DB 0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF
-reverse_mask : DB 0xF,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0
 malloc_error_str : db `No se pudo reservar memoria suficiente.\nMalloc: %d\nIntente reservar: %d bytes\n`,0
-dbg_str : db `rsp: 0x%llx-> 0x%llx\n`
-%macro dbg_rsp 0
-push rdi ; conserva *matrix
-push rsi
-push rdx
-push rcx
-push r8
-push r9
-push r10
-push r11
-
-mov rdi, dbg_str
-lea rsi, [rsp+0x40]
-mov rdx, [rsp+0x40]
-mov rax, 0
-call printf
-
-pop r11
-pop r10
-pop r9
-pop r8
-pop rcx
-pop rdx
-pop rsi
-pop rdi
-%endmacro
-
-%macro dbg_print 0
-push rax
-push rbx
-push rdi ; conserva *matrix
-push rsi
-push rdx
-push rcx
-push r8
-push r9
-push r10
-push r11
-push r12
-push r13
-push r14
-push r15
-
-vmovdqu [rsp-32], ymm15
-sub rsp, 32
-vmovdqu [rsp-32], ymm14
-sub rsp, 32
-vmovdqu [rsp-32], ymm13
-sub rsp, 32
-vmovdqu [rsp-32], ymm12
-sub rsp, 32
-vmovdqu [rsp-32], ymm11
-sub rsp, 32
-vmovdqu [rsp-32], ymm10
-sub rsp, 32
-vmovdqu [rsp-32], ymm9
-sub rsp, 32
-vmovdqu [rsp-32], ymm8
-sub rsp, 32
-vmovdqu [rsp-32], ymm7
-sub rsp, 32
-vmovdqu [rsp-32], ymm6
-sub rsp, 32
-vmovdqu [rsp-32], ymm5
-sub rsp, 32
-vmovdqu [rsp-32], ymm4
-sub rsp, 32
-vmovdqu [rsp-32], ymm3
-sub rsp, 32
-vmovdqu [rsp-32], ymm2
-sub rsp, 32
-vmovdqu [rsp-32], ymm1
-sub rsp, 32
-vmovdqu [rsp-32], ymm0
-sub rsp, 32
-call print_registers
-
-
-vmovdqu ymm0, [rsp]
-add rsp, 32
-vmovdqu ymm1, [rsp]
-add rsp, 32
-vmovdqu ymm2, [rsp]
-add rsp, 32
-vmovdqu ymm3, [rsp]
-add rsp, 32
-vmovdqu ymm4, [rsp]
-add rsp, 32
-vmovdqu ymm5, [rsp]
-add rsp, 32
-vmovdqu ymm6, [rsp]
-add rsp, 32
-vmovdqu ymm7, [rsp]
-add rsp, 32
-vmovdqu ymm8, [rsp]
-add rsp, 32
-vmovdqu ymm9, [rsp]
-add rsp, 32
-vmovdqu ymm10, [rsp]
-add rsp, 32
-vmovdqu ymm11, [rsp]
-add rsp, 32
-vmovdqu ymm12, [rsp]
-add rsp, 32
-vmovdqu ymm13, [rsp]
-add rsp, 32
-vmovdqu ymm14, [rsp]
-add rsp, 32
-vmovdqu ymm15, [rsp]
-add rsp, 32
-
-pop r15
-pop r14
-pop r13
-pop r12
-pop r11
-pop r10
-pop r9
-pop r8
-pop rcx
-pop rdx
-pop rsi
-pop rdi
-pop rbx
-pop rax
-%endmacro
-
-%macro dbg_print_xmm 0
-push rax
-push rbx
-push rdi ; conserva *matrix
-push rsi
-push rdx
-push rcx
-push r8
-push r9
-push r10
-push r11
-push r12
-push r13
-push r14
-push r15
-
-vmovdqu [rsp-32], ymm15
-sub rsp, 32
-vmovdqu [rsp-32], ymm14
-sub rsp, 32
-vmovdqu [rsp-32], ymm13
-sub rsp, 32
-vmovdqu [rsp-32], ymm12
-sub rsp, 32
-vmovdqu [rsp-32], ymm11
-sub rsp, 32
-vmovdqu [rsp-32], ymm10
-sub rsp, 32
-vmovdqu [rsp-32], ymm9
-sub rsp, 32
-vmovdqu [rsp-32], ymm8
-sub rsp, 32
-vmovdqu [rsp-32], ymm7
-sub rsp, 32
-vmovdqu [rsp-32], ymm6
-sub rsp, 32
-vmovdqu [rsp-32], ymm5
-sub rsp, 32
-vmovdqu [rsp-32], ymm4
-sub rsp, 32
-vmovdqu [rsp-32], ymm3
-sub rsp, 32
-vmovdqu [rsp-32], ymm2
-sub rsp, 32
-vmovdqu [rsp-32], ymm1
-sub rsp, 32
-vmovdqu [rsp-32], ymm0
-sub rsp, 32
-mov rdi, rsp
-mov rsi, 16
-call print_xmm
-
-vmovdqu ymm0, [rsp]
-add rsp, 32
-vmovdqu ymm1, [rsp]
-add rsp, 32
-vmovdqu ymm2, [rsp]
-add rsp, 32
-vmovdqu ymm3, [rsp]
-add rsp, 32
-vmovdqu ymm4, [rsp]
-add rsp, 32
-vmovdqu ymm5, [rsp]
-add rsp, 32
-vmovdqu ymm6, [rsp]
-add rsp, 32
-vmovdqu ymm7, [rsp]
-add rsp, 32
-vmovdqu ymm8, [rsp]
-add rsp, 32
-vmovdqu ymm9, [rsp]
-add rsp, 32
-vmovdqu ymm10, [rsp]
-add rsp, 32
-vmovdqu ymm11, [rsp]
-add rsp, 32
-vmovdqu ymm12, [rsp]
-add rsp, 32
-vmovdqu ymm13, [rsp]
-add rsp, 32
-vmovdqu ymm14, [rsp]
-add rsp, 32
-vmovdqu ymm15, [rsp]
-add rsp, 32
-
-pop r15
-pop r14
-pop r13
-pop r12
-pop r11
-pop r10
-pop r9
-pop r8
-pop rcx
-pop rdx
-pop rsi
-pop rdi
-pop rbx
-pop rax
-%endmacro
+; Máscara utilizada para shiftear a derecha los caracteres 
+shift_mask_right : DB 0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F
+; Máscara utilizada para shiftear a izquierda los caracteres
+shift_mask_left : DB 0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,0xA,0xB,0xC,0xD,0xE,0xF
+; Máscara utilizada para invertir el string almacenado en un registro
+reverse_mask : DB 0xF,0xE,0xD,0xC,0xB,0xA,0x9,0x8,0x7,0x6,0x5,0x4,0x3,0x2,0x1,0x0
 
 ; Variables globales
 %define constant_gap_ymm ymm0
@@ -329,12 +105,15 @@ pop rax
 
 ; Este valor se usa para calcular el tamanio de la matriz
 ; y poder navegarla. Es necesario actualizarlo si cambia.
+; El tamaño del vector auxiliar se corresponde con la cantidad de caracteres que vamos a procesar simultáneamente
 %define vector_len 16
 %define vector_len_log 4
 
 section .text
 
 ; Funciones auxiliares
+
+; Inicializar los valores del vector auxiliar y la matriz de puntajes
 inicializar_casos_base:
 %define offset_y rbx
 %define diag_xmm xmm14
@@ -344,7 +123,7 @@ inicializar_casos_base:
 mov rdi, [rdi + alignment_offset_parameters]
 mov di, [rdi + parameters_offset_gap]
 
-; llenamos el vector auxiliar
+; Llenar vector auxiliar con un valor inicial negativo grande para no afectar los calculos
 mov rsi, 0
 mov rax, width
 dec rax
@@ -354,14 +133,14 @@ dec rax
     cmp rax, rsi
     jne .loop
 
-; inicializar casos base en matriz
+; Inicializar por cada franja las primeras 2 diagonales. 
+; Se pone en cada posicion un cero para no afectar los calculos posteriores			
 mov rsi, 0
 .loop1:
-    ;offset_y = i * width * vector_len;
     mov rax, rsi
     mul width
     shl rax, vector_len_log
-    mov offset_y, rax
+    mov offset_y, rax                                               ; offset_y = i * width * vector_len;
    
     vmovdqu [score_matrix + 2*offset_y], zeroes_ymm
     vmovdqu [score_matrix + 2*offset_y + 2*vector_len], zeroes_ymm
@@ -375,150 +154,163 @@ vpxor zeroes_ymm, zeroes_ymm, zeroes_ymm
 ret
 
 
+; Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia columna a utilizar en la comparación
 leer_secuencia_columna:
 ; rdi = i
 %define offset_str_col_xmm xmm15
-;es el mismo registro pero lo usamos una vez que dejamos de usar el otro
+; Es el mismo registro pero lo usamos una vez que dejamos de usar el otro
 %define str_col_hi_xmm xmm15
 
-mov rdx, rdi
-inc rdx
-shl rdx, vector_len_log ; rdx = (i+1) * vector_len
-cmp rdx, seq2_len
-jl .else 
-sub rdx, seq2_len ; rdx = offset_str_col
-movdqu str_col_xmm, [seq2 + seq2_len - vector_len]
+%define i_index rdi
 
-pinsrb offset_str_col_xmm, edx, 0
-vpbroadcastb offset_str_col_xmm, offset_str_col_xmm
-paddb offset_str_col_xmm, shift_mask_right_xmm
+    mov rdx, i_index
+    inc rdx
+    shl rdx, vector_len_log ; rdx = (i+1) * vector_len
+    cmp rdx, seq2_len
+    jl .else ; Caso de desborde por abajo                                           ; (i+1)*vector_len < seq2_len ?
+    sub rdx, seq2_len                                                               ; rdx = offset_col = (i+1) * vector_len
+    movdqu str_col_xmm, [seq2 + seq2_len - vector_len]                              ; str_col_xmm = |0|str_col|
 
-pshufb str_col_xmm, offset_str_col_xmm
-vpblendvb str_col_xmm, str_col_xmm, offset_str_col_xmm, offset_str_col_xmm
+    pinsrb offset_str_col_xmm, edx, 0
+    vpbroadcastb offset_str_col_xmm, offset_str_col_xmm                             ; offset_str_col_xmm = |offset|...|offset|
+    ; Sumar con shift_mask_right_xmm para indicar cuanto hay que shiftear a la derecha los caracteres para que queden en las posiciones correctas
+    paddb offset_str_col_xmm, shift_mask_right_xmm                                  ; offset_str_col_xmm = |0x7F + offset|0x7E + offset|...|0x70 + offset|
+    ; Shiftear utilizando la mascara offset_str_col_xmm 
+    pshufb str_col_xmm, offset_str_col_xmm
+    ; Todos los elementos que sean basura van a convertirse en el valor 0xFFFF, haciendo que nunca matcheen mas adelante
+    vpblendvb str_col_xmm, str_col_xmm, offset_str_col_xmm, offset_str_col_xmm      ; str_col_xmm = |1...1|str_col|
 
-jmp .end
+    jmp .end
 
-.else:
-; está accediendo fuera de memoria acá
-shl rdi, vector_len_log
-movdqu str_col_xmm, [seq2 + rdi]
-jmp .end
+    .else:; Caso sin desborde
+    shl i_index, vector_len_log
+    movdqu str_col_xmm, [seq2 + i_index]
+    jmp .end
 
-.end:
-pshufb str_col_xmm, reverse_mask_xmm
-movdqu str_col_hi_xmm, str_col_xmm
-punpckhbw str_col_hi_xmm, zeroes_xmm
-punpcklbw str_col_xmm, zeroes_xmm
-vinserti128 str_col_ymm, str_col_ymm, str_col_hi_xmm, 1
-ret
+    .end:
+    ; Invertir el string almacenado en str_col_xmm
+    pshufb str_col_xmm, reverse_mask_xmm
+    movdqu str_col_hi_xmm, str_col_xmm
+    ; Desempaquetar los caracteres almacenados en str_col_xmm para trabajar con words
+    punpckhbw str_col_hi_xmm, zeroes_xmm
+    punpcklbw str_col_xmm, zeroes_xmm
+    vinserti128 str_col_ymm, str_col_ymm, str_col_hi_xmm, 1
+    ret
 
+; Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia fila a utilizar en la comparación
 leer_secuencia_fila:
 ; rdi = j
 %define shift_mask_left_copy_xmm xmm14
 %define offset_str_row_xmm xmm15
 %define str_row_hi_xmm xmm15
 
-mov rdx, rdi 
-sub rdx, vector_len ; rdx = j - vector_len
-cmp rdx, 0
-jge .elseif ; j-vector_len < 0
+%define j_index rdi
 
-    mov rcx, vector_len 
-    sub rcx, rdi ; rcx = offset_str_row
-    movdqu str_row_xmm, [seq1]
-    pinsrb offset_str_row_xmm, ecx, 0
-    vpbroadcastb offset_str_row_xmm, offset_str_row_xmm
-    movdqu shift_mask_left_copy_xmm, shift_mask_left_xmm
-    psubb shift_mask_left_copy_xmm, offset_str_row_xmm
-    pshufb str_row_xmm, shift_mask_left_copy_xmm
-jmp .end
+    mov rdx, j_index 
+    sub rdx, vector_len ; rdx = j - vector_len
+    cmp rdx, 0
+    jge .elseif ; Caso de desborde por izquierda                    ; j-vector_len < 0 ?
 
-.elseif:
-mov rdx, width
-sub rdx, vector_len
-cmp rdi, rdx ; j > width-vector_len
-jle .else
+        mov rcx, vector_len 
+        sub rcx, j_index ; rcx = offset_str_row
+        movdqu str_row_xmm, [seq1]
+        ; Broadcastear el offset_str_row en offset_str_row_xmm 
+        pinsrb offset_str_row_xmm, ecx, 0
+        vpbroadcastb offset_str_row_xmm, offset_str_row_xmm         ; offset_str_col_xmm = |offset|...|offset|
+        movdqu shift_mask_left_copy_xmm, shift_mask_left_xmm
+        ; Sumar con shift_mask_left_xmm para indicar cuanto hay que shiftear a la izquierda los caracteres para que queden en las posiciones correctas
+        psubb shift_mask_left_copy_xmm, offset_str_row_xmm          ; offset_str_col_xmm = |0xF - offset|0xE - offset|...|0x0 - offset|
+        ; Acomodar los caracteres en str_row_xmm para que queden en las posiciones correctas para la comparación mas adelante
+        pshufb str_row_xmm, shift_mask_left_copy_xmm                ; str_row_xmm = |str_row|0...0|
+    jmp .end
 
-    mov rcx, rdi
-    sub rcx, rdx ; rcx = offset_str_row
+    .elseif: ; Caso de desborde por derecha
+    mov rdx, width
+    sub rdx, vector_len
+    cmp j_index, rdx ; j > width-vector_len
+    jle .else
+        ; Desplazamiento de puntero a derecha y levantar datos de memoria
+        mov rcx, j_index
+        sub rcx, rdx ; rcx = offset_str_row                         ; Indica cuanto hay que shiftear a la derecha el string fila luego de levantarlo
 
-    mov rdx, rdi
-    sub rdx, rcx
-    movdqu str_row_xmm, [seq1 + rdx - vector_len]
-    
-    pinsrb offset_str_row_xmm, ecx, 0
-    vpbroadcastb offset_str_row_xmm, offset_str_row_xmm
-    paddb offset_str_row_xmm, shift_mask_right_xmm
-    pshufb str_row_xmm, offset_str_row_xmm
+        mov rdx, j_index
+        sub rdx, rcx
+        movdqu str_row_xmm, [seq1 + rdx - vector_len]
+        
+        pinsrb offset_str_row_xmm, ecx, 0
+        vpbroadcastb offset_str_row_xmm, offset_str_row_xmm         ; offset_str_col_xmm = |offset|...|offset|
+        ; Sumar con shift_mask_right_xmm para indicar cuanto hay que shiftear a la derecha los caracteres para que queden en las posiciones correctas
+        paddb offset_str_row_xmm, shift_mask_right_xmm              ; offset_str_col_xmm = |0xF + offset|0xE + offset|...|0x0 + offset|
+        ; Acomodar los caracteres en str_row_xmm para que queden en las posiciones correctas para la comparación mas adelante
+        pshufb str_row_xmm, offset_str_row_xmm                      ; str_row_xmm = |0...0|str_row|
 
-jmp .end
+    jmp .end
 
-.else:
-    movdqu str_row_xmm, [seq1 + rdi - vector_len]
+    .else:  ; Caso sin desborde
+        movdqu str_row_xmm, [seq1 + j_index - vector_len]
 
-jmp .end
+    jmp .end
 
-.end:
-
-vpxor zeroes_ymm, zeroes_ymm, zeroes_ymm
-
-movdqu str_row_hi_xmm, str_row_xmm
-punpckhbw str_row_hi_xmm, zeroes_xmm
-punpcklbw str_row_xmm, zeroes_xmm
-vinserti128 str_row_ymm, str_row_ymm, str_row_hi_xmm, 1
-
-ret
-
+    .end:
+    vpxor zeroes_ymm, zeroes_ymm, zeroes_ymm 
+    ; Desempaquetar los caracteres en str_row_xmm para trabajar con words
+    movdqu str_row_hi_xmm, str_row_xmm
+    punpckhbw str_row_hi_xmm, zeroes_xmm
+    punpcklbw str_row_xmm, zeroes_xmm
+    vinserti128 str_row_ymm, str_row_ymm, str_row_hi_xmm, 1
+    ret
+; Calcula los puntajes resultantes de las comparaciones entre caracteres
 calcular_scores:
 ; rdi = j
-; rsi = offset_y
-; rdx = offset_x
     %define cmp_match_ymm ymm14
     %define temp_xmm xmm15
-    ; left score
+    
+    ; Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
     vmovdqu left_score_ymm, diag2_ymm 
     vpaddw left_score_ymm, left_score_ymm, constant_gap_ymm
     
-    ; up score 
+    ; Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
     vmovdqu up_score_ymm, diag2_ymm
-    ; insert shift
-    vextracti128 temp_xmm, up_score_ymm, 1
-    pextrw esi, temp_xmm, 0b0 ; si = medium_score
-    vpsrldq  up_score_ymm, up_score_ymm, 2
-    pinsrw up_score_xmm, esi, 0b0111
-    ; insert v_aux
+    ; El shift de a bytes se hace en cada linea de 128 bits,
+    ; por lo que hay que mover manualmente el word en la posicion mas baja en la linea de 128 bits
+    ; mas alta, e insertarlo en la posicion mas alta de la linea de 128 bits mas baja
+    vextracti128 temp_xmm, up_score_ymm, 1                      ; |0xF...0x8|0x7...0x0| -> 0x8
+    pextrw esi, temp_xmm, 0b0                                  
+    vpsrldq  up_score_ymm, up_score_ymm, 2                      ; |0xF...0x8|0x7...0x0| -> |0x0...0x9|0x0...0x1|
+    pinsrw up_score_xmm, esi, 0b0111                           
+   
     mov bx, word [v_aux + 2*rdi - 2*1] 
     vextracti128 temp_xmm, up_score_ymm, 1
-    pinsrw temp_xmm, ebx, 0b111
+    pinsrw temp_xmm, ebx, 0b111                                 ; |0x0...0x9|0x0...0x1| -> |0x0...0x9|0x8...0x1|
     vinserti128 up_score_ymm, up_score_ymm, temp_xmm, 1
-    
     vpaddw up_score_ymm, up_score_ymm, constant_gap_ymm
-    ;diag score
+
+    ; Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
+    ; si coinciden o no los caracteres de la fila y columna correspondientes
     vmovdqu diag_score_ymm, diag1_ymm
-    ;insert shit
-    vextracti128 temp_xmm, diag_score_ymm, 1
+    
+    vextracti128 temp_xmm, diag_score_ymm, 1                    ; |0xF...0x8|0x7...0x0| -> 0x8
     pextrw esi, temp_xmm, 0b0
-    vpsrldq  diag_score_ymm, diag_score_ymm, 2
-    pinsrw diag_score_xmm, esi, 0b0111
-    ; insert v_aux
+    vpsrldq  diag_score_ymm, diag_score_ymm, 2                  ; |0xF...0x8|0x7...0x0| -> |0x0...0x9|0x0...0x1|
+    pinsrw diag_score_xmm, esi, 0b0111                          ; |0x0...0x9|0x0...0x1| -> |0x0...0x9|0x8...0x1|
+    ; Insert v_aux
     mov cx, word [v_aux + 2*rdi - 2*2] 
     vextracti128 temp_xmm, diag_score_ymm, 1
     pinsrw temp_xmm, ecx, 0b111
     vinserti128 diag_score_ymm, diag_score_ymm, temp_xmm, 1
     
-    ;compare the 2 strings and put the right penalty (match or missmatch) on each position
+    ; Comparar los dos strings y colocar según corresponda el puntaje correcto (match o missmatch) en cada posición
     vmovdqu cmp_match_ymm, str_col_ymm
-    vpcmpeqw cmp_match_ymm, cmp_match_ymm, str_row_ymm
-    vpblendvb cmp_match_ymm, constant_missmatch_ymm, constant_match_ymm, cmp_match_ymm
+    vpcmpeqw cmp_match_ymm, cmp_match_ymm, str_row_ymm                                      ; Mascara con unos en las posiciones donde coinciden los caracteres
+    vpblendvb cmp_match_ymm, constant_missmatch_ymm, constant_match_ymm, cmp_match_ymm      ; Seleccionar para cada posicion el puntaje correcto basado en la mascara previa
 
-    ;get the max score of diag, up, left
     vpaddw diag_score_ymm, diag_score_ymm, cmp_match_ymm
-    
-    
     vpxor zeroes_ymm, zeroes_ymm, zeroes_ymm
     ret
 
 
+; Obtener la posicion del word de valor máximo entre todos los de la diagonal
+; Obtener el valor máximo
 actualizar_posicion_maxima:
 ; rdi : i
 ; rsi : j
@@ -529,29 +321,30 @@ actualizar_posicion_maxima:
 %define nums_s_xmm xmm15
 %define index_ymm ymm15
 %define mask eax
-vmovdqu nums_ymm, diag_score_ymm
+vmovdqu nums_ymm, diag_score_ymm                        ; nums_mm = |WWWWWWWW|WWWWWWWW|
 
 vpsrldq nums_s_ymm, nums_ymm, 1*2
-vpmaxsw nums_ymm, nums_ymm, nums_s_ymm
+vpmaxsw nums_ymm, nums_ymm, nums_s_ymm                  ; nums_mm = | W W W W| W W W W|
 
 vpsrldq nums_s_ymm, nums_ymm, 2*2
-vpmaxsw nums_ymm, nums_ymm, nums_s_ymm
+vpmaxsw nums_ymm, nums_ymm, nums_s_ymm                  ; nums_mm = |   W   W|   W   W|
 
 vpsrldq nums_s_ymm, nums_ymm, 4*2
-vpmaxsw nums_ymm, nums_ymm, nums_s_ymm
+vpmaxsw nums_ymm, nums_ymm, nums_s_ymm                  ; nums_mm = |       W|       W|
 
 ;extract max in upper part
 vextracti128 nums_s_xmm, nums_ymm, 1
-vpmaxsw nums_ymm, nums_ymm, nums_s_ymm
+vpmaxsw nums_ymm, nums_ymm, nums_s_ymm                  ; nums_mm = |        |       W|
 vpbroadcastw nums_ymm, nums_xmm
 
+; Obtener el índice del valor máximo en el registro
 vpcmpeqw index_ymm, nums_ymm, diag_score_ymm
 xor rax, rax
 vpmovmskb mask, index_ymm
-bsf mask, mask
-shr mask, 1
+bsf mask, mask                                          ; Obtener la posicion del word de valor máximo entre todos los de la diagonal
+shr mask, 1     
 
-pextrw edx, nums_xmm, 0b0000
+pextrw edx, nums_xmm, 0b0000                            ; Obtener el valor máximo
 pextrd ecx, best_x_y_global, best_global_xmm_pos
 cmp ecx, edx
 jge .menor_a_best
@@ -627,82 +420,60 @@ shl rax, vector_len_log
 
 
 ; -----------------------------------------------------------------
-; Ignoramos rdx porque no podriamos manejar un nro tan grande
-; Estaria bueno chequear que no pase
-push rdi ; conserva *matrix
-push rsi
-push rdx
-push rcx
+; Reservar memoria para la matriz de puntajes y el vector auxiliar, luego inicializamos sus valores
+push rdi ; conserva *alignment
 push r8
 push r9
-push r10
-push r11
 
 mov rdi, rax
 shl rdi, 1 ; score_matrix_sz*sizeof(short)
-push rdi
 sub rsp, 8
 call malloc
 add rsp, 8
-pop rdx
 mov rsi, 0
 cmp rax, 0
 je .malloc_error
-pop r11
-pop r10
 pop r9
 pop r8
-pop rcx
-pop rdx
-pop rsi
-pop rdi
-mov score_matrix,rax
-push rdi ; conserva *matrix
-push rsi
-push rdx
-push rcx
+
+mov score_matrix, rax
 push r8
 push r9
 push r10
-push r11
 mov rdi, width
 dec rdi
 shl rdi,1
-push rdi
-sub rsp, 8
 call malloc
-add rsp, 8
-pop rdx
 mov rsi, 1
 cmp rax, 0
 je .malloc_error
-pop r11
 pop r10
 pop r9
 pop r8
-pop rcx
-pop rdx
-pop rsi
 pop rdi
 mov v_aux, rax
 ;------------------------------------------------------------------
 ; asignacion de datos en los registros xmm nombrados --------------
 
+; Broadcastear el valor de gap, a nivel word, en el registro
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_gap]
 pinsrw constant_gap_xmm, eax, 0
 vpbroadcastw constant_gap_ymm, constant_gap_xmm
 
+; Broadcastear el valor de missmatch, a nivel word, en el registro
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_missmatch]
 pinsrw constant_missmatch_xmm, eax, 0
 vpbroadcastw constant_missmatch_ymm, constant_missmatch_xmm
 
+; Broadcastear el valor de match, a nivel word, en el registro
 mov rax, [rdi + alignment_offset_parameters]
 mov ax, [rax + parameters_offset_match]
 pinsrw constant_match_xmm, eax, 0
 vpbroadcastw constant_match_ymm, constant_match_xmm
 
+; Máscara de ceros
 vpxor zeroes_ymm, zeroes_ymm, zeroes_ymm
 ;------------------------------------------------------------------
 
@@ -715,7 +486,6 @@ movdqu shift_mask_left_xmm, [shift_mask_left]
 ; Casos base ------------------------------------------------------
 push rdi
 call inicializar_casos_base
-pop rdi
 
 ; Loop principal --------------------------------------------------
 pxor best_x_y_global, best_x_y_global
@@ -727,52 +497,34 @@ mov rbx, 0 ; i
     shl rax, vector_len_log
     mov rsi, rax ; rsi = offset_y
     
-    push rdi
-    push rsi
-    push rbx
-    push rcx
     mov rdi, rbx ; rdi = i
     call leer_secuencia_columna
-    pop rcx
-    pop rbx
-    pop rsi
-    pop rdi
-    ;dbg_print
+    
     vmovdqu diag1_ymm, [score_matrix + 2*rsi]
     vmovdqu diag2_ymm, [score_matrix + 2*rsi + 2*vector_len] 
     mov rcx, 2 ; j
     .loop_j:
-        push rdi
-        push rsi
         push rbx
         push rcx
         mov rdi, rcx
-        call leer_secuencia_fila ; debugging
+        call leer_secuencia_fila
         pop rcx
-        pop rbx
-        pop rsi
-        pop rdi
         mov rdx, rcx 
         shl rdx, vector_len_log ; rdx = offset_x
-        push rdx
-        push rdi
         push rsi
-        push rbx
         push rcx
-        sub rsp, 8
         mov rdi, rcx ; rdi = j
-        call calcular_scores ; debugging
-        add rsp, 8
+        call calcular_scores 
         pop rcx
-        pop rbx
         pop rsi
-        pop rdi
-        pop rdx
+        pop rbx
+        
+        ; Guardar en cada posicion de la diagonal el maximo entre los puntajes de venir por izquierda, arriba ,diagonalmente y cero
         vpmaxsw diag_score_ymm, diag_score_ymm, up_score_ymm 
         vpmaxsw diag_score_ymm, diag_score_ymm, left_score_ymm 
         vpmaxsw diag_score_ymm, diag_score_ymm, zeroes_ymm
 
-        ;save the max score in the right position of score matrix
+        ; Almacenamos el puntaje máximo en la posición correcta de la matriz
         mov rax, rsi
         add rax, rdx
         vmovdqu [score_matrix + 2*rax], diag_score_ymm
@@ -785,19 +537,15 @@ mov rbx, 0 ; i
         .menor:
         
         push rdx
-        push rdi
         push rsi
         push rbx
         push rcx
-        sub rsp, 8
         mov rdi, rbx ; rdi = i  
         mov rsi, rcx ; rsi = j
         call actualizar_posicion_maxima 
-        add rsp, 8
         pop rcx
         pop rbx
         pop rsi
-        pop rdi
         pop rdx
 
         vmovdqu diag1_ymm, diag2_ymm
@@ -809,14 +557,17 @@ mov rbx, 0 ; i
     inc rbx
     cmp rbx, height
     jne .loop_i
+; Restaurar *alignment luego de que el algoritmo termina
+pop rdi
 
-.debug:
+.debug:;  Utilizar para debuggear los valores en la matriz de puntajes
 pop rsi
 cmp rsi, 0
 je .no_debug
 mov [rdi + alignment_offset_matrix], score_matrix
 
 .no_debug:
+; Recuperar los 2 strings del mejor alineamiento utilizando backtracking, empezando desde la posicion correspondiente al maximo valor obtenido
 push rsi
 push score_matrix
 mov rsi, rdi
@@ -853,6 +604,3 @@ mov rax, 0
 call printf
 jmp .epilogo
 
-
-
-; old rbp 0x00007fffffffd8f0 rsp 0x7fffffffd608: 0x004055d8

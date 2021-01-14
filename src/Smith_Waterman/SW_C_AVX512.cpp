@@ -16,7 +16,7 @@ namespace AVX512{
 	// Registros globales utilizados
 	SIMDreg constant_gap_mm, constant_missmatch_mm, constant_match_mm, zeroes_mm, ones_mm;
 	SIMDreg str_row_mm, str_col_mm, left_score_mm, up_score_mm, diag_score_mm;
-	SIMDreg str_reverse_mask_mm, str_shift_right_mask_mm, str_shift_left_mask_mm;
+	SIMDreg str_reverse_mask_mm;
 	SIMDreg str_512_unpacklo_epi8_mask_mm;
 	SIMDreg score_512_rot_right_word_mask_mm;
 	SIMDreg diag1_mm, diag2_mm;
@@ -146,7 +146,7 @@ namespace AVX512{
 	}
 
 	void actualizar_posicion_maxima(int i,int j){
-		// Encontrar el índice del máximo word en el registro xmm
+		// Encontrar el índice del máximo word en el registro zmm
 		SIMDreg nums_mm =  diag_score_mm;
 		SIMDreg nums_s_mm;
 		

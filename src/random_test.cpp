@@ -644,8 +644,8 @@ LT_BEGIN_TEST(TestSW, SW_ASM_AVX_test)
              printf("Score matrices differ at: \n");	
              DBG(i);	
              DBG(j);	
-             DBG(get_score_LIN(alignment_lin->matrix,s_len1,i,j,8));	
-             DBG(get_score_SSE(alignment->matrix,s_len1,i,j,8));   	
+             DBG(get_score_LIN(alignment_lin->matrix,s_len1,i,j,vector_len));	
+             DBG(get_score_SSE(alignment->matrix,s_len1,i,j,vector_len));   	
             }	
         }	
     }	

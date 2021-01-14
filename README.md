@@ -25,11 +25,11 @@ struct Alignment{
 - [x] Hacer versiones AVX-512.
 - [x] Documentar los pasos de NW y SW para LIN, SSE, AVX y AVX512 en C
 - [x] Dividir el .c  de NW y SW para las distintas versiones porque quedo enorme
-- [ ] Documentar los pasos de NW y SW para LIN, SSE, AVX y AVX512 en ASM
+- [x] Documentar los pasos de NW y SW para LIN, SSE, AVX y AVX512 en ASM
+- [x] Reducir push y pop alrededor de los malloc en NW_ASM_SSE
+- [x] Emprolijar mascaras que no se usan y demas basura que quedo.
+- [x] Pensar en remover casos base y utilizar diag1 y diag2
 - [ ] Decidir si agregar o no los cambios a NW y SW de C en AVX512 a los respectivos asm.
-- [ ] Pensar en remover casos base y utilizar diag1 y diag2
-- [ ] Reducir push y pop alrededor de los malloc en NW_ASM_SSE
-- [ ] Emprolijar mascaras que no se usan y demas basura que quedo.
 - [ ] Cli o las funciones que manejan la selección de algoritmos deben chequear que se cumplan las precondiciones (i.e. secuencias de al menos 8 letras para los SSE).
 - [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
 - [ ] Pensar en usar instancia de AWS para usar AVX-512.
