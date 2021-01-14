@@ -80,7 +80,7 @@ namespace AVX512{
             __mmask32 shift_right_mask = 0xFFFFFFFF;
             shift_right_mask = (shift_right_mask >> offset_str_col); 
             // Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
-            // A su vez poner en los lugares de posiciones invalidas todos 0s, para evitar que coincida con algun caracter de la secuencia columna
+            // A su vez poner en los lugares de posiciones invalidas todos 1s, para evitar que coincida con algun caracter de la secuencia columna
             str_col_mm.y = _mm256_mask_loadu_epi8(ones_mm.y, shift_right_mask, (__m256i*)(seq2 + seq2_len - vector_len + offset_str_col));  	// str_row_mm = |0...0|str_row|
         }else{ // Caso sin desborde
             str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
@@ -101,7 +101,7 @@ namespace AVX512{
             // para evitar levantar memoria invalida
             __mmask32 shift_left_mask = 0xFFFFFFFF;
             shift_left_mask <<= offset_str_row; 
-            // Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
+            // Seleccionar los caracteres validos a izquierda con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
             // A su vez poner en los lugares de posiciones invalidas todos 0s, para evitar que coincida con algun caracter de la secuencia columna
             str_row_mm.y = _mm256_maskz_loadu_epi8(shift_left_mask, (__m256i*)(seq1 - offset_str_row)); 	// str_row_mm = |str_row|0...0|
 

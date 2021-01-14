@@ -1,7 +1,7 @@
 #!/bin/bash
 
 while
-        ./random_test
+        sde-kit/sde -icl -- ./random_test
         ret=$?
         ((ret == 0))
 do

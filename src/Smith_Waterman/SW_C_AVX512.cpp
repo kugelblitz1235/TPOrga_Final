@@ -66,59 +66,59 @@ namespace AVX512{
 	}
 
 	// Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia columna a utilizar en la comparación
-	void leer_secuencia_columna(int i){
+    void leer_secuencia_columna(int i){
 
-		if((i+1)*vector_len >= (int)seq2_len){// Caso de desborde por abajo
-			int offset_str_col = (i+1)*vector_len - seq2_len; // Indica cuanto hay que shiftear a la derecha el shift_right_mask
+        if((i+1)*vector_len >= (int)seq2_len){// Caso de desborde por abajo
+            int offset_str_col = (i+1)*vector_len - seq2_len; // Indica cuanto hay que shiftear a la derecha el shift_right_mask
 
-			// Shiftear a derecha la cantidad de posiciones equivalente a caracteres invalidos,
-			// para evitar levantar memoria invalida
-			__mmask32 shift_right_mask = 0xFFFFFFFF;
-			shift_right_mask = (shift_right_mask >> offset_str_col); 
-			// Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
-			// A su vez poner en los lugares de posiciones invalidas todos 0s, para evitar que coincida con algun caracter de la secuencia columna
-			str_col_mm.y = _mm256_mask_loadu_epi8(ones_mm.y, shift_right_mask, (__m256i*)(seq2 + seq2_len - vector_len + offset_str_col));  	// str_row_mm = |0...0|str_row|
-		}else{ // Caso sin desborde
-			str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
-		}
-		// Desempaquetar el string en str_col_ymm para trabajar a nivel words
-		str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
-		str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
-		
-		// Invertir el string en str_col_zmm
-		str_col_mm.z = _mm512_permutexvar_epi16 (str_reverse_mask_mm.z, str_col_mm.z);
-	}
+            // Shiftear a derecha la cantidad de posiciones equivalente a caracteres invalidos,
+            // para evitar levantar memoria invalida
+            __mmask32 shift_right_mask = 0xFFFFFFFF;
+            shift_right_mask = (shift_right_mask >> offset_str_col); 
+            // Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
+            // A su vez poner en los lugares de posiciones invalidas todos 1s, para evitar que coincida con algun caracter de la secuencia columna
+            str_col_mm.y = _mm256_mask_loadu_epi8(ones_mm.y, shift_right_mask, (__m256i*)(seq2 + seq2_len - vector_len + offset_str_col));  	// str_row_mm = |0...0|str_row|
+        }else{ // Caso sin desborde
+            str_col_mm.y = _mm256_loadu_si256((__m256i*)(seq2 + i * vector_len));
+        }
+        // Desempaquetar el string en str_col_ymm para trabajar a nivel words
+        str_col_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_col_mm.z);
+        str_col_mm.z = _mm512_unpacklo_epi8(str_col_mm.z, zeroes_mm.z); 
+        
+        // Invertir el string en str_col_zmm
+        str_col_mm.z = _mm512_permutexvar_epi16 (str_reverse_mask_mm.z, str_col_mm.z);
+    }
 
-	// Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia fila a utilizar en la comparación
-	void leer_secuencia_fila(int j) {
-		if(j-vector_len < 0){ // Caso de desborde por izquierda
-			int offset_str_row = vector_len - j;
-			// Shiftear a izquierda la cantidad de posiciones equivalente a caracteres invalidos,
-			// para evitar levantar memoria invalida
-			__mmask32 shift_left_mask = 0xFFFFFFFF;
-			shift_left_mask <<= offset_str_row; 
-			// Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
-			// A su vez poner en los lugares de posiciones invalidas todos 0s, para evitar que coincida con algun caracter de la secuencia columna
-			str_row_mm.y = _mm256_maskz_loadu_epi8(shift_left_mask, (__m256i*)(seq1 - offset_str_row)); 	// str_row_mm = |str_row|0...0|
+    // Lee de memoria y almacena correctamente en los registros los caracteres de la secuencia fila a utilizar en la comparación
+    void leer_secuencia_fila(int j) {
+        if(j-vector_len < 0){ // Caso de desborde por izquierda
+            int offset_str_row = vector_len - j;
+            // Shiftear a izquierda la cantidad de posiciones equivalente a caracteres invalidos,
+            // para evitar levantar memoria invalida
+            __mmask32 shift_left_mask = 0xFFFFFFFF;
+            shift_left_mask <<= offset_str_row; 
+            // Seleccionar los caracteres validos a izquierda con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
+            // A su vez poner en los lugares de posiciones invalidas todos 0s, para evitar que coincida con algun caracter de la secuencia columna
+            str_row_mm.y = _mm256_maskz_loadu_epi8(shift_left_mask, (__m256i*)(seq1 - offset_str_row)); 	// str_row_mm = |str_row|0...0|
 
-		}else if(j > width-vector_len){ // Caso de desborde por derecha
-			int offset_str_row = j - (width-vector_len);
-			// Shiftear a derecha la cantidad de posiciones equivalente a caracteres invalidos,
-			// para evitar levantar memoria invalida
-			__mmask32 shift_right_mask = 0xFFFFFFFF;
-			shift_right_mask >>= offset_str_row; 
-			// Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
-			// A su vez poner en los lugares de posiciones invalidas todos 0s, para evitar que coincida con algun caracter de la secuencia columna
-			str_row_mm.y = _mm256_maskz_loadu_epi8(shift_right_mask, (__m256i*)(seq1 + j - vector_len)); 	// str_row_mm = |0...0|str_row|
+        }else if(j > width-vector_len){ // Caso de desborde por derecha
+            int offset_str_row = j - (width-vector_len);
+            // Shiftear a derecha la cantidad de posiciones equivalente a caracteres invalidos,
+            // para evitar levantar memoria invalida
+            __mmask32 shift_right_mask = 0xFFFFFFFF;
+            shift_right_mask >>= offset_str_row; 
+            // Seleccionar los caracteres validos a derecha con el offset adecuado para que queden cargados correctamente para la comparación mas adelante
+            // A su vez poner en los lugares de posiciones invalidas todos 0s, para evitar que coincida con algun caracter de la secuencia columna
+            str_row_mm.y = _mm256_maskz_loadu_epi8(shift_right_mask, (__m256i*)(seq1 + j - vector_len)); 	// str_row_mm = |0...0|str_row|
 
-		}else{ // Caso sin desborde
-			str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
-		}
-		
-		// Desempaquetamos los caracteres en str_row_ymm para trabajr a nivel word
-		str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
-		str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
-	}
+        }else{ // Caso sin desborde
+            str_row_mm.y = _mm256_loadu_si256((__m256i*)(seq1 + j - vector_len));
+        }
+        
+        // Desempaquetamos los caracteres en str_row_ymm para trabajar a nivel word
+        str_row_mm.z = _mm512_permutexvar_epi64(str_512_unpacklo_epi8_mask_mm.z, str_row_mm.z);
+        str_row_mm.z = _mm512_unpacklo_epi8(str_row_mm.z, zeroes_mm.z); 
+    }
 
 	//Calcula los puntajes resultantes de las comparaciones entre caracteres
 	void calcular_scores(int j){
