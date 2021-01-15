@@ -47,16 +47,16 @@ void align_sequences(Alignment &alignment, string s1, string s2){
   int min_length = min(alignment.sequence_1->length, alignment.sequence_2->length);
   string implementation = *(alignment.parameters->algorithm);
 
-  if(implementation.find("SSE") != implementation.end() && min_len < 8){
-    cerr < "Los algoritmos SSE necesitan strings de largo mínimo 8" << endl;
+  if(implementation.find("SSE") != string::npos && min_length < 8){
+    cerr << "Los algoritmos SSE necesitan strings de largo mínimo 8" << endl;
     exit(1);
   }
-  else if(implementation.find("AVX512") != implementation.end() && min_len < 32){
-    cerr < "Los algoritmos AVX512 necesitan strings de largo mínimo 32" << endl;
+  else if(implementation.find("AVX512") != string::npos && min_length < 32){
+    cerr << "Los algoritmos AVX512 necesitan strings de largo mínimo 32" << endl;
     exit(1);
   }
-  else if(implementation.find("AVX") != implementation.end() && min_len < 16){
-    cerr < "Los algoritmos AVX necesitan strings de largo mínimo 16" << endl;
+  else if(implementation.find("AVX") != string::npos && min_length < 16){
+    cerr << "Los algoritmos AVX necesitan strings de largo mínimo 16" << endl;
     exit(1);
   }
 
