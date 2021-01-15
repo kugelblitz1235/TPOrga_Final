@@ -34,7 +34,8 @@ struct Alignment{
 - [x] Opcional: dejar parametros como variables globales en SSE.
 - [x] Opcional: agregar tipo de datos union para simular registro en memoria en AVX.
 - [x] Cli o las funciones que manejan la selección de algoritmos deben chequear que se cumplan las precondiciones (i.e. secuencias de al menos 8 letras para los SSE).
+- [x] Pensar en usar instancia de AWS para usar AVX-512.
 - [ ] Chequear que el tamaño de los strings sea manejable en cli y evitar que se use en ese caso.
-- [ ] Pensar en usar instancia de AWS para usar AVX-512.
 - [ ] Medir el tiempo en cli.
+- [ ] Medir GCUPS en cli.
 - [ ] Pensar si habría que cambiar la representación del score a int.
