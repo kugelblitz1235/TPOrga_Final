@@ -60,6 +60,22 @@ void align_sequences(Alignment &alignment, string s1, string s2){
     exit(1);
   }
 
+  int vector_len;
+
+  if(implementation.find("SSE") != string::npos )
+    vector_len = 8;
+  else if(implementation.find("AVX512") != string::npos )
+    vector_len = 32;
+  else if(implementation.find("AVX") != string::npos )
+    vector_len = 16;
+  else
+    vector_len = 1;
+        
+  int height = ((alignment.sequence_2->length + vector_len - 1)/ vector_len);
+  int width = (1 + alignment.sequence_1->length + vector_len - 1); 			
+  int total_cells = height * width * vector_len; 		
+
+	stopwatch.Start();
 
   if(implementation.compare("SW_C_LIN") == 0)SW::C::LIN::SW(alignment, false);
   else if(implementation.compare("SW_C_SSE") == 0)SW::C::SSE::SW(alignment, false);
@@ -81,6 +97,10 @@ void align_sequences(Alignment &alignment, string s1, string s2){
     throw "No existe la implementación ingresada.";
     exit(1);
   }
+
+  auto total_time = stopwatch.EllapsedMicroseconds();
+  
+  cerr << total_time << " " << total_cells << " " << alignment.result->score << " " << alignment.sequence_1->length << " " << alignment.sequence_2->length << endl;
 }
 
 void imprimir_ayuda() {

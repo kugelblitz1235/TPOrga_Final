@@ -1,6 +1,7 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -14,6 +15,20 @@
 #define _mm256_set_m128i(v0, v1)  _mm256_insertf128_si256(_mm256_castsi128_si256(v1), (v0), 1)
 
 using namespace std;
+using namespace chrono;
+
+#define NOW high_resolution_clock::now()
+#define Now() chrono::high_resolution_clock::now()
+static struct Stopwatch {
+	chrono::high_resolution_clock::time_point c_time, c_timeout;
+	void setTimeout(int us) { c_timeout = c_time + chrono::microseconds(us); }
+	void Start() { c_time = Now();}
+	inline bool Timeout() { return Now() > c_timeout; }
+	long long EllapsedMicroseconds() { return chrono::duration_cast<chrono::microseconds>(Now() - c_time).count(); }
+	long long EllapsedMilliseconds() { return chrono::duration_cast<chrono::milliseconds>(Now() - c_time).count(); }
+} stopwatch;//} Stopwatch
+
+
 typedef short (*score_fun_t)(short* score_matrix, unsigned int seq_row_len, int y,int x, int vector_len);
 
 void printStartLine(int row,int vec);
@@ -52,5 +67,6 @@ bool check_scr_matrix_manual(short ** valid_matrix, Alignment* alignment, score_
 extern "C" void print_registers();
 
 extern "C" void print_xmm(short *stack, unsigned int n);
+
 
 #endif
