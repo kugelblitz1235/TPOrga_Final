@@ -13,7 +13,7 @@ for len in range(min_len, max_len, 1000):
         sequence_list = [chars[rnd.randint(0,3)] for _ in range(len)]
         sequence = ''.join(sequence_list)
         sequence_name = f">seq_{len}_{i}"
-        f = open(f"../../sequences/random/seq_{len}_{i}.FASTA", "w")
+        f = open(f"../../sequences/random/seq_{len}_{i}.fasta", "w")
         f.write(sequence_name)
         f.write("\n")
         f.write(sequence)
