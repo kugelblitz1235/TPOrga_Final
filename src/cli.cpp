@@ -196,10 +196,10 @@ int main (int argc, char **argv)
 
   align_sequences(a, s1, s2);
 
-  printf("Alineamiento terminado:\nAlgoritmo: %s\n", (*a.parameters->algorithm).c_str());
-  printf("Parámetros:\n\tmatch: %d\n\tmismatch: %d\n\tgap: %d\n", a.parameters->match, a.parameters->missmatch, a.parameters->gap);
-  printf("Alineamiento:\n%s\n%s\n", a.result->sequence_1->sequence, a.result->sequence_2->sequence);
-  printf("Puntaje:\n%d\n", a.result->score);
+  //printf("Alineamiento terminado:\nAlgoritmo: %s\n", (*a.parameters->algorithm).c_str());
+  //printf("Parámetros:\n\tmatch: %d\n\tmismatch: %d\n\tgap: %d\n", a.parameters->match, a.parameters->missmatch, a.parameters->gap);
+  //printf("Alineamiento:\n%s\n%s\n", a.result->sequence_1->sequence, a.result->sequence_2->sequence);
+  //printf("Puntaje:\n%d\n", a.result->score);
 
   return 0;
 }
