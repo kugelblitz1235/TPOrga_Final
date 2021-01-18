@@ -47,7 +47,7 @@ namespace AVX{
 	void inicializar_casos_base(){
 		// Llenar vector auxiliar con un valor inicial negativo grande para no afectar los calculos
 		for(int i = 0;i < width-1;i++){
-			v_aux[i] = SHRT_MIN/2;
+			v_aux[i] = SHRT_MIN;
 		}
 
 		// Inicializar por cada franja las primeras 2 diagonales. 
@@ -140,7 +140,7 @@ namespace AVX{
 
         // Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
         left_score_mm.y = diag2_mm.y;
-        left_score_mm.y = _mm256_add_epi16 (left_score_mm.y, constant_gap_mm.y);
+        left_score_mm.y = _mm256_adds_epi16 (left_score_mm.y, constant_gap_mm.y);
         
         // Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
         up_score_mm.y = diag2_mm.y;
@@ -151,7 +151,7 @@ namespace AVX{
         up_score_mm.y = _mm256_bsrli_epi128(up_score_mm.y, 2); 								// |0xF...0x8|0x7...0x0| -> |0x0...0x9|0x0...0x1|
         up_score_mm.y = _mm256_insert_epi16(up_score_mm.y,medium_score,0b0111); 				// |0x0...0x9|0x0...0x1| -> |0x0...0x9|0x8...0x1|
         up_score_mm.y = _mm256_insert_epi16(up_score_mm.y,v_aux[j-1],15); 					// 15 = vector_len - 1
-        up_score_mm.y = _mm256_add_epi16(up_score_mm.y, constant_gap_mm.y);
+        up_score_mm.y = _mm256_adds_epi16(up_score_mm.y, constant_gap_mm.y);
         
         // Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
         // si coinciden o no los caracteres de la fila y columna correspondientes
@@ -166,7 +166,7 @@ namespace AVX{
         SIMDreg cmp_match_mm;
         cmp_match_mm.y = _mm256_cmpeq_epi16(str_col_mm.y,str_row_mm.y);
         cmp_match_mm.y = _mm256_blendv_epi8(constant_missmatch_mm.y,constant_match_mm.y,cmp_match_mm.y); 
-        diag_score_mm.y = _mm256_add_epi16(diag_score_mm.y, cmp_match_mm.y);
+        diag_score_mm.y = _mm256_adds_epi16(diag_score_mm.y, cmp_match_mm.y);
 
     }
 

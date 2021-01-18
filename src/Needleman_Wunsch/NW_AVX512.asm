@@ -140,7 +140,7 @@ inicializar_casos_base:
     mov rax, width
     dec rax
     .loop:
-        mov word [v_aux + rsi*2], -16384 ; SHRT_MIN/2
+        mov word [v_aux + rsi*2], -32768 ; SHRT_MIN/2
         inc rsi
         cmp rax, rsi
         jne .loop
@@ -154,7 +154,7 @@ inicializar_casos_base:
         shl rax, vector_len_log
         mov offset_y, rax                                                   ; offset_y = i * width * vector_len
     
-        mov ax, -16384 ; SHRT_MIN/2
+        mov ax, -32768 ; SHRT_MIN/2
         vpbroadcastw diag_zmm, eax                                          ; diag_xmm = | -16384 | -16384 | ... | -16384 | -16384 |
         vmovdqu16 [score_matrix + 2*offset_y], diag_zmm
         mov rax, rdi
@@ -281,14 +281,14 @@ calcular_scores:
 
     ; Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
     vmovdqu16 left_score_zmm, diag2_zmm 
-    vpaddw left_score_zmm, left_score_zmm, constant_gap_zmm
+    vpaddsw left_score_zmm, left_score_zmm, constant_gap_zmm
     
     ; Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
     vmovdqu16 up_score_zmm, diag2_zmm
     mov bx, word [v_aux + 2*rdi - 2*1] 
     pinsrw up_score_xmm, ebx, 0b0
     vpermw up_score_zmm, score_512_rot_right_word_mask_zmm, up_score_zmm
-    vpaddw up_score_zmm, up_score_zmm, constant_gap_zmm
+    vpaddsw up_score_zmm, up_score_zmm, constant_gap_zmm
     
     ; Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
     ; si coinciden o no los caracteres de la fila y columna correspondientes
@@ -299,7 +299,7 @@ calcular_scores:
     ; Comparar los dos strings y colocar según corresponda el puntaje correcto (match o missmatch) en cada posición
     vpcmpw cmp_mask, str_col_zmm, str_row_zmm, 0
     vpblendmw cmp_match_zmm{cmp_mask}, constant_missmatch_zmm, constant_match_zmm
-    vpaddw diag_score_zmm, diag_score_zmm, cmp_match_zmm
+    vpaddsw diag_score_zmm, diag_score_zmm, cmp_match_zmm
     
     ret
 

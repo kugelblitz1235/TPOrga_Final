@@ -104,7 +104,7 @@ inicializar_casos_base:
     mov rax, width
     dec rax
     .loop:
-        mov word [v_aux + i_index*2], -16384 ; SHRT_MIN/2
+        mov word [v_aux + i_index*2], -32768 ; SHRT_MIN/2
         inc i_index
         cmp rax, i_index
         jne .loop
@@ -117,7 +117,7 @@ inicializar_casos_base:
         shl rax, vector_len_log
         mov offset_y, rax                                                   ; offset_y = i * width * vector_len
     
-        mov ax, -16384 ; SHRT_MIN/2
+        mov ax, -32768 ; SHRT_MIN/2
         pinsrw diag_xmm, eax, 0                       
         pshuflw diag_xmm, diag_xmm, 0b0                   
         pshufd diag_xmm, diag_xmm, 0b0                                      ; diag_xmm = | -16384 | -16384 | ... | -16384 | -16384 |
@@ -246,13 +246,13 @@ calcular_scores:
     add rcx, rdx 
     ; Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
     movdqu left_score_xmm, diag2_xmm
-    paddw left_score_xmm, constant_gap_xmm                          
+    paddsw left_score_xmm, constant_gap_xmm                          
     ; Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
     movdqu up_score_xmm, diag2_xmm
     psrldq  up_score_xmm, 2                                         ; up_score_xmm = | 0 | up_score |
     mov bx, word [v_aux + 2*rdi - 2*1]
     pinsrw up_score_xmm, ebx, 0b111                                 ; up_score_xmm = | v_aux[j-1] | up_score |
-    paddw up_score_xmm, constant_gap_xmm
+    paddsw up_score_xmm, constant_gap_xmm
     ; Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
     movdqu diag_score_xmm, diag1_xmm
     psrldq  diag_score_xmm, 2                                       ; up_score_xmm = | 0 | diag_score |
@@ -266,7 +266,7 @@ calcular_scores:
     pblendvb  str_row_xmm, constant_match_xmm                       ; Seleccionar para cada posicion el puntaje correcto basado en la mascara previa
 
     ; Obtener el máximo puntaje entre venir por la diagonal, por izquierda y por arriba
-    paddw diag_score_xmm, str_row_xmm
+    paddsw diag_score_xmm, str_row_xmm
     ret
 
 ; Funcion principal (global)

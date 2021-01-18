@@ -37,7 +37,7 @@ namespace SSE{
 	void inicializar_casos_base() {
 		// Llenar vector auxiliar con un valor inicial negativo grande para no afectar los calculos
 		for(int i = 0;i < width-1;i++){
-			v_aux[i] = SHRT_MIN/2;
+			v_aux[i] = SHRT_MIN;
 		}
 
 		// Inicializar por cada franja las primeras 2 diagonales. 
@@ -121,13 +121,13 @@ namespace SSE{
 
         // Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
         left_score_xmm = diag2_xmm;
-        left_score_xmm = _mm_add_epi16(left_score_xmm, constant_gap_xmm);
+        left_score_xmm = _mm_adds_epi16(left_score_xmm, constant_gap_xmm);
         
         // Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
         up_score_xmm = diag2_xmm;
         up_score_xmm = _mm_srli_si128(up_score_xmm, 2);
         up_score_xmm = _mm_insert_epi16(up_score_xmm,v_aux[j-1],0b111);
-        up_score_xmm = _mm_add_epi16(up_score_xmm, constant_gap_xmm);
+        up_score_xmm = _mm_adds_epi16(up_score_xmm, constant_gap_xmm);
         
         // Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
         // si coinciden o no los caracteres de la fila y columna correspondientes
@@ -138,7 +138,7 @@ namespace SSE{
         __m128i cmp_match_xmm;
         cmp_match_xmm = _mm_cmpeq_epi16(str_col_xmm,str_row_xmm); 									// Mascara con unos en las posiciones donde coinciden los caracteres
         cmp_match_xmm = _mm_blendv_epi8(constant_missmatch_xmm,constant_match_xmm,cmp_match_xmm); 	// Seleccionar para cada posicion el puntaje correcto basado en la mascara previa
-        diag_score_xmm = _mm_add_epi16(diag_score_xmm, cmp_match_xmm);
+        diag_score_xmm = _mm_adds_epi16(diag_score_xmm, cmp_match_xmm);
     }
 
 	void actualizar_posicion_maxima(int i,int j){

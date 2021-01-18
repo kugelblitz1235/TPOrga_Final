@@ -43,7 +43,7 @@ namespace AVX{
     void inicializar_casos_base(Alignment& alignment){
         // Llenar vector auxiliar con un valor inicial negativo grande para no afectar los calculos
         for(int i = 0;i < width-1;i++){
-            v_aux[i] = SHRT_MIN/2;
+            v_aux[i] = SHRT_MIN;
         }
 
         SIMDreg diag_mm;
@@ -52,7 +52,7 @@ namespace AVX{
         for(int i = 0 ; i < height ; i++){
             unsigned int offset_y = i * width * vector_len;
             // Broadcastear el valor SHRT_MIN/2 a nivel word en el registro diag
-            diag_mm.x = _mm_insert_epi16(diag_mm.x,SHRT_MIN/2,0);
+            diag_mm.x = _mm_insert_epi16(diag_mm.x,SHRT_MIN,0);
             diag_mm.y = _mm256_broadcastw_epi16(diag_mm.x);
             _mm256_storeu_si256((__m256i*)(score_matrix + offset_y), diag_mm.y);
             // Insertar la penalidad adecuada para la franja en la posicion mas alta de la diagonal
@@ -141,7 +141,7 @@ namespace AVX{
 
         // Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
         left_score_mm.y = diag2_mm.y;
-        left_score_mm.y = _mm256_add_epi16 (left_score_mm.y, constant_gap_mm.y);
+        left_score_mm.y = _mm256_adds_epi16 (left_score_mm.y, constant_gap_mm.y);
         
         // Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
         up_score_mm.y = diag2_mm.y;
@@ -152,7 +152,7 @@ namespace AVX{
         up_score_mm.y = _mm256_bsrli_epi128(up_score_mm.y, 2); 								// |0xF...0x8|0x7...0x0| -> |0x0...0x9|0x0...0x1|
         up_score_mm.y = _mm256_insert_epi16(up_score_mm.y,medium_score,0b0111); 				// |0x0...0x9|0x0...0x1| -> |0x0...0x9|0x8...0x1|
         up_score_mm.y = _mm256_insert_epi16(up_score_mm.y,v_aux[j-1],15); 					// 15 = vector_len - 1
-        up_score_mm.y = _mm256_add_epi16(up_score_mm.y, constant_gap_mm.y);
+        up_score_mm.y = _mm256_adds_epi16(up_score_mm.y, constant_gap_mm.y);
         
         // Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
         // si coinciden o no los caracteres de la fila y columna correspondientes
@@ -167,7 +167,7 @@ namespace AVX{
         SIMDreg cmp_match_mm;
         cmp_match_mm.y = _mm256_cmpeq_epi16(str_col_mm.y,str_row_mm.y);
         cmp_match_mm.y = _mm256_blendv_epi8(constant_missmatch_mm.y,constant_match_mm.y,cmp_match_mm.y); 
-        diag_score_mm.y = _mm256_add_epi16(diag_score_mm.y, cmp_match_mm.y);
+        diag_score_mm.y = _mm256_adds_epi16(diag_score_mm.y, cmp_match_mm.y);
 
     }
 

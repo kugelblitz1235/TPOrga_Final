@@ -53,7 +53,7 @@ namespace AVX512{
 	void inicializar_casos_base(Alignment& alignment){
 		// Llenar vector auxiliar con un valor inicial negativo grande para no afectar los calculos
 		for(int i = 0;i < width-1;i++){
-			v_aux[i] = SHRT_MIN/2;
+			v_aux[i] = SHRT_MIN;
 		}
 
 		// Inicializar por cada franja las primeras 2 diagonales. 
@@ -124,13 +124,13 @@ namespace AVX512{
 	void calcular_scores(int j){
 		// Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
 		left_score_mm.z = diag2_mm.z;
-		left_score_mm.z = _mm512_add_epi16 (left_score_mm.z, constant_gap_mm.z);
+		left_score_mm.z = _mm512_adds_epi16 (left_score_mm.z, constant_gap_mm.z);
 		
 		// Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
 		up_score_mm.z = diag2_mm.z;
 		up_score_mm.x = _mm_insert_epi16(up_score_mm.x,v_aux[j-1],0b0);
 		up_score_mm.z = _mm512_permutexvar_epi16(score_512_rot_right_word_mask_mm.z, up_score_mm.z);
-		up_score_mm.z = _mm512_add_epi16(up_score_mm.z, constant_gap_mm.z);
+		up_score_mm.z = _mm512_adds_epi16(up_score_mm.z, constant_gap_mm.z);
 		
 		// Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
 		// si coinciden o no los caracteres de la fila y columna correspondientes
@@ -142,7 +142,7 @@ namespace AVX512{
 		SIMDreg cmp_match_mm;
 		__mmask32 cmp_mask = _mm512_cmpeq_epi16_mask(str_col_mm.z,str_row_mm.z);
 		cmp_match_mm.z = _mm512_mask_blend_epi16(cmp_mask, constant_missmatch_mm.z,constant_match_mm.z); 
-		diag_score_mm.z = _mm512_add_epi16(diag_score_mm.z, cmp_match_mm.z);
+		diag_score_mm.z = _mm512_adds_epi16(diag_score_mm.z, cmp_match_mm.z);
 	}
 
 	void actualizar_posicion_maxima(int i,int j){

@@ -119,7 +119,7 @@ inicializar_casos_base:
     mov rax, width
     dec rax
     .loop:
-        mov word [v_aux + rsi*2], -16384 ; SHRT_MIN/2
+        mov word [v_aux + rsi*2], -32768 ; SHRT_MIN/2
         inc rsi
         cmp rax, rsi
         jne .loop
@@ -133,7 +133,7 @@ inicializar_casos_base:
         shl rax, vector_len_log
         mov offset_y, rax                                               ; offset_y = i * width * vector_len
     
-        mov ax, -16384 ; SHRT_MIN/2
+        mov ax, -32768 ; SHRT_MIN/2
         pinsrw diag_xmm, eax, 0
         vpbroadcastw diag_ymm, diag_xmm                                 ; diag_xmm = | -16384 | -16384 | ... | -16384 | -16384 |
         vmovdqu [score_matrix + 2*offset_y], diag_ymm
@@ -264,7 +264,7 @@ calcular_scores:
     
     ; Calcular los scores viniendo por izquierda, sumandole a cada posicion la penalidad del gap
     vmovdqu left_score_ymm, diag2_ymm 
-    vpaddw left_score_ymm, left_score_ymm, constant_gap_ymm
+    vpaddsw left_score_ymm, left_score_ymm, constant_gap_ymm
     
     ; Calcular los scores viniendo por arriba, sumandole a cada posicion la penalidad del gap
     vmovdqu up_score_ymm, diag2_ymm
@@ -280,7 +280,7 @@ calcular_scores:
     vextracti128 temp_xmm, up_score_ymm, 1
     pinsrw temp_xmm, ebx, 0b111                                 ; |0x0...0x9|0x0...0x1| -> |0x0...0x9|0x8...0x1|
     vinserti128 up_score_ymm, up_score_ymm, temp_xmm, 1
-    vpaddw up_score_ymm, up_score_ymm, constant_gap_ymm
+    vpaddsw up_score_ymm, up_score_ymm, constant_gap_ymm
 
     ; Calcular los scores viniendo diagonalmente, sumando en cada caso el puntaje de match o missmatch 
     ; si coinciden o no los caracteres de la fila y columna correspondientes
@@ -301,7 +301,7 @@ calcular_scores:
     vpcmpeqw cmp_match_ymm, cmp_match_ymm, str_row_ymm                                      ; Mascara con unos en las posiciones donde coinciden los caracteres
     vpblendvb cmp_match_ymm, constant_missmatch_ymm, constant_match_ymm, cmp_match_ymm      ; Seleccionar para cada posicion el puntaje correcto basado en la mascara previa
 
-    vpaddw diag_score_ymm, diag_score_ymm, cmp_match_ymm
+    vpaddsw diag_score_ymm, diag_score_ymm, cmp_match_ymm
     
     ret
 
