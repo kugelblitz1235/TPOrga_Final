@@ -1,6 +1,6 @@
 CXX=g++
-CXXFLAGS = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O0 -march=native
-CXXFLAGS_AVX512 = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O0 -march=skylake-avx512
+CXXFLAGS = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O3 -march=native
+CXXFLAGS_AVX512 = -ggdb -Wall -Wno-unused-parameter -Wextra -no-pie -pedantic -m64 -O3 -march=skylake-avx512
 
 ASM = nasm
 ASMFLAGS = -felf64 -g -F dwarf
