@@ -40,7 +40,7 @@ NW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/NW_random_t_c.png", width = 9, height = 5)
+ggsave("graficos/NW_random_t_c.pdf", width = 9, height = 5)
 
 NW_random %>%
   group_by(algoritmo, longitud1, longitud2, celdas_efectivas) %>%
@@ -60,7 +60,7 @@ NW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/NW_random_t_l.png", width = 9, height = 5)
+ggsave("graficos/NW_random_t_l.pdf", width = 9, height = 5)
 
 NW_random %>%
   group_by(algoritmo, longitud1, longitud2, celdas_efectivas) %>%
@@ -80,7 +80,7 @@ NW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/NW_random_gcups_c.png", width = 9, height = 5)
+ggsave("graficos/NW_random_gcups_c.pdf", width = 9, height = 5)
 
 NW_random %>%
   group_by(algoritmo, longitud1, longitud2, celdas_efectivas) %>%
@@ -100,7 +100,7 @@ NW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/NW_random_gcups_l.png", width = 9, height = 5)
+ggsave("graficos/NW_random_gcups_l.pdf", width = 9, height = 5)
 
 
 # Experimento 2: SW con secuencias random de distinto largo --------------------
@@ -125,7 +125,7 @@ SW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/SW_random_t_c.png", width = 9, height = 5)
+ggsave("graficos/SW_random_t_c.pdf", width = 9, height = 5)
 
 SW_random %>%
   group_by(algoritmo, longitud1, longitud2, celdas_efectivas) %>%
@@ -145,7 +145,7 @@ SW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/SW_random_t_l.png", width = 9, height = 5)
+ggsave("graficos/SW_random_t_l.pdf", width = 9, height = 5)
 
 SW_random %>%
   group_by(algoritmo, longitud1, longitud2, celdas_efectivas) %>%
@@ -165,7 +165,7 @@ SW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/SW_random_gcups_c.png", width = 9, height = 5)
+ggsave("graficos/SW_random_gcups_c.pdf", width = 9, height = 5)
 
 SW_random %>%
   group_by(algoritmo, longitud1, longitud2, celdas_efectivas) %>%
@@ -185,7 +185,7 @@ SW_random %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/SW_random_gcups_l.png", width = 9, height = 5)
+ggsave("graficos/SW_random_gcups_l.pdf", width = 9, height = 5)
 
 # Experimento 3: NW con genomas reales de distinto largo -----------------------
 NW_genomes <- data %>%
@@ -227,7 +227,7 @@ NW_genomes %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/NW_genomes_t.png", width = 9, height = 5)
+ggsave("graficos/NW_genomes_t.pdf", width = 9, height = 5)
 
 NW_genomes %>%
   group_by(algoritmo, genoma) %>%
@@ -252,7 +252,7 @@ NW_genomes %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/NW_genomes_gcups.png", width = 9, height = 5)
+ggsave("graficos/NW_genomes_gcups.pdf", width = 9, height = 5)
 
 # Experimento 4: SW reads simulados con genomas reales de distinto largo -------
 SW_reads <- data %>%
@@ -287,7 +287,7 @@ SW_reads %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/SW_reads_t.png", width = 9, height = 5)
+ggsave("graficos/SW_reads_t.pdf", width = 9, height = 5)
 
 SW_reads %>%
   group_by(algoritmo, genoma) %>%
@@ -312,4 +312,4 @@ SW_reads %>%
     axis.line = element_line()
   )
 
-ggsave("graficos/SW_reads_gcups.png", width = 9, height = 5)
+ggsave("graficos/SW_reads_gcups.pdf", width = 9, height = 5)
