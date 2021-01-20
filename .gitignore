@@ -3,3 +3,6 @@ build
 cli
 test
 random_test
+.Rproj.user
+.RData
+.Rhistory
