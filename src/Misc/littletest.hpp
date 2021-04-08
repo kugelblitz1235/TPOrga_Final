@@ -586,6 +586,6 @@ class test : public test_base
         friend class test_runner;
 };
 
-};
+}
 
 #endif //_LITTLETEST_HPP_

@@ -255,7 +255,7 @@ namespace SIMDlogic{
 				}
 
 				int best_score = 0;				
-				int index;
+				int index = 0;
 				for( int k = 0;k < vector_len;k++){
 					if(best_score < diag_score[k]){
 						best_score = diag_score[k];

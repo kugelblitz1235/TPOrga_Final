@@ -105,6 +105,7 @@ void align_sequences(Alignment &alignment, string s1, string s2){
 
 void imprimir_ayuda() {
   cerr << "Especificar algoritmo con -a" << endl;
+  cerr << "Especificar dos archivos FASTA con las secuencias a alinear con -s y -t" << endl;
   cerr << "Especificar puntaje de match con -p" << endl;
   cerr << "Especificar puntaje de mismatch con -q" << endl;
   cerr << "Especificar puntaje de gap con -r" << endl;
@@ -182,7 +183,7 @@ int main (int argc, char **argv)
         exit(1);
       }
 
-  if (a.parameters->algorithm == NULL | s1 == "" | s2 == "") {
+  if ((a.parameters->algorithm == NULL) | (s1 == "") | (s2 == "")) {
     cerr << "Faltan argumentos obligatorios. Especificar un algoritmo y dos secuencias (-a, -s, -t).\nImprimir ayuda con -h.\n" << endl;
     exit(1);
   }
