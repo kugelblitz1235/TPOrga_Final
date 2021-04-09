@@ -1,6 +1,6 @@
 # Implementación de algoritmos de alineamiento de secuencias de ADN utilizando instrucciones SIMD
 
-Como opción equivalente al final de la materia Organización del Computador II realizamos la implemetación de una versión paralelizada empleando instrucciones SIMD de los algoritmos de alineamiento de secuencias biológicas Smith-Waterman y Needleman-Wunsch. Dichos algoritmos son fundamentales en el estudio de secuencias de ADN durante el proceso de secuenciación que permite conocer el el genoma de cualquier especie. Adicionalmente, se evaluó su desempeño realizando distintos experimentos que se detallan en el informe. El trabajo fue realizado por Bruno Gomez, Tomás Tropea y Octavio Gianatiempo.
+Como opción equivalente al final de la materia Organización del Computador II realizamos la implementación de una versión paralelizada empleando instrucciones SIMD de los algoritmos de alineamiento de secuencias biológicas Smith-Waterman y Needleman-Wunsch. Dichos algoritmos son fundamentales en el estudio de secuencias de ADN durante el proceso de secuenciación que permite conocer el genoma de cualquier especie. Adicionalmente, se evaluó su desempeño realizando distintos experimentos que se detallan en el informe. El trabajo fue realizado por Bruno Gomez, Tomás Tropea y Octavio Gianatiempo.
 
 ## Instrucciones de compilación
 
